@@ -117,8 +117,8 @@
                         <span id="displayApprovalBadge" class="text-xs font-bold text-emerald-600">Status: Approved</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span id="shiftStatusIndicator" class="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">Offline</span>
-                        <button id="toggleShiftBtn" onclick="toggleShift()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm">
+                        <span id="shiftStatusIndicatorWallet" class="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">Offline</span>
+                        <button id="toggleShiftBtnWallet" onclick="toggleShift()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm">
                             Go Online
                         </button>
                     </div>
@@ -183,6 +183,20 @@
 
             <!-- TAB CONTENT: ORDERS / DELIVERIES -->
             <div id="tabContentOrders" class="space-y-4 hidden">
+                
+                <!-- Go Online Status Card on Orders Tab -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-gray-900 text-sm">Shift Availability</div>
+                        <div id="shiftStatusIndicatorOrders" class="text-xs font-bold text-gray-500">You are currently offline</div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button id="toggleShiftBtnOrders" onclick="toggleShift()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm">
+                            Go Online
+                        </button>
+                    </div>
+                </div>
+
                 <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100">
                     <div class="flex justify-between items-center border-b pb-2">
                         <h3 class="font-bold text-base text-gray-800">📦 Assigned Delivery Orders</h3>
@@ -417,8 +431,10 @@
         function toggleShift() {
             if (!currentDriver) return;
 
-            const toggleBtn = document.getElementById('toggleShiftBtn');
-            const indicator = document.getElementById('shiftStatusIndicator');
+            const toggleBtnWallet = document.getElementById('toggleShiftBtnWallet');
+            const toggleBtnOrders = document.getElementById('toggleShiftBtnOrders');
+            const indicatorWallet = document.getElementById('shiftStatusIndicatorWallet');
+            const indicatorOrders = document.getElementById('shiftStatusIndicatorOrders');
 
             if (!isOnline) {
                 if (!navigator.geolocation) {
@@ -426,30 +442,56 @@
                     return;
                 }
 
-                isOnline = true;
-                toggleBtn.innerText = 'Go Offline';
-                toggleBtn.className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
-                indicator.innerText = 'Online';
-                indicator.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 animate-pulse';
+                // Explicit prompt request to turn on location sharing
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        isOnline = true;
+                        
+                        // Update Wallet Tab Shift Button
+                        toggleBtnWallet.innerText = 'Go Offline';
+                        toggleBtnWallet.className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
+                        indicatorWallet.innerText = 'Online';
+                        indicatorWallet.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 animate-pulse';
 
-                connectedSeconds = 0;
-                timerInterval = setInterval(() => {
-                    connectedSeconds++;
-                    const hrs = String(Math.floor(connectedSeconds / 3600)).padStart(2, '0');
-                    const mins = String(Math.floor((connectedSeconds % 3600) / 60)).padStart(2, '0');
-                    document.getElementById('statTimeConnected').innerText = `${hrs}h:${mins}m`;
-                }, 1000);
+                        // Update Orders Tab Shift Button
+                        toggleBtnOrders.innerText = 'Go Offline';
+                        toggleBtnOrders.className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
+                        indicatorOrders.innerText = 'Online & sharing location with admin';
+                        indicatorOrders.className = 'text-xs font-bold text-emerald-600 animate-pulse';
 
-                sendCurrentLocation();
-                locationInterval = setInterval(sendCurrentLocation, 4000);
+                        connectedSeconds = 0;
+                        timerInterval = setInterval(() => {
+                            connectedSeconds++;
+                            const hrs = String(Math.floor(connectedSeconds / 3600)).padStart(2, '0');
+                            const mins = String(Math.floor((connectedSeconds % 3600) / 60)).padStart(2, '0');
+                            document.getElementById('statTimeConnected').innerText = `${hrs}h:${mins}m`;
+                        }, 1000);
+
+                        sendCurrentLocation();
+                        locationInterval = setInterval(sendCurrentLocation, 4000);
+                    },
+                    error => {
+                        alert('Location access is required to go online. Please enable GPS permissions in your browser settings.');
+                        console.error(error);
+                    },
+                    { enableHighAccuracy: true }
+                );
             } else {
                 isOnline = false;
                 clearInterval(locationInterval);
                 clearInterval(timerInterval);
-                toggleBtn.innerText = 'Go Online';
-                toggleBtn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
-                indicator.innerText = 'Offline';
-                indicator.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600';
+
+                // Reset Wallet Tab Shift Button
+                toggleBtnWallet.innerText = 'Go Online';
+                toggleBtnWallet.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
+                indicatorWallet.innerText = 'Offline';
+                indicatorWallet.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600';
+
+                // Reset Orders Tab Shift Button
+                toggleBtnOrders.innerText = 'Go Online';
+                toggleBtnOrders.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
+                indicatorOrders.innerText = 'You are currently offline';
+                indicatorOrders.className = 'text-xs font-bold text-gray-500';
 
                 fetch(`${API_URL}/drivers/location`, {
                     method: 'POST',
