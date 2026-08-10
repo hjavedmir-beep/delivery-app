@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Delivery App - Wallet</title>
+    <title>Swifty - Driver Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,7 +13,22 @@
     <!-- Top Header -->
     <div class="bg-emerald-600 text-white pt-5 pb-8 px-4 rounded-b-[30px] shadow-md sticky top-0 z-50">
         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-xl font-bold tracking-wide">Driver Portal</h1>
+            <!-- Embedded Proper SVG Logo -->
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 100" class="h-10 w-auto">
+                    <!-- Graphic Icon: Circle with Lightning Bolt -->
+                    <g transform="translate(4, 10)">
+                        <circle cx="40" cy="40" r="36" fill="#ffffff" opacity="0.15" />
+                        <circle cx="40" cy="40" r="28" fill="#ffffff" />
+                        <!-- Lightning Bolt Icon -->
+                        <path d="M42 22 L28 42 H38 L34 58 L50 36 H40 Z" fill="#059669" />
+                    </g>
+                    <!-- Typography: Swifty -->
+                    <text x="95" y="58" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="900" fill="#ffffff" letter-spacing="1">SWIFTY</text>
+                    <!-- Tagline -->
+                    <text x="97" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#a7f3d0" letter-spacing="2.5">EXPRESS DELIVERY</text>
+                </svg>
+            </div>
             <button onclick="logoutDriver()" id="logoutBtn" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1 rounded-lg font-bold text-xs transition hidden">Logout</button>
         </div>
 
