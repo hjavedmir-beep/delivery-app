@@ -142,15 +142,10 @@
                             <button type="button" onclick="searchPostcodeAddresses()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-semibold transition">Search</button>
                         </div>
                     </div>
-                    <div id="addressSelectContainer" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700">Select Location / Area</label>
-                        <select id="busAddressDropdown" onchange="onAddressSelected()" class="w-full mt-1 p-2 border rounded-md bg-white text-sm">
-                            <option value="">-- Choose matching location --</option>
-                        </select>
-                    </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Street Address (Fully Editable)</label>
-                        <input type="text" id="busAddress" required placeholder="e.g. Stafford Street" class="w-full mt-1 p-2 border rounded-md">
+                        <label class="block text-sm font-medium text-gray-700">Street Address (Type full address here)</label>
+                        <input type="text" id="busAddress" required placeholder="e.g. 123 Stafford Street" class="w-full mt-1 p-2 border rounded-md bg-white">
+                        <p class="text-[11px] text-gray-500 mt-1">💡 Type your exact street name and number. Postcode will pin the map automatically.</p>
                     </div>
                     <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 font-semibold transition">Save & Pin on Map</button>
                 </form>
@@ -314,41 +309,29 @@
             }
 
             try {
-                // Using Postcodes.io API for accurate UK postcode coordinates and district info
                 const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
                 const data = await res.json();
 
-                const dropdownContainer = document.getElementById('addressSelectContainer');
-                const dropdown = document.getElementById('busAddressDropdown');
-
-                dropdown.innerHTML = '<option value="">-- Choose location / area --</option>';
-
                 if (data.status === 200 && data.result) {
                     const resObj = data.result;
-                    dropdownContainer.classList.remove('hidden');
                     
-                    dropdown.dataset.lat = resObj.latitude;
-                    dropdown.dataset.lng = resObj.longitude;
+                    // Save coordinates automatically into dataset for map pinning
+                    document.getElementById('busAddress').dataset.lat = resObj.latitude;
+                    document.getElementById('busAddress').dataset.lng = resObj.longitude;
 
-                    let locationName = `${resObj.admin_ward || resObj.parish || ''}, ${resObj.admin_district}, ${postcode}`;
-                    dropdown.innerHTML += `<option value="exact">${locationName}</option>`;
-                    
-                    document.getElementById('busAddress').value = `${resObj.admin_district}, ${postcode}`;
+                    // Suggest district/town in address box if empty or just set district baseline
+                    let districtInfo = `${resObj.admin_district || ''}, ${postcode}`;
+                    let currentVal = document.getElementById('busAddress').value.trim();
+                    if(!currentVal) {
+                        document.getElementById('busAddress').value = districtInfo;
+                    }
+                    alert('Postcode found! Now enter your exact street name and number in the Street Address box.');
                 } else {
-                    dropdownContainer.classList.add('hidden');
-                    alert('Postcode not found in UK database. Please type your street address manually.');
+                    alert('Postcode not found in UK database. Please type your address manually.');
                 }
             } catch (e) {
                 console.error("Error looking up postcode", e);
                 alert('Error connecting to postcode server. You can type the address manually.');
-            }
-        }
-
-        function onAddressSelected() {
-            const dropdown = document.getElementById('busAddressDropdown');
-            if (dropdown.value === "exact") {
-                document.getElementById('busAddress').dataset.lat = dropdown.dataset.lat;
-                document.getElementById('busAddress').dataset.lng = dropdown.dataset.lng;
             }
         }
 
@@ -398,7 +381,6 @@
             localStorage.setItem('admin_businesses', JSON.stringify(savedBusinesses));
 
             document.getElementById('businessForm').reset();
-            document.getElementById('addressSelectContainer').classList.add('hidden');
             alert('Business added successfully and pinned on the map!');
             renderBusinesses();
             updateAdminMap();
@@ -787,7 +769,7 @@
 
                 Object.keys(locations).forEach(id => {
                     const loc = locations[id];
-                    let dObj = allDMap.find(d => String(d.id) === String(id));
+                    let dObj = allDMap.find(d =>String(d.id) === String(id));
                     let driverName = dObj ? `${dObj.firstName} ${dObj.surname}` : `Driver #${id}`;
                     
                     if (driverMarkers[id]) {
