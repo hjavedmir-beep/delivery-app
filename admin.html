@@ -52,7 +52,7 @@
             <!-- Live Drivers Location Box -->
             <div class="bg-white p-4 rounded-xl shadow border">
                 <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Drivers Location</h3>
-                <div id="liveDriversList" class="text-xs text-gray-600">
+                <div id="liveDriversList" class="text-xs text-gray-600 space-y-1">
                     Loading live locations...
                 </div>
             </div>
@@ -202,9 +202,10 @@
                 container.innerHTML = '';
                 driverIds.forEach(id => {
                     const loc = locations[id];
+                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
                     container.innerHTML += `
-                        <div class="flex justify-between py-1 border-b">
-                            <span><strong>Driver ID ${id}</strong></span>
+                        <div class="flex justify-between py-1 border-b items-center">
+                            <span><strong>${driverName}</strong></span>
                             <span class="text-green-600 font-mono">Lat: ${loc.lat.toFixed(4)}, Lng: ${loc.lng.toFixed(4)}</span>
                         </div>`;
                 });
@@ -213,7 +214,7 @@
             }
         }
 
-        let adminMap = L.map('adminMap').setView([51.505, -0.09], 13);
+        let adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13); // Stoke-on-Trent coordinates
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
 
         let driverMarkers = {};
@@ -225,10 +226,12 @@
 
                 Object.keys(locations).forEach(id => {
                     const loc = locations[id];
+                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
+                    
                     if (driverMarkers[id]) {
                         driverMarkers[id].setLatLng([loc.lat, loc.lng]);
                     } else {
-                        driverMarkers[id] = L.marker([loc.lat, loc.lng]).addTo(adminMap).bindPopup(`Driver ID: ${id}`);
+                        driverMarkers[id] = L.marker([loc.lat, loc.lng]).addTo(adminMap).bindPopup(`${driverName} (ID: ${id})`);
                     }
                 });
             } catch (e) {
