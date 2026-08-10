@@ -14,74 +14,136 @@
 
     <nav class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
         <h1 class="text-xl font-bold">Admin Dispatch Panel</h1>
-        <span class="text-sm bg-blue-700 px-3 py-1 rounded">Connected to Server</span>
+        <div class="space-x-4">
+            <button onclick="switchTab('orders')" id="btnOrdersTab" class="bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition">Orders & Map</button>
+            <button onclick="switchTab('drivers')" id="btnDriversTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Drivers Management</button>
+        </div>
     </nav>
 
-    <div class="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="container mx-auto p-6">
         
-        <!-- Left Column: Create Order, Live Drivers & Live Map -->
-        <div class="space-y-6 md:col-span-1">
-            <!-- Create Order Form -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Create New Order</h2>
-                <form id="orderForm" onsubmit="createOrder(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
-                        <input type="text" id="custName" required class="w-full mt-1 p-2 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
-                        <input type="text" id="custPhone" required class="w-full mt-1 p-2 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Pickup Address</label>
-                        <input type="text" id="pickupAddr" required class="w-full mt-1 p-2 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Drop-off Address</label>
-                        <input type="text" id="dropAddr" required class="w-full mt-1 p-2 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Special Notes</label>
-                        <textarea id="orderNotes" class="w-full mt-1 p-2 border rounded-md"></textarea>
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold transition">Add Order to Server</button>
-                </form>
-            </div>
+        <!-- SECTION 1: Orders & Live Map View (Default) -->
+        <div id="ordersSection" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Left Column: Create Order, Live Drivers & Live Map -->
+            <div class="space-y-6 md:col-span-1">
+                <!-- Create Order Form -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Create New Order</h2>
+                    <form id="orderForm" onsubmit="createOrder(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                            <input type="text" id="custName" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+                            <input type="text" id="custPhone" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pickup Address</label>
+                            <input type="text" id="pickupAddr" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Drop-off Address</label>
+                            <input type="text" id="dropAddr" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Special Notes</label>
+                            <textarea id="orderNotes" class="w-full mt-1 p-2 border rounded-md"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold transition">Add Order to Server</button>
+                    </form>
+                </div>
 
-            <!-- Live Drivers Location Box -->
-            <div class="bg-white p-4 rounded-xl shadow border">
-                <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Drivers Location</h3>
-                <div id="liveDriversList" class="text-xs text-gray-600 space-y-1">
-                    Loading live locations...
+                <!-- Live Drivers Location Box -->
+                <div class="bg-white p-4 rounded-xl shadow border">
+                    <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Drivers Location</h3>
+                    <div id="liveDriversList" class="text-xs text-gray-600 space-y-1">
+                        Loading live locations...
+                    </div>
+                </div>
+
+                <!-- Live Map View Box -->
+                <div class="bg-white p-4 rounded-xl shadow border">
+                    <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Map View</h3>
+                    <div id="adminMap" class="w-full h-64 rounded-lg"></div>
                 </div>
             </div>
 
-            <!-- Live Map View Box -->
-            <div class="bg-white p-4 rounded-xl shadow border">
-                <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Map View</h3>
-                <div id="adminMap" class="w-full h-64 rounded-lg"></div>
+            <!-- Right Column: Orders Queue -->
+            <div class="md:col-span-2 space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Live Orders Queue</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 text-sm">
+                                    <th class="p-3 border-b">ID & Customer</th>
+                                    <th class="p-3 border-b">Route</th>
+                                    <th class="p-3 border-b">Status</th>
+                                    <th class="p-3 border-b">Assign Driver</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody" class="text-sm text-gray-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading orders...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Right Column: Orders Queue -->
-        <div class="md:col-span-2 space-y-6">
+        <!-- SECTION 2: Drivers Management Tab (Hidden by default) -->
+        <div id="driversSection" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Live Orders Queue</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 text-sm">
-                                <th class="p-3 border-b">ID & Customer</th>
-                                <th class="p-3 border-b">Route</th>
-                                <th class="p-3 border-b">Status</th>
-                                <th class="p-3 border-b">Assign Driver</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ordersTableBody" class="text-sm text-gray-700">
-                            <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading orders...</td></tr>
-                        </tbody>
-                    </table>
+                <!-- Sub-tabs for Drivers -->
+                <div class="flex border-b mb-6 space-x-6">
+                    <button onclick="switchDriverSubTab('all')" id="subBtnAll" class="pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition">All Drivers</button>
+                    <button onclick="switchDriverSubTab('online')" id="subBtnOnline" class="pb-2 font-medium text-gray-500 border-b-2 border-transparent text-sm transition">Online Drivers</button>
+                </div>
+
+                <!-- Sub-Tab Content: All Drivers -->
+                <div id="allDriversSubTab" class="space-y-4">
+                    <h3 class="text-md font-semibold text-gray-800">Complete Fleet Registry</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 text-sm">
+                                    <th class="p-3 border-b">Driver ID & Name</th>
+                                    <th class="p-3 border-b">Phone</th>
+                                    <th class="p-3 border-b">Status</th>
+                                    <th class="p-3 border-b">Total Deliveries</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm text-gray-700">
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-3 font-bold">#1 - Ali Khan</td>
+                                    <td class="p-3 text-xs text-gray-500">+44 7000 111222</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">Registered</span></td>
+                                    <td class="p-3">24</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-3 font-bold">#2 - Ahmed Raza</td>
+                                    <td class="p-3 text-xs text-gray-500">+44 7000 333444</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">Registered</span></td>
+                                    <td class="p-3">19</td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-3 font-bold">#3 - Usman Ali</td>
+                                    <td class="p-3 text-xs text-gray-500">+44 7000 555666</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">Registered</span></td>
+                                    <td class="p-3">31</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sub-Tab Content: Online Drivers -->
+                <div id="onlineDriversSubTab" class="hidden space-y-4">
+                    <h3 class="text-md font-semibold text-gray-800">Currently Active & Online Drivers</h3>
+                    <div id="onlineDriversDetailList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <p class="text-gray-400 text-sm">Loading active drivers...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -90,6 +152,49 @@
 
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
+
+        // Main Tab Switching
+        function switchTab(tab) {
+            const ordersSec = document.getElementById('ordersSection');
+            const driversSec = document.getElementById('driversSection');
+            const btnOrders = document.getElementById('btnOrdersTab');
+            const btnDrivers = document.getElementById('btnDriversTab');
+
+            if (tab === 'orders') {
+                ordersSec.classList.remove('hidden');
+                driversSec.classList.add('hidden');
+                btnOrders.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
+                btnDrivers.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
+                setTimeout(() => { adminMap.invalidateSize(); }, 200); // Fix map render issue when switching tabs
+            } else {
+                ordersSec.classList.add('hidden');
+                driversSec.classList.remove('hidden');
+                btnDrivers.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
+                btnOrders.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
+                fetchDetailedOnlineDrivers();
+            }
+        }
+
+        // Driver Sub-Tab Switching
+        function switchDriverSubTab(subTab) {
+            const allSub = document.getElementById('allDriversSubTab');
+            const onlineSub = document.getElementById('onlineDriversSubTab');
+            const btnAll = document.getElementById('subBtnAll');
+            const btnOnline = document.getElementById('subBtnOnline');
+
+            if (subTab === 'all') {
+                allSub.classList.remove('hidden');
+                onlineSub.classList.add('hidden');
+                btnAll.className = 'pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
+                btnOnline.className = 'pb-2 font-medium text-gray-500 border-b-2 border-transparent text-sm transition';
+            } else {
+                allSub.classList.add('hidden');
+                onlineSub.classList.remove('hidden');
+                btnOnline.className = 'pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
+                btnAll.className = 'pb-2 font-medium text-gray-500 border-b-2 border-transparent text-sm transition';
+                fetchDetailedOnlineDrivers();
+            }
+        }
 
         async function fetchOrders() {
             try {
@@ -103,7 +208,6 @@
 
         async function createOrder(event) {
             event.preventDefault();
-            
             const newOrder = {
                 customerName: document.getElementById('custName').value,
                 customerPhone: document.getElementById('custPhone').value,
@@ -130,7 +234,6 @@
 
         async function assignDriver(orderId, driverId) {
             if (!driverId) return;
-
             try {
                 const response = await fetch(`${API_URL}/orders/assign`, {
                     method: 'POST',
@@ -156,7 +259,6 @@
             tbody.innerHTML = '';
             orders.forEach(order => {
                 const trackingLink = `customer-track.html?id=${order.id}`;
-
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="p-3">
@@ -214,7 +316,39 @@
             }
         }
 
-        let adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13); // Stoke-on-Trent coordinates
+        async function fetchDetailedOnlineDrivers() {
+            try {
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const locations = await res.json();
+                const container = document.getElementById('onlineDriversDetailList');
+                const driverIds = Object.keys(locations);
+
+                if (driverIds.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-sm col-span-2">No drivers currently online.</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                driverIds.forEach(id => {
+                    const loc = locations[id];
+                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
+                    container.innerHTML += `
+                        <div class="p-4 border rounded-xl bg-gray-50 flex justify-between items-center shadow-sm">
+                            <div>
+                                <p class="font-bold text-gray-800">${driverName} <span class="text-xs text-gray-500">(ID: #${id})</span></p>
+                                <p class="text-xs text-emerald-600 mt-1">🟢 Status: Online</p>
+                                <p class="text-xs text-gray-500 font-mono mt-0.5">Lat: ${loc.lat.toFixed(4)}, Lng: ${loc.lng.toFixed(4)}</p>
+                            </div>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">Live</span>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error("Error fetching detailed online drivers", e);
+            }
+        }
+
+        let adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
 
         let driverMarkers = {};
