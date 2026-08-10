@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Delivery Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet Maps CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet Maps JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -22,11 +20,9 @@
 
     <div class="container mx-auto p-6">
         
-        <!-- SECTION 1: Orders & Live Map View (Default) -->
+        <!-- SECTION 1: Orders & Map -->
         <div id="ordersSection" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Left Column: Create Order, Live Drivers & Live Map -->
             <div class="space-y-6 md:col-span-1">
-                <!-- Create Order Form -->
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Create New Order</h2>
                     <form id="orderForm" onsubmit="createOrder(event)" class="space-y-4">
@@ -54,29 +50,20 @@
                     </form>
                 </div>
 
-                <!-- Live Drivers Location Box -->
                 <div class="bg-white p-4 rounded-xl shadow border">
                     <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Drivers Location</h3>
-                    <div id="liveDriversList" class="text-xs text-gray-600 space-y-1">
-                        Loading live locations...
-                    </div>
+                    <div id="liveDriversList" class="text-xs text-gray-600 space-y-1">Loading live locations...</div>
                 </div>
 
-                <!-- Live Map View Box -->
                 <div class="bg-white p-4 rounded-xl shadow border">
                     <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Map View</h3>
                     <div id="adminMap" class="w-full h-64 rounded-lg"></div>
                 </div>
             </div>
 
-            <!-- Right Column: 3 Categorized Order Tables -->
             <div class="md:col-span-2 space-y-6">
-                
-                <!-- 1. New Orders Tab/Section -->
                 <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2">
-                        <span>📦 New Orders (Pending Assignment)</span>
-                    </h2>
+                    <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2">📦 New Orders (Pending Assignment)</h2>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -94,11 +81,8 @@
                     </div>
                 </div>
 
-                <!-- 2. Assigned Orders Tab/Section -->
                 <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold mb-4 text-orange-600 border-b pb-2">
-                        <span>🛵 Assigned Orders (In Progress)</span>
-                    </h2>
+                    <h2 class="text-lg font-semibold mb-4 text-orange-600 border-b pb-2">🛵 Assigned Orders (In Progress)</h2>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -116,11 +100,8 @@
                     </div>
                 </div>
 
-                <!-- 3. Completed Orders Tab/Section -->
                 <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold mb-4 text-emerald-700 border-b pb-2">
-                        <span>✅ Completed / Delivered Orders</span>
-                    </h2>
+                    <h2 class="text-lg font-semibold mb-4 text-emerald-700 border-b pb-2">✅ Completed / Delivered Orders</h2>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -137,21 +118,42 @@
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- SECTION 2: Drivers Management & Earnings Tab (Hidden by default) -->
+        <!-- SECTION 2: Drivers Management & Approvals Tab -->
         <div id="driversSection" class="hidden space-y-6">
+            
+            <!-- Pending Sign-Up Approvals Notification Box -->
+            <div class="bg-amber-50 border border-amber-200 p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-bold text-amber-800 mb-2">🔔 Pending Driver Sign-Up Requests</h2>
+                <p class="text-xs text-amber-700 mb-4">Review and approve new driver registrations so they can log into the driver app.</p>
+                <div class="overflow-x-auto bg-white rounded border">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-xs">
+                                <th class="p-2.5 border-b">ID & Name</th>
+                                <th class="p-2.5 border-b">Mobile</th>
+                                <th class="p-2.5 border-b">Address</th>
+                                <th class="p-2.5 border-b text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingApprovalsTableBody" class="text-xs text-gray-700">
+                            <tr><td colspan="4" class="p-3 text-center text-gray-400">No pending sign-up requests.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Fleet Performance & Earnings -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
                     <div>
-                        <h2 class="text-lg font-bold text-gray-800">Drivers Fleet Performance, Shift Logs & Earnings</h2>
-                        <p class="text-xs text-gray-500 mt-0.5">Click on any driver to view real-time online/offline shift logs and earnings (£5.00 per delivery).</p>
+                        <h2 class="text-lg font-bold text-gray-800">Approved Drivers Fleet Performance & Earnings</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Click on any driver to view shift history and earnings (£5.00 per delivery).</p>
                     </div>
                 </div>
 
-                <!-- Drivers Earnings & Shift Table -->
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -170,10 +172,7 @@
                     </table>
                 </div>
 
-                <!-- Expanded Driver Shift Detail Modal/Container -->
-                <div id="driverShiftDetailContainer" class="mt-6 hidden bg-gray-50 p-4 rounded-lg border">
-                    <!-- Dynamic details will be loaded here -->
-                </div>
+                <div id="driverShiftDetailContainer" class="mt-6 hidden bg-gray-50 p-4 rounded-lg border"></div>
             </div>
         </div>
 
@@ -182,9 +181,8 @@
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
         let globalOrders = [];
-        let activeDriverIdForDetails = null; // To keep track of currently open shift detail view
+        let activeDriverIdForDetails = null;
 
-        // Main Tab Switching
         function switchTab(tab) {
             const ordersSec = document.getElementById('ordersSection');
             const driversSec = document.getElementById('driversSection');
@@ -271,17 +269,19 @@
             const activeDrivers = await res.json(); 
             const onlineDriverIds = Object.keys(activeDrivers);
 
-            const driversList = [
-                { id: '1', name: 'Ali Khan' },
-                { id: '2', name: 'Ahmed Raza' },
-                { id: '3', name: 'Usman Ali' }
+            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            let defaultDrivers = [
+                { id: '1', firstName: 'Ali', surname: 'Khan', status: 'Approved' },
+                { id: '2', firstName: 'Ahmed', surname: 'Raza', status: 'Approved' },
+                { id: '3', firstName: 'Usman', surname: 'Ali', status: 'Approved' }
             ];
+            let allDrivers = [...defaultDrivers, ...registeredDrivers].filter(d => d.status === 'Approved');
+            let driversList = allDrivers.map(d => ({ id: d.id, name: `${d.firstName} ${d.surname}` }));
 
             const newOrders = orders.filter(o => !o.assignedDriverId && o.status !== 'Delivered');
             const assignedOrders = orders.filter(o => o.assignedDriverId && o.status !== 'Delivered');
             const completedOrders = orders.filter(o => o.status === 'Delivered');
 
-            // 1. New Orders
             if (newOrders.length === 0) {
                 newTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No new orders pending assignment.</td></tr>`;
             } else {
@@ -292,10 +292,7 @@
                     driversList.forEach(d => {
                         const isOnline = onlineDriverIds.includes(d.id);
                         const statusLabel = isOnline ? '' : ' (Offline)';
-                        optionsHtml += `
-                            <option value="${d.id}" ${!isOnline ? 'disabled class="text-gray-400"' : ''}>
-                                ${d.name}${statusLabel}
-                            </option>`;
+                        optionsHtml += `<option value="${d.id}" ${!isOnline ? 'disabled class="text-gray-400"' : ''}>${d.name}${statusLabel}</option>`;
                     });
 
                     newTbody.innerHTML += `
@@ -313,16 +310,12 @@
                                 <span class="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800">${order.status}</span>
                             </td>
                             <td class="p-3">
-                                <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">
-                                    ${optionsHtml}
-                                </select>
+                                <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">${optionsHtml}</select>
                             </td>
-                        </tr>
-                    `;
+                        </tr>`;
                 });
             }
 
-            // 2. Assigned Orders
             if (assignedOrders.length === 0) {
                 assignedTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No orders currently assigned/in progress.</td></tr>`;
             } else {
@@ -344,15 +337,11 @@
                                 <p><strong>To:</strong> ${order.dropoffAddress}</p>
                             </td>
                             <td class="p-3 font-semibold text-orange-700">${driverNameDisplay}</td>
-                            <td class="p-3">
-                                <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">${order.status}</span>
-                            </td>
-                        </tr>
-                    `;
+                            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">${order.status}</span></td>
+                        </tr>`;
                 });
             }
 
-            // 3. Completed Orders
             if (completedOrders.length === 0) {
                 completedTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No completed orders yet.</td></tr>`;
             } else {
@@ -374,32 +363,30 @@
                                 <p><strong>To:</strong> ${order.dropoffAddress}</p>
                             </td>
                             <td class="p-3 text-xs font-medium text-gray-600">${driverNameDisplay}</td>
-                            <td class="p-3">
-                                <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">${order.status}</span>
-                            </td>
-                        </tr>
-                    `;
+                            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">${order.status}</span></td>
+                        </tr>`;
                 });
             }
         }
 
-        async function fetchDriverPerformance() {
-            fetchOrders();
-        }
-
-        // Real-Time Shift Tracker Engine using localStorage to capture actual online/offline toggles
         function updateRealTimeShifts(locations) {
-            const drivers = ['1', '2', '3'];
+            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            let defaultDrivers = [
+                { id: '1', status: 'Approved' },
+                { id: '2', status: 'Approved' },
+                { id: '3', status: 'Approved' }
+            ];
+            let allDrivers = [...defaultDrivers, ...registeredDrivers].filter(d => d.status === 'Approved');
             let allShifts = JSON.parse(localStorage.getItem('driver_real_shifts') || '{}');
             const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' (' + new Date().toLocaleDateString() + ')';
 
-            drivers.forEach(id => {
+            allDrivers.forEach(driver => {
+                let id = driver.id;
                 if (!allShifts[id]) allShifts[id] = [];
                 const isCurrentlyOnline = locations[id] ? true : false;
                 const activeShift = allShifts[id].find(s => s.status === 'Ongoing');
 
                 if (isCurrentlyOnline && !activeShift) {
-                    // Driver came online -> Open new shift
                     allShifts[id].push({
                         shiftNo: allShifts[id].length + 1,
                         loginTime: nowStr,
@@ -407,18 +394,57 @@
                         status: 'Ongoing'
                     });
                 } else if (!isCurrentlyOnline && activeShift) {
-                    // Driver went offline -> Close active shift
                     activeShift.logoutTime = nowStr;
                     activeShift.status = 'Completed Shift';
                 }
             });
 
             localStorage.setItem('driver_real_shifts', JSON.stringify(allShifts));
-            
-            // Refresh detailed view if currently opened for a driver
             if (activeDriverIdForDetails) {
-                const driverObj = [{ id: '1', name: 'Ali Khan' }, { id: '2', name: 'Ahmed Raza' }, { id: '3', name: 'Usman Ali' }].find(d => d.id === activeDriverIdForDetails);
-                if (driverObj) viewDriverShifts(driverObj.id, driverObj.name);
+                let allDList = [...defaultDrivers, ...JSON.parse(localStorage.getItem('registered_drivers') || '[]')];
+                let driverObj = allDList.find(d => d.id === activeDriverIdForDetails);
+                if (driverObj) viewDriverShifts(driverObj.id, `${driverObj.firstName} ${driverObj.surname}`);
+            }
+        }
+
+        async function fetchDriverPerformance() {
+            fetchOrders();
+            renderPendingApprovals();
+        }
+
+        function renderPendingApprovals() {
+            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            let pendingDrivers = registeredDrivers.filter(d => d.status === 'Pending');
+            const tbody = document.getElementById('pendingApprovalsTableBody');
+
+            if (pendingDrivers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">No pending sign-up requests.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            pendingDrivers.forEach(driver => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2.5 font-bold">#${driver.id} - ${driver.firstName} ${driver.surname}</td>
+                        <td class="p-2.5 text-gray-500">${driver.mobile}</td>
+                        <td class="p-2.5 text-gray-500">${driver.address}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="approveDriver('${driver.id}')" class="bg-emerald-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-emerald-700 transition">Approve Account</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function approveDriver(driverId) {
+            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            let driver = registeredDrivers.find(d => d.id === driverId);
+            if (driver) {
+                driver.status = 'Approved';
+                localStorage.setItem('registered_drivers', JSON.stringify(registeredDrivers));
+                alert(`Driver ${driver.firstName} ${driver.surname} has been approved successfully!`);
+                renderPendingApprovals();
+                fetchDriverPerformance();
             }
         }
 
@@ -426,52 +452,45 @@
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
                 const locations = await res.json();
-
-                // Trigger real-time shift recording check
                 updateRealTimeShifts(locations);
 
-                const drivers = [
-                    { id: '1', name: 'Ali Khan', phone: '+44 7000 111222' },
-                    { id: '2', name: 'Ahmed Raza', phone: '+44 7000 333444' },
-                    { id: '3', name: 'Usman Ali', phone: '+44 7000 555666' }
+                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                let defaultDrivers = [
+                    { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', status: 'Approved' },
+                    { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', status: 'Approved' },
+                    { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', status: 'Approved' }
                 ];
 
+                let allDrivers = [...defaultDrivers, ...registeredDrivers].filter(d => d.status === 'Approved');
                 const tbody = document.getElementById('driversEarningsTableBody');
                 tbody.innerHTML = '';
 
-                drivers.forEach(driver => {
+                allDrivers.forEach(driver => {
                     const isOnline = locations[driver.id] ? true : false;
-                    
-                    const driverDeliveredOrders = globalOrders.filter(o => {
-                        const matchesDriver = String(o.assignedDriverId) === String(driver.id);
-                        const isDelivered = o.status === 'Delivered';
-                        return matchesDriver && isDelivered;
-                    });
-
+                    const driverDeliveredOrders = globalOrders.filter(o => String(o.assignedDriverId) === String(driver.id) && o.status === 'Delivered');
                     const deliveredCount = driverDeliveredOrders.length;
                     const totalEarnings = deliveredCount * 5.00;
+                    const fullName = `${driver.firstName} ${driver.surname}`;
 
                     tbody.innerHTML += `
                         <tr class="border-b hover:bg-gray-50">
-                            <td class="p-3 font-bold">#${driver.id} - ${driver.name}</td>
-                            <td class="p-3 text-xs text-gray-500">${driver.phone}</td>
+                            <td class="p-3 font-bold">#${driver.id} - ${fullName}</td>
+                            <td class="p-3 text-xs text-gray-500">${driver.mobile || driver.phone || 'N/A'}</td>
                             <td class="p-3">
                                 ${isOnline ? '<span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 font-semibold">🟢 Online</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-800 font-semibold">🔴 Offline</span>'}
                             </td>
                             <td class="p-3 font-semibold text-gray-700">${deliveredCount} Trips</td>
                             <td class="p-3 font-bold text-emerald-600 text-base">£${totalEarnings.toFixed(2)}</td>
                             <td class="p-3 text-center">
-                                <button onclick="viewDriverShifts('${driver.id}', '${driver.name}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">View Shifts & Logs</button>
+                                <button onclick="viewDriverShifts('${driver.id}', '${fullName}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">View Shifts & Logs</button>
                             </td>
-                        </tr>
-                    `;
+                        </tr>`;
                 });
             } catch (e) {
                 console.error("Error rendering driver performance", e);
             }
         }
 
-        // Real shift logs & earnings breakdown when clicking a driver
         function viewDriverShifts(driverId, driverName) {
             activeDriverIdForDetails = driverId;
             const container = document.getElementById('driverShiftDetailContainer');
@@ -483,14 +502,13 @@
 
                 let shiftHtml = `
                     <div class="flex justify-between items-center mb-3 border-b pb-2">
-                        <h3 class="font-bold text-gray-800">Real-Time Shift History & Earnings Logs for: <span class="text-blue-600">${driverName} (ID: ${driverId})</span></h3>
+                        <h3 class="font-bold text-gray-800">Shift History & Logs for: <span class="text-blue-600">${driverName} (ID: ${driverId})</span></h3>
                         <button onclick="activeDriverIdForDetails=null; document.getElementById('driverShiftDetailContainer').classList.add('hidden')" class="text-gray-500 hover:text-red-600 text-xs font-bold">✕ Close</button>
                     </div>
-                    <div class="space-y-2">
-                `;
+                    <div class="space-y-2">`;
 
                 if (shifts.length === 0) {
-                    shiftHtml += `<p class="text-xs text-gray-400">No shift activity recorded yet. Driver has not come online.</p>`;
+                    shiftHtml += `<p class="text-xs text-gray-400">No shift activity recorded yet.</p>`;
                 } else {
                     shifts.forEach(s => {
                         shiftHtml += `
@@ -502,8 +520,7 @@
                                 <div class="text-right">
                                     <p class="font-bold text-emerald-600 text-sm">£5.00 / Shift Log</p>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     });
                 }
 
@@ -518,7 +535,6 @@
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
                 const locations = await res.json();
-                
                 const container = document.getElementById('liveDriversList');
                 const driverIds = Object.keys(locations);
 
@@ -527,10 +543,15 @@
                     return;
                 }
 
+                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                let defaultDrivers = [{id:'1', firstName:'Ali', surname:'Khan'}, {id:'2', firstName:'Ahmed', surname:'Raza'}, {id:'3', firstName:'Usman', surname:'Ali'}];
+                let allDMap = [...defaultDrivers, ...registeredDrivers];
+
                 container.innerHTML = '';
                 driverIds.forEach(id => {
                     const loc = locations[id];
-                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
+                    let dObj = allDMap.find(d => String(d.id) === String(id));
+                    let driverName = dObj ? `${dObj.firstName} ${dObj.surname}` : `Driver #${id}`;
                     container.innerHTML += `
                         <div class="flex justify-between py-1 border-b items-center">
                             <span><strong>${driverName}</strong></span>
@@ -544,17 +565,20 @@
 
         let adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
-
         let driverMarkers = {};
 
         async function updateAdminMap() {
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
                 const locations = await res.json();
+                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                let defaultDrivers = [{id:'1', firstName:'Ali', surname:'Khan'}, {id:'2', firstName:'Ahmed', surname:'Raza'}, {id:'3', firstName:'Usman', surname:'Ali'}];
+                let allDMap = [...defaultDrivers, ...registeredDrivers];
 
                 Object.keys(locations).forEach(id => {
                     const loc = locations[id];
-                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
+                    let dObj = allDMap.find(d => String(d.id) === String(id));
+                    let driverName = dObj ? `${dObj.firstName} ${dObj.surname}` : `Driver #${id}`;
                     
                     if (driverMarkers[id]) {
                         driverMarkers[id].setLatLng([loc.lat, loc.lng]);
