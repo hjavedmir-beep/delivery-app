@@ -59,7 +59,7 @@
                     </form>
                 </div>
 
-                <!-- Right: Completed / Delivered Orders Archive (Replaced Map Position) -->
+                <!-- Right: Completed Orders Archive -->
                 <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
                     <div class="flex justify-between items-center border-b pb-1.5">
                         <h2 class="font-bold text-sm text-gray-800">Completed Orders Archive</h2>
@@ -105,7 +105,7 @@
             </div>
         </div>
 
-        <!-- TAB 2: Live Map View (Separate Tab) -->
+        <!-- TAB 2: Live Map View -->
         <div id="tabContentMap" class="space-y-4 hidden">
             <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
                 <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Map View (Drivers & Businesses)</h2>
@@ -139,13 +139,22 @@
                             <input type="text" id="busPhone" placeholder="e.g. +44 1782..." required class="w-full mt-1 p-1.5 border rounded">
                         </div>
                         <div>
-                            <label class="block font-medium text-gray-700">Street Address</label>
-                            <input type="text" id="busStreet" placeholder="e.g. Stafford Street" required class="w-full mt-1 p-1.5 border rounded">
+                            <label class="block font-medium text-gray-700">Address Line 1</label>
+                            <input type="text" id="busAddress1" placeholder="e.g. Stafford Street" required class="w-full mt-1 p-1.5 border rounded">
                         </div>
                         <div>
-                            <label class="block font-medium text-gray-700">Post Code</label>
-                            <input type="text" id="busPostcode" placeholder="e.g. ST1 5PT" oninput="lookupPostcode(this.value)" required class="w-full mt-1 p-1.5 border rounded uppercase">
-                            <p id="postcodeAreaDisplay" class="text-[11px] text-blue-600 font-semibold mt-1 hidden"></p>
+                            <label class="block font-medium text-gray-700">Address Line 2 (Optional)</label>
+                            <input type="text" id="busAddress2" placeholder="e.g. Suite 3 / Unit B" class="w-full mt-1 p-1.5 border rounded">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-medium text-gray-700">Post Code</label>
+                                <input type="text" id="busPostcode" placeholder="e.g. ST1 5PT" oninput="lookupPostcode(this.value)" required class="w-full mt-1 p-1.5 border rounded uppercase">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700">Area</label>
+                                <input type="text" id="busArea" placeholder="Auto-populated area" readonly class="w-full mt-1 p-1.5 border rounded bg-gray-50 text-gray-600 font-semibold">
+                            </div>
                         </div>
                         <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded font-bold transition">Save & Pin on Map</button>
                     </form>
@@ -154,7 +163,7 @@
                 <!-- List Registered Businesses Directory -->
                 <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
                     <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Registered Businesses Directory</h2>
-                    <div id="businessesListContainer" class="space-y-2 text-xs max-h-[300px] overflow-y-auto">
+                    <div id="businessesListContainer" class="space-y-2 text-xs max-h-[350px] overflow-y-auto">
                         <p class="text-gray-400 text-center py-4">No businesses registered yet.</p>
                     </div>
                 </div>
@@ -210,10 +219,10 @@
         }
 
         async function lookupPostcode(postcode) {
-            const areaDisplay = document.getElementById('postcodeAreaDisplay');
+            const areaInput = document.getElementById('busArea');
             const cleanPostcode = postcode.trim();
             if (cleanPostcode.length < 3) {
-                areaDisplay.classList.add('hidden');
+                areaInput.value = '';
                 return;
             }
 
@@ -222,15 +231,14 @@
                 const data = await res.json();
                 if (data.status === 200 && data.result) {
                     const r = data.result;
-                    const areaText = `Area / Region: ${r.admin_district || ''} - ${r.parish || r.region || r.codes?.admin_county || 'United Kingdom'} (District: ${r.admin_district || 'N/A'})`;
-                    areaDisplay.innerText = areaText;
-                    areaDisplay.classList.remove('hidden');
+                    const areaName = r.admin_district || r.region || r.parish || 'United Kingdom';
+                    areaInput.value = areaName;
                 } else {
-                    areaDisplay.innerText = 'Searching UK postcode area...';
-                    areaDisplay.classList.remove('hidden');
+                    areaInput.value = 'Searching area...';
                 }
             } catch (err) {
                 console.error('Postcode lookup error:', err);
+                areaInput.value = 'Unavailable';
             }
         }
 
@@ -242,7 +250,8 @@
 
             let optionsHtml = '<option value="">Select Registered Business</option>';
             businesses.forEach(b => {
-                const fullAddress = `${b.street}, ${b.postcode}`;
+                const addr2 = b.address2 ? `, ${b.address2}` : '';
+                const fullAddress = `${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode}`;
                 optionsHtml += `<option value="${b.name} (${fullAddress})">${b.name} - ${fullAddress}</option>`;
             });
             pickupSelect.innerHTML = optionsHtml;
@@ -252,17 +261,19 @@
             e.preventDefault();
             const name = document.getElementById('busName').value.trim();
             const phone = document.getElementById('busPhone').value.trim();
-            const street = document.getElementById('busStreet').value.trim();
+            const address1 = document.getElementById('busAddress1').value.trim();
+            const address2 = document.getElementById('busAddress2').value.trim();
             const postcode = document.getElementById('busPostcode').value.trim().toUpperCase();
+            const area = document.getElementById('busArea').value.trim();
 
-            if (!name || !phone || !street || !postcode) return;
+            if (!name || !phone || !address1 || !postcode) return;
 
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            businesses.push({ id: Date.now(), name, phone, street, postcode });
+            businesses.push({ id: Date.now(), name, phone, address1, address2, postcode, area });
             localStorage.setItem('registered_businesses', JSON.stringify(businesses));
 
             document.getElementById('addBusinessForm').reset();
-            document.getElementById('postcodeAreaDisplay').classList.add('hidden');
+            document.getElementById('busArea').value = '';
             loadBusinessesManagement();
             loadRegisteredBusinesses();
             alert('Business saved and pinned successfully!');
@@ -280,11 +291,13 @@
 
             container.innerHTML = '';
             businesses.forEach((b, index) => {
+                const addr2Str = b.address2 ? `, ${b.address2}` : '';
+                const areaStr = b.area ? `(${b.area})` : '';
                 container.innerHTML += `
                     <div class="bg-gray-50 p-2.5 rounded-lg border flex justify-between items-center">
                         <div>
                             <p class="font-bold text-gray-800">${b.name} <span class="text-gray-500 font-normal">(${b.phone})</span></p>
-                            <p class="text-gray-600 text-[11px]">${b.street}, ${b.postcode}</p>
+                            <p class="text-gray-600 text-[11px]">${b.address1}${addr2Str}, ${b.postcode} <span class="text-blue-600 font-semibold">${areaStr}</span></p>
                         </div>
                         <button onclick="deleteBusiness(${index})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition">Delete</button>
                     </div>
