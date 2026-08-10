@@ -15,6 +15,7 @@
         <h1 class="text-lg font-bold">Admin Dispatch Panel</h1>
         <div class="space-x-2 flex flex-wrap gap-2">
             <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition">Dashboard / Front Screen</button>
+            <button onclick="switchTab('map')" id="navTabMap" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Live Map View</button>
             <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Drivers</button>
             <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Businesses</button>
         </div>
@@ -25,7 +26,7 @@
         <!-- MAIN DASHBOARD / FRONT SCREEN -->
         <div id="tabContentActive" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
             
-            <!-- LEFT COLUMN: Create Order Form, Live Drivers List, Live Map -->
+            <!-- LEFT COLUMN: Create Order Form, Live Drivers List -->
             <div class="lg:col-span-4 space-y-5">
                 
                 <!-- Create New Order Form -->
@@ -68,10 +69,10 @@
                     </div>
                 </div>
 
-                <!-- Live Map View Widget -->
+                <!-- Small Map Widget on Dashboard -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-2">
-                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Live Map View (Drivers & Businesses)</h2>
-                    <div id="adminMap" class="w-full h-[250px] rounded-lg"></div>
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Quick Map Preview</h2>
+                    <div id="adminMap" class="w-full h-[200px] rounded-lg"></div>
                 </div>
 
             </div>
@@ -126,7 +127,21 @@
 
         </div>
 
-        <!-- TAB 2: Manage Drivers Page -->
+        <!-- TAB 2: Dedicated Live Map View -->
+        <div id="tabContentMap" class="space-y-4 hidden">
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <div>
+                        <h2 class="font-bold text-base text-gray-800">🗺️ Live Map — Online Drivers & Businesses</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Real-time GPS tracking for active delivery vehicles and registered outlets.</p>
+                    </div>
+                    <button onclick="refreshMapPins()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Map</button>
+                </div>
+                <div id="dedicatedAdminMap" class="w-full h-[600px] rounded-lg"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Manage Drivers Page -->
         <div id="tabContentDrivers" class="space-y-5 hidden">
             
             <!-- SECTION A: Driver Directory & Approvals -->
@@ -153,7 +168,7 @@
 
         </div>
 
-        <!-- TAB 3: Manage Businesses Page -->
+        <!-- TAB 4: Manage Businesses Page -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Add Business Form -->
@@ -205,16 +220,35 @@
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
         let adminMap = null;
+        let dedicatedMap = null;
         let markersLayer = null;
+        let dedicatedMarkersLayer = null;
         let onlineDriversCache = {};
         let allOrdersCache = [];
 
+        // Custom Leaflet Icons
+        const carIcon = L.divIcon({
+            className: 'custom-car-marker',
+            html: '<div style="background-color: #2563eb; color: white; padding: 6px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; border: 2px solid white;">🚗 Car</div>',
+            iconSize: [60, 30],
+            iconAnchor: [30, 15]
+        });
+
+        const businessIcon = L.divIcon({
+            className: 'custom-business-marker',
+            html: '<div style="background-color: #059669; color: white; padding: 6px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; border: 2px solid white;">🏢 Business</div>',
+            iconSize: [80, 30],
+            iconAnchor: [40, 15]
+        });
+
         function switchTab(tab) {
             document.getElementById('tabContentActive').classList.add('hidden');
+            document.getElementById('tabContentMap').classList.add('hidden');
             document.getElementById('tabContentDrivers').classList.add('hidden');
             document.getElementById('tabContentBusinesses').classList.add('hidden');
 
             document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
+            document.getElementById('navTabMap').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
             document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
             document.getElementById('navTabBusinesses').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
 
@@ -224,6 +258,11 @@
                 fetchOrders();
                 refreshMapPins();
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
+            } else if (tab === 'map') {
+                document.getElementById('tabContentMap').classList.remove('hidden');
+                document.getElementById('navTabMap').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
+                refreshMapPins();
+                setTimeout(() => { if (dedicatedMap) dedicatedMap.invalidateSize(); }, 200);
             } else if (tab === 'drivers') {
                 document.getElementById('tabContentDrivers').classList.remove('hidden');
                 document.getElementById('navTabDrivers').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
@@ -243,6 +282,15 @@
                     attribution: '© OpenStreetMap'
                 }).addTo(adminMap);
                 markersLayer = L.layerGroup().addTo(adminMap);
+            }
+
+            if (!dedicatedMap) {
+                dedicatedMap = L.map('dedicatedAdminMap').setView([53.0027, -2.1794], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(dedicatedMap);
+                dedicatedMarkersLayer = L.layerGroup().addTo(dedicatedMap);
             }
         }
 
@@ -514,7 +562,7 @@
                         const drvObj = registeredDriversAll.find(d => String(d.id) === String(driverId));
                         const drvName = drvObj ? `${drvObj.firstName} ${drvObj.surname}` : `Driver #${driverId}`;
                         
-                        driverHtml += `<div class="text-emerald-800 font-bold text-sm">• ${drvName} (Online)</div>`;
+                        driverHtml += `<div class="text-emerald-800 font-bold text-sm">• 🚗 ${drvName} (Online)</div>`;
                     }
                 }
 
@@ -535,14 +583,25 @@
         }
 
         function refreshMapPins() {
-            if (!markersLayer) return;
-            markersLayer.clearLayers();
+            // Update Dashboard Quick Map
+            if (markersLayer) {
+                markersLayer.clearLayers();
+                addPinsToLayer(markersLayer);
+            }
+            // Update Dedicated Live Map View
+            if (dedicatedMarkersLayer) {
+                dedicatedMarkersLayer.clearLayers();
+                addPinsToLayer(dedicatedMarkersLayer);
+            }
+        }
 
+        function addPinsToLayer(layerGroup) {
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
             businesses.forEach(b => {
                 if (b.lat && b.lng) {
-                    const marker = L.marker([b.lat, b.lng]).bindPopup(`<b>🏢 ${b.name} (Business)</b><br>${b.address1}, ${b.postcode}`);
-                    markersLayer.addLayer(marker);
+                    const marker = L.marker([b.lat, b.lng], { icon: businessIcon })
+                        .bindPopup(`<b>🏢 ${b.name} (Business)</b><br>${b.address1}, ${b.postcode}`);
+                    layerGroup.addLayer(marker);
                 }
             });
 
@@ -552,8 +611,9 @@
                     const drvObj = registeredDriversAll.find(d => String(d.id) === String(driverId));
                     const drvName = drvObj ? `${drvObj.firstName} ${drvObj.surname}` : `Driver #${driverId}`;
                     
-                    const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>🚗 ${drvName}</b><br>Status: Online`);
-                    markersLayer.addLayer(marker);
+                    const marker = L.marker([data.lat, data.lng], { icon: carIcon })
+                        .bindPopup(`<b>🚗 ${drvName}</b><br>Status: Online (Active Car)`);
+                    layerGroup.addLayer(marker);
                 }
             }
         }
@@ -584,7 +644,6 @@
                 const shiftStart = drv.lastShiftStart || (isOnline ? 'Active Session' : 'Not Started');
                 const shiftEnd = isOnline ? 'Ongoing...' : (drv.lastShiftEnd || 'Offline');
 
-                // 1. Render Section A: Driver Directory & Approvals Item
                 dirContainer.innerHTML += `
                     <div class="bg-gray-50 p-4 rounded-xl border flex flex-wrap justify-between items-center gap-3">
                         <div>
@@ -604,7 +663,6 @@
                     </div>
                 `;
 
-                // 2. Render Section B: Real-Time Shift History & Earnings Item
                 earnContainer.innerHTML += `
                     <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
                         <div class="flex justify-between items-center border-b pb-2">
