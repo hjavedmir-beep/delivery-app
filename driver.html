@@ -1,45 +1,353 @@
-async function handleSignUp(e) {
-    e.preventDefault();
-    const firstName = document.getElementById('regFirstName').value.trim();
-    const surname = document.getElementById('regSurname').value.trim();
-    const mobile = document.getElementById('regMobile').value.trim();
-    const address = document.getElementById('regAddress').value.trim();
-    const password = document.getElementById('regPassword').value;
-    const confirmPassword = document.getElementById('regConfirmPassword').value;
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Portal - Delivery App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
 
-    if (password !== confirmPassword) {
-        alert('Passwords do not match!');
-        return;
-    }
+    <nav class="bg-blue-600 text-white p-3 shadow-md flex justify-between items-center">
+        <h1 class="text-lg font-bold">Driver Portal</h1>
+        <div id="driverNavInfo" class="text-xs hidden">
+            <span id="navDriverName" class="font-semibold mr-3"></span>
+            <button onclick="logoutDriver()" class="bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded text-white font-medium transition">Logout</button>
+        </div>
+    </nav>
 
-    if (password.length < 8) {
-        alert('Password must be at least 8 characters long.');
-        return;
-    }
+    <div class="container mx-auto p-4 max-w-md">
+        
+        <!-- Auth Container (Login / Sign Up) -->
+        <div id="authContainer" class="bg-white p-6 rounded-xl shadow-md space-y-4">
+            <div class="flex border-b pb-2 mb-4">
+                <button onclick="toggleAuthMode('signin')" id="tabSignIn" class="flex-1 pb-1 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition">Sign In</button>
+                <button onclick="toggleAuthMode('signup')" id="tabSignUp" class="flex-1 pb-1 font-semibold text-gray-400 text-sm transition">Sign Up</button>
+            </div>
 
-    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-        alert('Password must contain at least one uppercase letter and at least one number.');
-        return;
-    }
+            <!-- Sign In Form -->
+            <form id="signInForm" onsubmit="handleSignIn(event)" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Mobile Number or Driver ID</label>
+                    <input type="text" id="loginId" required placeholder="e.g. 1 or +44..." class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-2.5 rounded-md hover:bg-blue-700 font-semibold text-xs transition">Sign In</button>
+            </form>
 
-    const newDriverObj = { firstName, surname, mobile, address, password };
+            <!-- Sign Up Form -->
+            <form id="signUpForm" onsubmit="handleSignUp(event)" class="space-y-3 text-sm hidden">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">First Name</label>
+                        <input type="text" id="regFirstName" required class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Surname</label>
+                        <input type="text" id="regSurname" required class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Mobile Number</label>
+                    <input type="text" id="regMobile" required placeholder="+44..." class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Address / City</label>
+                    <input type="text" id="regAddress" required placeholder="Stoke-on-Trent" class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Password (Min 8 chars, 1 uppercase, 1 number)</label>
+                    <input type="password" id="regPassword" required class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700">Confirm Password</label>
+                    <input type="password" id="regConfirmPassword" required class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 text-white p-2.5 rounded-md hover:bg-emerald-700 font-semibold text-xs transition">Register Account</button>
+            </form>
+        </div>
 
-    try {
-        const response = await fetch(`${API_URL}/drivers/signup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newDriverObj)
-        });
+        <!-- Driver Dashboard Container (Hidden until logged in) -->
+        <div id="dashboardContainer" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-md text-center space-y-3">
+                <h2 id="welcomeDriverTitle" class="font-bold text-gray-800 text-base">Welcome Driver</h2>
+                <div class="flex justify-center gap-3">
+                    <button id="btnGoOnline" onclick="toggleOnlineStatus(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition">Go Online</button>
+                    <button id="btnGoOffline" onclick="toggleOnlineStatus(false)" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition hidden">Go Offline</button>
+                </div>
+                <p id="onlineStatusText" class="text-xs text-gray-500">Status: Offline</p>
+            </div>
 
-        if (response.ok) {
-            alert('Sign up request submitted successfully! Please wait for Admin approval before signing in.');
-            toggleAuthMode('signin');
-            document.getElementById('signUpForm').reset();
-        } else {
-            alert('Error submitting sign up request. Please try again.');
+            <!-- Assigned Orders List -->
+            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                <h3 class="font-bold text-sm text-gray-800 border-b pb-1.5">Your Assigned Orders</h3>
+                <div id="driverOrdersList" class="space-y-2 text-xs">
+                    <p class="text-gray-400 text-center py-3">No active orders assigned.</p>
+                </div>
+            </div>
+
+            <!-- Live Map for Driver -->
+            <div class="bg-white p-3 rounded-xl shadow-md">
+                <h3 class="font-bold text-xs mb-1.5 text-gray-700 border-b pb-1">Your Live Location Tracking</h3>
+                <div id="driverMap" class="w-full h-[250px] rounded-lg"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
+        let currentDriver = null;
+        let isOnline = false;
+        let locationInterval = null;
+        let driverMap = null;
+        let driverMarker = null;
+
+        function toggleAuthMode(mode) {
+            const signInForm = document.getElementById('signInForm');
+            const signUpForm = document.getElementById('signUpForm');
+            const tabSignIn = document.getElementById('tabSignIn');
+            const tabSignUp = document.getElementById('tabSignUp');
+
+            if (mode === 'signin') {
+                signInForm.classList.remove('hidden');
+                signUpForm.classList.add('hidden');
+                tabSignIn.className = 'flex-1 pb-1 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
+                tabSignUp.className = 'flex-1 pb-1 font-semibold text-gray-400 text-sm transition';
+            } else {
+                signInForm.classList.add('hidden');
+                signUpForm.classList.remove('hidden');
+                tabSignIn.className = 'flex-1 pb-1 font-semibold text-gray-400 text-sm transition';
+                tabSignUp.className = 'flex-1 pb-1 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
+            }
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Network error. Please check your connection.');
-    }
-}
+
+        async function handleSignIn(e) {
+            e.preventDefault();
+            const loginId = document.getElementById('loginId').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                // Check local registered drivers first or API
+                let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                let found = registered.find(d => String(d.id) === loginId || d.mobile === loginId);
+
+                if (found) {
+                    if (found.status !== 'Approved') {
+                        alert('Your account is pending admin approval.');
+                        return;
+                    }
+                    if (found.password && found.password !== password) {
+                        alert('Incorrect password.');
+                        return;
+                    }
+                    currentDriver = found;
+                } else {
+                    // Default test drivers fallback
+                    if (loginId === '1' || loginId === '2' || loginId === '3') {
+                        currentDriver = { id: loginId, firstName: loginId === '1' ? 'Ali' : (loginId === '2' ? 'Ahmed' : 'Usman'), surname: 'Khan' };
+                    } else {
+                        alert('Driver not found or invalid credentials.');
+                        return;
+                    }
+                }
+
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('dashboardContainer').classList.remove('hidden');
+                document.getElementById('driverNavInfo').classList.remove('hidden');
+                document.getElementById('navDriverName').innerText = `${currentDriver.firstName} ${currentDriver.surname}`;
+                document.getElementById('welcomeDriverTitle').innerText = `Welcome, ${currentDriver.firstName}`;
+
+                initDriverMap();
+                fetchDriverOrders();
+                setInterval(fetchDriverOrders, 5000);
+            } catch (err) {
+                console.error('Sign-in error:', err);
+                alert('Sign in failed. Please check connection.');
+            }
+        }
+
+        async function handleSignUp(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const surname = document.getElementById('regSurname').value.trim();
+            const mobile = document.getElementById('regMobile').value.trim();
+            const address = document.getElementById('regAddress').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+                alert('Password must be at least 8 characters long, contain at least one uppercase letter and one number.');
+                return;
+            }
+
+            const newDriverObj = {
+                id: 'DRV-' + Math.floor(1000 + Math.random() * 9000),
+                firstName,
+                surname,
+                mobile,
+                address,
+                password,
+                status: 'Pending'
+            };
+
+            try {
+                let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                registered.push(newDriverObj);
+                localStorage.setItem('registered_drivers', JSON.stringify(registered));
+
+                alert('Sign up request submitted successfully! Please wait for Admin approval before signing in.');
+                document.getElementById('signUpForm').reset();
+                toggleAuthMode('signin');
+            } catch (error) {
+                console.error('Error submitting sign up request', error);
+                alert('Error submitting sign up request. Please try again.');
+            }
+        }
+
+        function logoutDriver() {
+            currentDriver = null;
+            toggleOnlineStatus(false);
+            document.getElementById('dashboardContainer').classList.add('hidden');
+            document.getElementById('driverNavInfo').classList.add('hidden');
+            document.getElementById('authContainer').classList.remove('hidden');
+            document.getElementById('signInForm').reset();
+        }
+
+        function initDriverMap() {
+            if (!driverMap) {
+                driverMap = L.map('driverMap').setView([53.0027, -2.1794], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(driverMap);
+            } else {
+                setTimeout(() => { driverMap.invalidateSize(); }, 200);
+            }
+        }
+
+        function toggleOnlineStatus(status) {
+            isOnline = status;
+            const btnOnline = document.getElementById('btnGoOnline');
+            const btnOffline = document.getElementById('btnGoOffline');
+            const statusText = document.getElementById('onlineStatusText');
+
+            if (isOnline) {
+                btnOnline.classList.add('hidden');
+                btnOffline.classList.remove('hidden');
+                statusText.innerText = 'Status: Online (Broadcasting Location)';
+                statusText.className = 'text-xs text-emerald-600 font-bold';
+
+                startLocationTracking();
+            } else {
+                btnOffline.classList.add('hidden');
+                btnOnline.classList.remove('hidden');
+                statusText.innerText = 'Status: Offline';
+                statusText.className = 'text-xs text-gray-500';
+
+                if (locationInterval) clearInterval(locationInterval);
+                // Send offline status to server
+                if (currentDriver) {
+                    fetch(`${API_URL}/drivers/location`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ driverId: currentDriver.id, lat: null, lng: null, offline: true })
+                    }).catch(e => console.log(e));
+                }
+            }
+        }
+
+        function startLocationTracking() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(updatePosition, handleGeoError, { enableHighAccuracy: true });
+                locationInterval = setInterval(() => {
+                    navigator.geolocation.getCurrentPosition(updatePosition, handleGeoError, { enableHighAccuracy: true });
+                }, 4000);
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        function updatePosition(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            if (driverMap) {
+                driverMap.setView([lat, lng], 15);
+                if (!driverMarker) {
+                    driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('You are here');
+                } else {
+                    driverMarker.setLatLng([lat, lng]);
+                }
+            }
+
+            if (currentDriver && isOnline) {
+                fetch(`${API_URL}/drivers/location`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ driverId: currentDriver.id, lat, lng })
+                }).catch(err => console.error('Error sending location:', err));
+            }
+        }
+
+        function handleGeoError(err) {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+        }
+
+        async function fetchDriverOrders() {
+            if (!currentDriver) return;
+            try {
+                const res = await fetch(`${API_URL}/orders`);
+                const orders = await res.json();
+                const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id) && o.status !== 'Delivered');
+
+                const container = document.getElementById('driverOrdersList');
+                if (myOrders.length === 0) {
+                    container.innerHTML = `<p class="text-gray-400 text-center py-3">No active orders assigned.</p>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                myOrders.forEach(order => {
+                    container.innerHTML += `
+                        <div class="bg-gray-50 p-3 rounded-lg border space-y-1.5">
+                            <p class="font-bold text-gray-800">Order #${order.id} - ${order.customerName}</p>
+                            <p class="text-gray-600"><strong>Pickup:</strong> ${order.pickupAddress}</p>
+                            <p class="text-gray-600"><strong>Drop-off:</strong> ${order.dropoffAddress}</p>
+                            <button onclick="markDelivered('${order.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded font-semibold transition mt-2">Mark as Delivered</button>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error("Error fetching driver orders", e);
+            }
+        }
+
+        async function markDelivered(orderId) {
+            try {
+                const res = await fetch(`${API_URL}/orders/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId, status: 'Delivered' })
+                });
+                if (res.ok) {
+                    alert('Order marked as delivered successfully!');
+                    fetchDriverOrders();
+                }
+            } catch (e) {
+                console.error("Error updating order status", e);
+                alert('Error updating order status.');
+            }
+        }
+    </script>
+</body>
+</html>
