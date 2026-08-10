@@ -16,7 +16,7 @@
         <h1 class="text-xl font-bold">Admin Dispatch Panel</h1>
         <div class="space-x-4">
             <button onclick="switchTab('orders')" id="btnOrdersTab" class="bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition">Orders & Map</button>
-            <button onclick="switchTab('drivers')" id="btnDriversTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Drivers Management</button>
+            <button onclick="switchTab('drivers')" id="btnDriversTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Drivers Management & Earnings</button>
         </div>
     </nav>
 
@@ -92,58 +92,33 @@
             </div>
         </div>
 
-        <!-- SECTION 2: Drivers Management Tab (Hidden by default) -->
+        <!-- SECTION 2: Drivers Management & Earnings Tab (Hidden by default) -->
         <div id="driversSection" class="hidden space-y-6">
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <!-- Sub-tabs for Drivers -->
-                <div class="flex border-b mb-6 space-x-6">
-                    <button onclick="switchDriverSubTab('all')" id="subBtnAll" class="pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition">All Drivers</button>
-                    <button onclick="switchDriverSubTab('online')" id="subBtnOnline" class="pb-2 font-medium text-gray-500 border-b-2 border-transparent text-sm transition">Online Drivers</button>
-                </div>
-
-                <!-- Sub-Tab Content: All Drivers -->
-                <div id="allDriversSubTab" class="space-y-4">
-                    <h3 class="text-md font-semibold text-gray-800">Complete Fleet Registry</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50 text-gray-600 text-sm">
-                                    <th class="p-3 border-b">Driver ID & Name</th>
-                                    <th class="p-3 border-b">Phone</th>
-                                    <th class="p-3 border-b">Status</th>
-                                    <th class="p-3 border-b">Total Deliveries</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm text-gray-700">
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-3 font-bold">#1 - Ali Khan</td>
-                                    <td class="p-3 text-xs text-gray-500">+44 7000 111222</td>
-                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">Registered</span></td>
-                                    <td class="p-3">24</td>
-                                </tr>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-3 font-bold">#2 - Ahmed Raza</td>
-                                    <td class="p-3 text-xs text-gray-500">+44 7000 333444</td>
-                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">Registered</span></td>
-                                    <td class="p-3">19</td>
-                                </tr>
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-3 font-bold">#3 - Usman Ali</td>
-                                    <td class="p-3 text-xs text-gray-500">+44 7000 555666</td>
-                                    <td class="p-3"><span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">Registered</span></td>
-                                    <td class="p-3">31</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Drivers Fleet Performance, Earnings & Shifts</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Monitor today's total earnings (£5.00 per completed delivery) and shift timings.</p>
                     </div>
                 </div>
 
-                <!-- Sub-Tab Content: Online Drivers -->
-                <div id="onlineDriversSubTab" class="hidden space-y-4">
-                    <h3 class="text-md font-semibold text-gray-800">Currently Active & Online Drivers</h3>
-                    <div id="onlineDriversDetailList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <p class="text-gray-400 text-sm">Loading active drivers...</p>
-                    </div>
+                <!-- Drivers Earnings & Shift Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm">
+                                <th class="p-3 border-b">Driver Name & ID</th>
+                                <th class="p-3 border-b">Phone</th>
+                                <th class="p-3 border-b">Current Status</th>
+                                <th class="p-3 border-b">Shift Timings</th>
+                                <th class="p-3 border-b">Delivered Orders</th>
+                                <th class="p-3 border-b">Today's Total Earnings</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driversEarningsTableBody" class="text-sm text-gray-700">
+                            <tr><td colspan="6" class="p-4 text-center text-gray-400">Loading driver performance metrics...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -152,6 +127,7 @@
 
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
+        let globalOrders = [];
 
         // Main Tab Switching
         function switchTab(tab) {
@@ -165,42 +141,24 @@
                 driversSec.classList.add('hidden');
                 btnOrders.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
                 btnDrivers.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
-                setTimeout(() => { adminMap.invalidateSize(); }, 200); // Fix map render issue when switching tabs
+                setTimeout(() => { adminMap.invalidateSize(); }, 200);
             } else {
                 ordersSec.classList.add('hidden');
                 driversSec.classList.remove('hidden');
                 btnDrivers.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
                 btnOrders.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
-                fetchDetailedOnlineDrivers();
-            }
-        }
-
-        // Driver Sub-Tab Switching
-        function switchDriverSubTab(subTab) {
-            const allSub = document.getElementById('allDriversSubTab');
-            const onlineSub = document.getElementById('onlineDriversSubTab');
-            const btnAll = document.getElementById('subBtnAll');
-            const btnOnline = document.getElementById('subBtnOnline');
-
-            if (subTab === 'all') {
-                allSub.classList.remove('hidden');
-                onlineSub.classList.add('hidden');
-                btnAll.className = 'pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
-                btnOnline.className = 'pb-2 font-medium text-gray-500 border-b-2 border-transparent text-sm transition';
-            } else {
-                allSub.classList.add('hidden');
-                onlineSub.classList.remove('hidden');
-                btnOnline.className = 'pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
-                btnAll.className = 'pb-2 font-medium text-gray-500 border-b-2 border-transparent text-sm transition';
-                fetchDetailedOnlineDrivers();
+                fetchDriverPerformance();
             }
         }
 
         async function fetchOrders() {
             try {
                 const response = await fetch(`${API_URL}/orders`);
-                const orders = await response.json();
-                renderOrders(orders);
+                globalOrders = await response.json();
+                renderOrders(globalOrders);
+                if (!document.getElementById('driversSection').classList.contains('hidden')) {
+                    renderDriverPerformance();
+                }
             } catch (error) {
                 console.error('Error fetching orders:', error);
             }
@@ -278,14 +236,65 @@
                         <td class="p-3">
                             <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded">
                                 <option value="">Select Driver</option>
-                                <option value="1">Ali Khan</option>
-                                <option value="2">Ahmed Raza</option>
-                                <option value="3">Usman Ali</option>
+                                <option value="1" ${order.assignedDriverId == 1 ? 'selected' : ''}>Ali Khan</option>
+                                <option value="2" ${order.assignedDriverId == 2 ? 'selected' : ''}>Ahmed Raza</option>
+                                <option value="3" ${order.assignedDriverId == 3 ? 'selected' : ''}>Usman Ali</option>
                             </select>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        async function fetchDriverPerformance() {
+            fetchOrders();
+        }
+
+        async function renderDriverPerformance() {
+            try {
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const locations = await res.json();
+
+                const drivers = [
+                    { id: '1', name: 'Ali Khan', phone: '+44 7000 111222' },
+                    { id: '2', name: 'Ahmed Raza', phone: '+44 7000 333444' },
+                    { id: '3', name: 'Usman Ali', phone: '+44 7000 555666' }
+                ];
+
+                const tbody = document.getElementById('driversEarningsTableBody');
+                tbody.innerHTML = '';
+
+                drivers.forEach(driver => {
+                    const isOnline = locations[driver.id] ? true : false;
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    
+                    const driverDeliveredOrders = globalOrders.filter(o => {
+                        const matchesDriver = String(o.assignedDriverId) === String(driver.id);
+                        const isDelivered = o.status === 'Delivered';
+                        return matchesDriver && isDelivered;
+                    });
+
+                    const deliveredCount = driverDeliveredOrders.length;
+                    const totalEarnings = deliveredCount * 5.00;
+
+                    tbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3 font-bold">#${driver.id} - ${driver.name}</td>
+                            <td class="p-3 text-xs text-gray-500">${driver.phone}</td>
+                            <td class="p-3">
+                                ${isOnline ? '<span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 font-semibold">🟢 Online</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-800 font-semibold">🔴 Offline</span>'}
+                            </td>
+                            <td class="p-3 text-xs text-gray-600">
+                                ${isOnline ? '<span class="text-emerald-700 font-medium">Active Shift Today</span>' : '<span class="text-gray-400">Not in shift</span>'}
+                            </td>
+                            <td class="p-3 font-semibold text-gray-700">${deliveredCount} Trips</td>
+                            <td class="p-3 font-bold text-emerald-600 text-base">£${totalEarnings.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                console.error("Error rendering driver performance", e);
+            }
         }
 
         async function fetchDriversLocations() {
@@ -313,38 +322,6 @@
                 });
             } catch (e) {
                 console.error("Error fetching driver locations", e);
-            }
-        }
-
-        async function fetchDetailedOnlineDrivers() {
-            try {
-                const res = await fetch(`${API_URL}/drivers/locations`);
-                const locations = await res.json();
-                const container = document.getElementById('onlineDriversDetailList');
-                const driverIds = Object.keys(locations);
-
-                if (driverIds.length === 0) {
-                    container.innerHTML = '<p class="text-gray-400 text-sm col-span-2">No drivers currently online.</p>';
-                    return;
-                }
-
-                container.innerHTML = '';
-                driverIds.forEach(id => {
-                    const loc = locations[id];
-                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
-                    container.innerHTML += `
-                        <div class="p-4 border rounded-xl bg-gray-50 flex justify-between items-center shadow-sm">
-                            <div>
-                                <p class="font-bold text-gray-800">${driverName} <span class="text-xs text-gray-500">(ID: #${id})</span></p>
-                                <p class="text-xs text-emerald-600 mt-1">🟢 Status: Online</p>
-                                <p class="text-xs text-gray-500 font-mono mt-0.5">Lat: ${loc.lat.toFixed(4)}, Lng: ${loc.lng.toFixed(4)}</p>
-                            </div>
-                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">Live</span>
-                        </div>
-                    `;
-                });
-            } catch (e) {
-                console.error("Error fetching detailed online drivers", e);
             }
         }
 
