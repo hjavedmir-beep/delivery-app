@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Delivery App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet Maps CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Leaflet Maps JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <!-- AUTHENTICATION CONTAINER (Sign In / Sign Up) -->
+    <!-- AUTHENTICATION CONTAINER -->
     <div id="authContainer" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
             <h1 id="authTitle" class="text-2xl font-bold text-center mb-6 text-blue-600">Driver Sign In</h1>
@@ -33,7 +31,7 @@
                 </div>
             </form>
 
-            <!-- Sign Up Form (Hidden by default) -->
+            <!-- Sign Up Form -->
             <form id="signUpForm" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">First Name</label>
@@ -59,7 +57,7 @@
                     <label class="block text-sm font-medium text-gray-700">Retype Password</label>
                     <input type="password" id="regConfirmPassword" required class="w-full mt-1 p-2 border rounded-lg">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white p-3 rounded-lg hover:bg-emerald-700 font-semibold transition">Complete Sign Up</button>
+                <button type="submit" class="w-full bg-emerald-600 text-white p-3 rounded-lg hover:bg-emerald-700 font-semibold transition">Submit Sign Up Request</button>
                 <div class="text-center mt-4">
                     <p class="text-sm text-gray-600">Already have an account? <button type="button" onclick="toggleAuthMode('signin')" class="text-blue-600 font-semibold underline">Sign In</button></p>
                 </div>
@@ -67,10 +65,8 @@
         </div>
     </div>
 
-    <!-- MAIN DRIVER DASHBOARD (Hidden until signed in) -->
+    <!-- MAIN DRIVER DASHBOARD -->
     <div id="driverDashboard" class="hidden container mx-auto p-4 max-w-2xl space-y-6">
-        
-        <!-- Header & Status Toggle -->
         <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center">
             <div>
                 <h1 id="driverWelcomeName" class="text-xl font-bold text-gray-800">Driver Portal</h1>
@@ -84,7 +80,6 @@
             </div>
         </div>
 
-        <!-- Assigned Orders Box -->
         <div class="bg-white p-6 rounded-xl shadow-md">
             <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2">Assigned Orders For You</h2>
             <div id="assignedOrdersList" class="space-y-4">
@@ -92,13 +87,11 @@
             </div>
         </div>
 
-        <!-- Live GPS Map View -->
         <div class="bg-white p-6 rounded-xl shadow-md">
             <h2 class="text-lg font-semibold mb-2 text-gray-800">Your Current Location</h2>
             <p id="gpsStatus" class="text-xs text-gray-500 mb-3">Acquiring GPS location...</p>
             <div id="driverMap" class="w-full h-64 rounded-lg border"></div>
         </div>
-
     </div>
 
     <script>
@@ -125,7 +118,7 @@
             if (mode === 'signup') {
                 signInForm.classList.add('hidden');
                 signUpForm.classList.remove('hidden');
-                authTitle.innerText = 'Driver Sign Up';
+                authTitle.innerText = 'Driver Sign Up Request';
             } else {
                 signUpForm.classList.add('hidden');
                 signInForm.classList.remove('hidden');
@@ -140,24 +133,28 @@
             
             let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
             let defaultDrivers = [
-                { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', password: 'Password1' },
-                { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', password: 'Password2' },
-                { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', password: 'Password3' }
+                { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', password: 'Password1', status: 'Approved' },
+                { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', password: 'Password2', status: 'Approved' },
+                { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', password: 'Password3', status: 'Approved' }
             ];
 
             let allDrivers = [...defaultDrivers, ...registeredDrivers];
             let found = allDrivers.find(d => (d.id === inputVal || d.mobile.includes(inputVal)) && d.password === inputPass);
 
             if (found) {
+                if (found.status !== 'Approved') {
+                    alert('Your account is pending admin approval. Please wait for the admin to approve your request.');
+                    return;
+                }
                 currentDriver = {
-                    id: found.id || String(Date.now()),
+                    id: found.id,
                     name: `${found.firstName} ${found.surname}`,
                     mobile: found.mobile || inputVal
                 };
                 localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
                 showDashboard();
             } else {
-                alert('Invalid Mobile/ID or Password!');
+                alert('Invalid Mobile/ID, Password, or account pending approval!');
             }
         }
 
@@ -170,7 +167,6 @@
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
 
-            // Password validation checks
             if (password !== confirmPassword) {
                 alert('Passwords do not match!');
                 return;
@@ -181,10 +177,7 @@
                 return;
             }
 
-            const hasUpperCase = /[A-Z]/.test(password);
-            const hasNumber = /[0-9]/.test(password);
-
-            if (!hasUpperCase || !hasNumber) {
+            if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
                 alert('Password must contain at least one uppercase letter and at least one number.');
                 return;
             }
@@ -195,21 +188,17 @@
                 surname,
                 mobile,
                 address,
-                password
+                password,
+                status: 'Pending' // Requires admin approval
             };
 
             let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
             registeredDrivers.push(newDriverObj);
             localStorage.setItem('registered_drivers', JSON.stringify(registeredDrivers));
 
-            currentDriver = {
-                id: newDriverObj.id,
-                name: `${firstName} ${surname}`,
-                mobile: mobile
-            };
-            localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
-            alert(`Sign up successful! Your assigned Driver ID is #${newDriverObj.id}`);
-            showDashboard();
+            alert('Sign up request submitted successfully! Please wait for Admin approval before signing in.');
+            toggleAuthMode('signin');
+            document.getElementById('signUpForm').reset();
         }
 
         function showDashboard() {
