@@ -207,8 +207,14 @@
             }
         }
 
-        function renderOrders(orders) {
+        async function renderOrders(orders) {
             const tbody = document.getElementById('ordersTableBody');
+            
+            // Fetch online drivers data to check status
+            const res = await fetch(`${API_URL}/drivers/locations`);
+            const activeDrivers = await res.json(); 
+            const onlineDriverIds = Object.keys(activeDrivers);
+
             if (orders.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No active orders.</td></tr>`;
                 return;
@@ -217,6 +223,23 @@
             tbody.innerHTML = '';
             orders.forEach(order => {
                 const trackingLink = `customer-track.html?id=${order.id}`;
+                const drivers = [
+                    { id: '1', name: 'Ali Khan' },
+                    { id: '2', name: 'Ahmed Raza' },
+                    { id: '3', name: 'Usman Ali' }
+                ];
+
+                let optionsHtml = `<option value="">Select Driver</option>`;
+                drivers.forEach(d => {
+                    const isOnline = onlineDriverIds.includes(d.id);
+                    const statusLabel = isOnline ? '' : ' (Offline)';
+                    
+                    optionsHtml += `
+                        <option value="${d.id}" ${order.assignedDriverId == d.id ? 'selected' : ''} ${!isOnline ? 'disabled class="text-gray-400"' : ''}>
+                            ${d.name}${statusLabel}
+                        </option>`;
+                });
+
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="p-3">
@@ -234,11 +257,8 @@
                             </span>
                         </td>
                         <td class="p-3">
-                            <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded">
-                                <option value="">Select Driver</option>
-                                <option value="1" ${order.assignedDriverId == 1 ? 'selected' : ''}>Ali Khan</option>
-                                <option value="2" ${order.assignedDriverId == 2 ? 'selected' : ''}>Ahmed Raza</option>
-                                <option value="3" ${order.assignedDriverId == 3 ? 'selected' : ''}>Usman Ali</option>
+                            <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">
+                                ${optionsHtml}
                             </select>
                         </td>
                     </tr>
@@ -266,7 +286,6 @@
 
                 drivers.forEach(driver => {
                     const isOnline = locations[driver.id] ? true : false;
-                    const todayStr = new Date().toISOString().split('T')[0];
                     
                     const driverDeliveredOrders = globalOrders.filter(o => {
                         const matchesDriver = String(o.assignedDriverId) === String(driver.id);
@@ -362,61 +381,3 @@
     </script>
 </body>
 </html>
-async function renderOrders(orders) {
-    const tbody = document.getElementById('ordersTableBody');
-    
-    // سب سے پہلے آن لائن ڈرائیورز کا ڈیٹا حاصل کریں تاکہ چیک کر سکیں کہ کون آن لائن ہے
-    const res = await fetch(`${API_URL}/drivers/locations`);
-    const activeDrivers = await res.json(); 
-    const onlineDriverIds = Object.keys(activeDrivers);
-
-    if (orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No active orders.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = '';
-    orders.forEach(order => {
-        // ڈرائیورز کی لسٹ بنائیں اور چیک کریں کہ کیا وہ آن لائن ہیں
-        const drivers = [
-            { id: '1', name: 'Ali Khan' },
-            { id: '2', name: 'Ahmed Raza' },
-            { id: '3', name: 'Usman Ali' }
-        ];
-
-        let optionsHtml = `<option value="">Select Driver</option>`;
-        drivers.forEach(d => {
-            const isOnline = onlineDriverIds.includes(d.id);
-            const statusLabel = isOnline ? '' : ' (Offline)';
-            
-            // اگر ڈرائیور آف لائن ہے تو disabled ایٹریبیوٹ لگا دیں
-            optionsHtml += `
-                <option value="${d.id}" ${order.assignedDriverId == d.id ? 'selected' : ''} ${!isOnline ? 'disabled class="text-gray-400"' : ''}>
-                    ${d.name}${statusLabel}
-                </option>`;
-        });
-
-        tbody.innerHTML += `
-            <tr class="border-b hover:bg-gray-50">
-                <td class="p-3">
-                    <p class="font-bold">#${order.id} - ${order.customerName}</p>
-                    <p class="text-xs text-gray-500">${order.customerPhone}</p>
-                </td>
-                <td class="p-3 text-xs">
-                    <p><strong>From:</strong> ${order.pickupAddress}</p>
-                    <p><strong>To:</strong> ${order.dropoffAddress}</p>
-                </td>
-                <td class="p-3">
-                    <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">
-                        ${order.status}
-                    </span>
-                </td>
-                <td class="p-3">
-                    <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">
-                        ${optionsHtml}
-                    </select>
-                </td>
-            </tr>
-        `;
-    });
-}
