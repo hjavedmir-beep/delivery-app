@@ -23,6 +23,10 @@
                     <label class="block text-sm font-medium text-gray-700">Mobile Number / Driver ID</label>
                     <input type="text" id="signInPhone" required placeholder="e.g. 1 or +447000..." class="w-full mt-1 p-3 border rounded-lg">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="signInPassword" required class="w-full mt-1 p-3 border rounded-lg">
+                </div>
                 <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 font-semibold transition">Sign In</button>
                 <div class="text-center mt-4">
                     <p class="text-sm text-gray-600">Don't have an account? <button type="button" onclick="toggleAuthMode('signup')" class="text-blue-600 font-semibold underline">Sign Up</button></p>
@@ -46,6 +50,14 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Address</label>
                     <textarea id="regAddress" required class="w-full mt-1 p-2 border rounded-lg" rows="2"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="regPassword" required placeholder="Min 8 chars (1 uppercase, 1 number)" class="w-full mt-1 p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Retype Password</label>
+                    <input type="password" id="regConfirmPassword" required class="w-full mt-1 p-2 border rounded-lg">
                 </div>
                 <button type="submit" class="w-full bg-emerald-600 text-white p-3 rounded-lg hover:bg-emerald-700 font-semibold transition">Complete Sign Up</button>
                 <div class="text-center mt-4">
@@ -97,7 +109,6 @@
         let driverMap = null;
         let driverMarker = null;
 
-        // Check if driver was already logged in via localStorage
         window.onload = function() {
             const savedDriver = localStorage.getItem('logged_in_driver');
             if (savedDriver) {
@@ -125,28 +136,28 @@
         function handleSignIn(e) {
             e.preventDefault();
             const inputVal = document.getElementById('signInPhone').value.trim();
+            const inputPass = document.getElementById('signInPassword').value;
             
-            // Default built-in drivers or locally registered drivers
             let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
             let defaultDrivers = [
-                { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', address: 'Stoke-on-Trent' },
-                { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', address: 'Stoke-on-Trent' },
-                { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', address: 'Stoke-on-Trent' }
+                { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', password: 'Password1' },
+                { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', password: 'Password2' },
+                { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', password: 'Password3' }
             ];
 
             let allDrivers = [...defaultDrivers, ...registeredDrivers];
-            let found = allDrivers.find(d => d.id === inputVal || d.mobile.includes(inputVal));
+            let found = allDrivers.find(d => (d.id === inputVal || d.mobile.includes(inputVal)) && d.password === inputPass);
 
             if (found) {
                 currentDriver = {
                     id: found.id || String(Date.now()),
                     name: `${found.firstName} ${found.surname}`,
-                    mobile: found.mobile || found.phone || inputVal
+                    mobile: found.mobile || inputVal
                 };
                 localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
                 showDashboard();
             } else {
-                alert('Driver not found! Please check your ID/Mobile or Sign Up.');
+                alert('Invalid Mobile/ID or Password!');
             }
         }
 
@@ -156,13 +167,35 @@
             const surname = document.getElementById('regSurname').value.trim();
             const mobile = document.getElementById('regMobile').value.trim();
             const address = document.getElementById('regAddress').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            // Password validation checks
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            if (password.length < 8) {
+                alert('Password must be at least 8 characters long.');
+                return;
+            }
+
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+
+            if (!hasUpperCase || !hasNumber) {
+                alert('Password must contain at least one uppercase letter and at least one number.');
+                return;
+            }
 
             const newDriverObj = {
                 id: String(Math.floor(100 + Math.random() * 900)),
                 firstName,
                 surname,
                 mobile,
-                address
+                address,
+                password
             };
 
             let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
@@ -238,7 +271,6 @@
                             }
                         }
 
-                        // Send location to server
                         fetch(`${API_URL}/drivers/location`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -260,7 +292,6 @@
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
             }
-            // Send offline signal (remove location)
             fetch(`${API_URL}/drivers/location`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
