@@ -89,7 +89,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://alumni-skinny-morbidly.ngrok-free.dev/api';
+        const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
 
         async function fetchOrders() {
             try {
@@ -155,7 +155,6 @@
 
             tbody.innerHTML = '';
             orders.forEach(order => {
-                // کسٹمر کے لیے ٹریکنگ لنک بنانے کا طریقہ (اگر ضرورت ہو تو استعمال کر سکتے ہیں)
                 const trackingLink = `customer-track.html?id=${order.id}`;
 
                 tbody.innerHTML += `
@@ -187,7 +186,6 @@
             });
         }
 
-        // ڈرائیورز کی لائیو لوکیشن لانے کا فنکشن
         async function fetchDriversLocations() {
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
@@ -215,7 +213,6 @@
             }
         }
 
-        // --- ایڈمن میپ انٹیگریشن ---
         let adminMap = L.map('adminMap').setView([51.505, -0.09], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
 
@@ -239,7 +236,6 @@
             }
         }
 
-        // صفحہ کھلتے ہی ڈیٹا لوڈ کریں اور ہر 3 سیکنڈ بعد آٹو ریفریش کریں
         fetchOrders();
         fetchDriversLocations();
         updateAdminMap();
