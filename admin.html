@@ -69,10 +69,14 @@
                 </div>
             </div>
 
-            <!-- Right Column: Orders Queue -->
+            <!-- Right Column: 3 Categorized Order Tables -->
             <div class="md:col-span-2 space-y-6">
+                
+                <!-- 1. New Orders Tab/Section -->
                 <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Live Orders Queue</h2>
+                    <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2 flex items-center justify-between">
+                        <span>📦 New Orders (Pending Assignment)</span>
+                    </h2>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -83,12 +87,57 @@
                                     <th class="p-3 border-b">Assign Driver</th>
                                 </tr>
                             </thead>
-                            <tbody id="ordersTableBody" class="text-sm text-gray-700">
-                                <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading orders...</td></tr>
+                            <tbody id="newOrdersTableBody" class="text-sm text-gray-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading new orders...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
+
+                <!-- 2. Assigned Orders Tab/Section -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-orange-600 border-b pb-2 flex items-center justify-between">
+                        <span>motor_scooter Assigned Orders (In Progress)</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 text-sm">
+                                    <th class="p-3 border-b">ID & Customer</th>
+                                    <th class="p-3 border-b">Route</th>
+                                    <th class="p-3 border-b">Assigned Driver</th>
+                                    <th class="p-3 border-b">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignedOrdersTableBody" class="text-sm text-gray-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">No assigned orders.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. Completed Orders Tab/Section -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-emerald-700 border-b pb-2 flex items-center justify-between">
+                        <span>✅ Completed / Delivered Orders</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 text-sm">
+                                    <th class="p-3 border-b">ID & Customer</th>
+                                    <th class="p-3 border-b">Route</th>
+                                    <th class="p-3 border-b">Delivered By</th>
+                                    <th class="p-3 border-b">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="completedOrdersTableBody" class="text-sm text-gray-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">No completed orders yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -155,7 +204,7 @@
             try {
                 const response = await fetch(`${API_URL}/orders`);
                 globalOrders = await response.json();
-                renderOrders(globalOrders);
+                renderCategorizedOrders(globalOrders);
                 if (!document.getElementById('driversSection').classList.contains('hidden')) {
                     renderDriverPerformance();
                 }
@@ -207,63 +256,130 @@
             }
         }
 
-        async function renderOrders(orders) {
-            const tbody = document.getElementById('ordersTableBody');
-            
-            // Fetch online drivers data to check status
+        async function renderCategorizedOrders(orders) {
+            const newTbody = document.getElementById('newOrdersTableBody');
+            const assignedTbody = document.getElementById('assignedOrdersTableBody');
+            const completedTbody = document.getElementById('completedOrdersTableBody');
+
+            // Fetch online drivers data to restrict assignment to online drivers only
             const res = await fetch(`${API_URL}/drivers/locations`);
             const activeDrivers = await res.json(); 
             const onlineDriverIds = Object.keys(activeDrivers);
 
-            if (orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No active orders.</td></tr>`;
-                return;
+            const driversList = [
+                { id: '1', name: 'Ali Khan' },
+                { id: '2', name: 'Ahmed Raza' },
+                { id: '3', name: 'Usman Ali' }
+            ];
+
+            const newOrders = orders.filter(o => !o.assignedDriverId && o.status !== 'Delivered');
+            const assignedOrders = orders.filter(o => o.assignedDriverId && o.status !== 'Delivered');
+            const completedOrders = orders.filter(o => o.status === 'Delivered');
+
+            // 1. Render New Orders
+            if (newOrders.length === 0) {
+                newTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No new orders pending assignment.</td></tr>`;
+            } else {
+                newTbody.innerHTML = '';
+                newOrders.forEach(order => {
+                    const trackingLink = `customer-track.html?id=${order.id}`;
+                    let optionsHtml = `<option value="">Select Online Driver</option>`;
+                    driversList.forEach(d => {
+                        const isOnline = onlineDriverIds.includes(d.id);
+                        const statusLabel = isOnline ? '' : ' (Offline)';
+                        optionsHtml += `
+                            <option value="${d.id}" ${!isOnline ? 'disabled class="text-gray-400"' : ''}>
+                                ${d.name}${statusLabel}
+                            </option>`;
+                    });
+
+                    newTbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3">
+                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
+                                <p class="text-xs text-gray-500">${order.customerPhone}</p>
+                                <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p><strong>From:</strong> ${order.pickupAddress}</p>
+                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800">${order.status}</span>
+                            </td>
+                            <td class="p-3">
+                                <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">
+                                    ${optionsHtml}
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                });
             }
 
-            tbody.innerHTML = '';
-            orders.forEach(order => {
-                const trackingLink = `customer-track.html?id=${order.id}`;
-                const drivers = [
-                    { id: '1', name: 'Ali Khan' },
-                    { id: '2', name: 'Ahmed Raza' },
-                    { id: '3', name: 'Usman Ali' }
-                ];
+            // 2. Render Assigned Orders
+            if (assignedOrders.length === 0) {
+                assignedTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No orders currently assigned/in progress.</td></tr>`;
+            } else {
+                assignedTbody.innerHTML = '';
+                assignedOrders.forEach(order => {
+                    const trackingLink = `customer-track.html?id=${order.id}`;
+                    const assignedDriver = driversList.find(d => String(d.id) === String(order.assignedDriverId));
+                    const driverNameDisplay = assignedDriver ? assignedDriver.name : `Driver #${order.assignedDriverId}`;
 
-                let optionsHtml = `<option value="">Select Driver</option>`;
-                drivers.forEach(d => {
-                    const isOnline = onlineDriverIds.includes(d.id);
-                    const statusLabel = isOnline ? '' : ' (Offline)';
-                    
-                    optionsHtml += `
-                        <option value="${d.id}" ${order.assignedDriverId == d.id ? 'selected' : ''} ${!isOnline ? 'disabled class="text-gray-400"' : ''}>
-                            ${d.name}${statusLabel}
-                        </option>`;
+                    assignedTbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3">
+                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
+                                <p class="text-xs text-gray-500">${order.customerPhone}</p>
+                                <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p><strong>From:</strong> ${order.pickupAddress}</p>
+                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
+                            </td>
+                            <td class="p-3 font-semibold text-orange-700">
+                                ${driverNameDisplay}
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">${order.status}</span>
+                            </td>
+                        </tr>
+                    `;
                 });
+            }
 
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3">
-                            <p class="font-bold">#${order.id} - ${order.customerName}</p>
-                            <p class="text-xs text-gray-500">${order.customerPhone}</p>
-                            <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
-                        </td>
-                        <td class="p-3 text-xs">
-                            <p><strong>From:</strong> ${order.pickupAddress}</p>
-                            <p><strong>To:</strong> ${order.dropoffAddress}</p>
-                        </td>
-                        <td class="p-3">
-                            <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">
-                                ${order.status}
-                            </span>
-                        </td>
-                        <td class="p-3">
-                            <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">
-                                ${optionsHtml}
-                            </select>
-                        </td>
-                    </tr>
-                `;
-            });
+            // 3. Render Completed Orders
+            if (completedOrders.length === 0) {
+                completedTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No completed orders yet.</td></tr>`;
+            } else {
+                completedTbody.innerHTML = '';
+                completedOrders.forEach(order => {
+                    const trackingLink = `customer-track.html?id=${order.id}`;
+                    const assignedDriver = driversList.find(d => String(d.id) === String(order.assignedDriverId));
+                    const driverNameDisplay = assignedDriver ? assignedDriver.name : `Driver #${order.assignedDriverId}`;
+
+                    completedTbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3">
+                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
+                                <p class="text-xs text-gray-500">${order.customerPhone}</p>
+                                <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p><strong>From:</strong> ${order.pickupAddress}</p>
+                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
+                            </td>
+                            <td class="p-3 text-xs font-medium text-gray-600">
+                                ${driverNameDisplay}
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">${order.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
         }
 
         async function fetchDriverPerformance() {
