@@ -130,24 +130,11 @@
         <div id="tabContentDrivers" class="space-y-5 hidden">
             <div class="bg-white p-5 rounded-xl shadow-md space-y-5">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h2 class="font-bold text-base text-gray-800">Driver Directory & Live Deliveries Tracker</h2>
+                    <h2 class="font-bold text-base text-gray-800">Driver Directory, Real-Time Shifts & Earnings</h2>
                     <button onclick="loadDriversManagement()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Drivers</button>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-800 border-b font-bold">
-                                <th class="p-3">Driver Name</th>
-                                <th class="p-3">Status</th>
-                                <th class="p-3">Phone Number</th>
-                                <th class="p-3">Total Deliveries</th>
-                                <th class="p-3 text-right">Action / Approval</th>
-                            </tr>
-                        </thead>
-                        <tbody id="driversTableBody">
-                            <tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No driver applications pending or registered.</td></tr>
-                        </tbody>
-                    </table>
+                <div id="driversDirectoryContainer" class="space-y-6">
+                    <p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>
                 </div>
             </div>
         </div>
@@ -464,14 +451,38 @@
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
                 const drivers = await res.json();
+                
+                let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                let updated = false;
+                const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                // Detect shift start / end transitions in real-time
+                registeredDriversAll.forEach(drv => {
+                    const hasLoc = drivers[drv.id] && drivers[drv.id].lat && drivers[drv.id].lng;
+                    const wasOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
+
+                    if (hasLoc && !wasOnline) {
+                        // Driver just came online -> Record Shift Start
+                        drv.lastShiftStart = currentTimeStr;
+                        drv.lastShiftEnd = 'Ongoing...';
+                        updated = true;
+                    } else if (!hasLoc && wasOnline) {
+                        // Driver just went offline -> Record Shift End
+                        drv.lastShiftEnd = currentTimeStr;
+                        updated = true;
+                    }
+                });
+
+                if (updated) {
+                    localStorage.setItem('registered_drivers', JSON.stringify(registeredDriversAll));
+                }
+
                 onlineDriversCache = drivers; 
                 if (markersLayer) markersLayer.clearLayers();
 
                 const driversWidget = document.getElementById('liveDriversListWidget');
                 let activeDriversCount = 0;
                 let driverHtml = '';
-
-                let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
 
                 for (const [driverId, data] of Object.entries(drivers)) {
                     if (data.lat && data.lng) {
@@ -492,7 +503,6 @@
                     driversWidget.innerHTML = driverHtml;
                 }
 
-                // Refresh orders view so dropdowns instantly update when drivers come online/offline
                 fetchOrders();
 
                 if (!document.getElementById('tabContentDrivers').classList.contains('hidden')) {
@@ -505,35 +515,64 @@
 
         function loadDriversManagement() {
             let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            const tableBody = document.getElementById('driversTableBody');
-            if (!tableBody) return;
+            const container = document.getElementById('driversDirectoryContainer');
+            if (!container) return;
 
             if (registered.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No driver applications pending or registered.</td></tr>`;
+                container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>`;
                 return;
             }
 
-            tableBody.innerHTML = '';
+            container.innerHTML = '';
             registered.forEach((drv, index) => {
                 const isOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
                 const driverCompletedOrders = allOrdersCache.filter(o => String(o.assignedDriverId) === String(drv.id) && o.status === 'Delivered');
+                
+                const RATE_PER_ORDER = 5.00;
+                const totalEarnings = driverCompletedOrders.length * RATE_PER_ORDER;
 
-                tableBody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 font-bold text-gray-900">${drv.firstName} ${drv.surname}</td>
-                        <td class="p-3">
-                            ${isOnline 
-                                ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Online</span>`
-                                : `<span class="bg-gray-200 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold">Offline</span>`
-                            }
-                        </td>
-                        <td class="p-3 text-gray-700 font-medium"><a href="tel:${drv.mobile}" class="text-blue-600 hover:underline">${drv.mobile}</a></td>
-                        <td class="p-3 font-bold text-gray-900">${driverCompletedOrders.length}</td>
-                        <td class="p-3 text-right space-x-2">
-                            <span class="font-bold px-2.5 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${drv.status}</span>
-                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold text-xs transition">Approve</button>` : ''}
-                        </td>
-                    </tr>
+                const shiftStart = drv.lastShiftStart || (isOnline ? 'Active Session' : 'Not Started');
+                const shiftEnd = isOnline ? 'Ongoing...' : (drv.lastShiftEnd || 'Offline');
+
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
+                        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
+                            <div>
+                                <div class="flex items-center gap-3">
+                                    <h3 class="font-bold text-gray-900 text-base">${drv.firstName} ${drv.surname}</h3>
+                                    ${isOnline 
+                                        ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Online</span>`
+                                        : `<span class="bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold">Offline</span>`
+                                    }
+                                </div>
+                                <p class="text-gray-600 text-xs mt-1">📞 Phone: <a href="tel:${drv.mobile}" class="text-blue-600 font-bold hover:underline">${drv.mobile}</a></p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">Approval: ${drv.status}</span>
+                                ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold text-xs transition">Approve</button>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Real-Time Shift & Performance Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                            <div class="bg-white p-3 rounded-lg border">
+                                <span class="text-gray-500 block font-semibold">Shift Started</span>
+                                <span class="text-gray-900 font-bold text-sm">${shiftStart}</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border">
+                                <span class="text-gray-500 block font-semibold">Shift Ended</span>
+                                <span class="text-gray-900 font-bold text-sm">${shiftEnd}</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border">
+                                <span class="text-gray-500 block font-semibold">Total Deliveries</span>
+                                <span class="text-blue-700 font-extrabold text-sm">${driverCompletedOrders.length} Orders</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border">
+                                <span class="text-gray-500 block font-semibold">Total Earned (£5/order)</span>
+                                <span class="text-emerald-700 font-extrabold text-sm">£${totalEarnings.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
                 `;
             });
         }
