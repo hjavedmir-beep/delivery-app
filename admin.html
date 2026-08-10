@@ -8,70 +8,70 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans text-sm">
 
     <!-- Top Navigation Bar -->
-    <nav class="bg-blue-600 text-white p-3 shadow-md flex justify-between items-center">
-        <h1 class="text-base font-bold">Admin Dispatch Panel</h1>
-        <div class="space-x-1 text-xs flex flex-wrap gap-1">
-            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-3 py-1.5 rounded font-semibold transition">Dashboard / Front Screen</button>
-            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Drivers</button>
-            <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Businesses</button>
+    <nav class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-lg font-bold">Admin Dispatch Panel</h1>
+        <div class="space-x-2 flex flex-wrap gap-1">
+            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-4 py-2 rounded-lg font-semibold text-sm transition">Dashboard / Front Screen</button>
+            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm transition">Manage Drivers</button>
+            <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm transition">Manage Businesses</button>
         </div>
     </nav>
 
     <div class="container mx-auto p-4 max-w-7xl space-y-4">
         
-        <!-- MAIN DASHBOARD / FRONT SCREEN (Matching Screenshot Layout) -->
+        <!-- MAIN DASHBOARD / FRONT SCREEN -->
         <div id="tabContentActive" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
             
             <!-- LEFT COLUMN: Create Order Form, Live Drivers List, Live Map -->
             <div class="lg:col-span-4 space-y-4">
                 
                 <!-- Create New Order Form -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Create New Order</h2>
-                    <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-2.5 text-xs">
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Create New Order</h2>
+                    <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-3 text-sm">
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-medium text-gray-700">Customer Name</label>
-                                <input type="text" id="orderCustName" required class="w-full mt-1 p-1.5 border rounded">
+                                <input type="text" id="orderCustName" required class="w-full mt-1 p-2 border rounded-lg">
                             </div>
                             <div>
                                 <label class="block font-medium text-gray-700">Customer Phone</label>
-                                <input type="text" id="orderCustPhone" required class="w-full mt-1 p-1.5 border rounded">
+                                <input type="text" id="orderCustPhone" required class="w-full mt-1 p-2 border rounded-lg">
                             </div>
                         </div>
                         <div>
                             <label class="block font-medium text-gray-700">Pickup Business (Registered)</label>
-                            <select id="orderPickup" required class="w-full mt-1 p-1.5 border rounded bg-white">
+                            <select id="orderPickup" required class="w-full mt-1 p-2 border rounded-lg bg-white">
                                 <option value="">Select Registered Business</option>
                             </select>
                         </div>
                         <div>
                             <label class="block font-medium text-gray-700">Drop-off Address</label>
-                            <input type="text" id="orderDropoff" required class="w-full mt-1 p-1.5 border rounded">
+                            <input type="text" id="orderDropoff" required class="w-full mt-1 p-2 border rounded-lg">
                         </div>
                         <div>
                             <label class="block font-medium text-gray-700">Special Notes</label>
-                            <textarea id="orderNotes" rows="2" class="w-full mt-1 p-1.5 border rounded"></textarea>
+                            <textarea id="orderNotes" rows="2" class="w-full mt-1 p-2 border rounded-lg"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-bold transition">Add Order to Server</button>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-lg font-bold transition">Add Order to Server</button>
                     </form>
                 </div>
 
                 <!-- Live Drivers Location Widget -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
-                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Drivers Location</h2>
-                    <div id="liveDriversListWidget" class="text-xs text-gray-500 py-1">
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-2">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Live Drivers Location</h2>
+                    <div id="liveDriversListWidget" class="text-sm text-gray-500 py-1">
                         No active drivers online.
                     </div>
                 </div>
 
                 <!-- Live Map View Widget -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
-                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Map View (Drivers & Businesses)</h2>
-                    <div id="adminMap" class="w-full h-[220px] rounded-lg"></div>
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-2">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Live Map View (Drivers & Businesses)</h2>
+                    <div id="adminMap" class="w-full h-[240px] rounded-lg"></div>
                 </div>
 
             </div>
@@ -80,16 +80,16 @@
             <div class="lg:col-span-8 space-y-4">
                 
                 <!-- Active Orders Table Section -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Active Orders & Assignment</h2>
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Active Orders & Assignment</h2>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs">
+                        <table class="w-full text-left text-sm">
                             <thead>
-                                <tr class="bg-gray-50 text-gray-600 border-b">
-                                    <th class="p-2">ID & Customer</th>
-                                    <th class="p-2">Route</th>
-                                    <th class="p-2">Assigned Driver</th>
-                                    <th class="p-2">Status</th>
+                                <tr class="bg-gray-50 text-gray-700 border-b font-semibold">
+                                    <th class="p-3">ID & Customer</th>
+                                    <th class="p-3">Route</th>
+                                    <th class="p-3">Assigned Driver</th>
+                                    <th class="p-3">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="activeOrdersTableBody">
@@ -100,19 +100,19 @@
                 </div>
 
                 <!-- Completed / Delivered Orders Table Section -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                    <div class="flex justify-between items-center border-b pb-1.5">
-                        <h2 class="font-bold text-sm text-gray-800">✅ Completed / Delivered Orders</h2>
-                        <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-bold">0 Orders</span>
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h2 class="font-bold text-base text-gray-800">✅ Completed / Delivered Orders</h2>
+                        <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">0 Orders</span>
                     </div>
-                    <div class="overflow-x-auto max-h-[320px] overflow-y-auto">
-                        <table class="w-full text-left text-xs">
+                    <div class="overflow-x-auto max-h-[340px] overflow-y-auto">
+                        <table class="w-full text-left text-sm">
                             <thead>
-                                <tr class="bg-gray-50 text-gray-600 border-b sticky top-0">
-                                    <th class="p-2">ID & Customer</th>
-                                    <th class="p-2">Route</th>
-                                    <th class="p-2">Delivered By</th>
-                                    <th class="p-2">Status</th>
+                                <tr class="bg-gray-50 text-gray-700 border-b font-semibold sticky top-0">
+                                    <th class="p-3">ID & Customer</th>
+                                    <th class="p-3">Route</th>
+                                    <th class="p-3">Delivered By</th>
+                                    <th class="p-3">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="completedOrdersTableBody">
@@ -128,9 +128,9 @@
 
         <!-- TAB 2: Manage Drivers Page -->
         <div id="tabContentDrivers" class="space-y-4 hidden">
-            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Driver Approval & Management</h2>
-                <div id="driversListContainer" class="space-y-2 text-xs">
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                <h2 class="font-bold text-base text-gray-800 border-b pb-2">Driver Approval & Management</h2>
+                <div id="driversListContainer" class="space-y-2 text-sm">
                     <p class="text-gray-400 text-center py-4">No driver applications pending.</p>
                 </div>
             </div>
@@ -140,43 +140,43 @@
         <div id="tabContentBusinesses" class="space-y-4 hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Add Business Form -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Add New Business</h2>
-                    <form id="addBusinessForm" onsubmit="handleAddBusiness(event)" class="space-y-2.5 text-xs">
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
+                    <form id="addBusinessForm" onsubmit="handleAddBusiness(event)" class="space-y-3 text-sm">
                         <div>
                             <label class="block font-medium text-gray-700">Business Name</label>
-                            <input type="text" id="busName" placeholder="e.g. Mother Hubbard's Stoke" required class="w-full mt-1 p-1.5 border rounded">
+                            <input type="text" id="busName" placeholder="e.g. Mother Hubbard's Stoke" required class="w-full mt-1 p-2 border rounded-lg">
                         </div>
                         <div>
                             <label class="block font-medium text-gray-700">Phone Number</label>
-                            <input type="text" id="busPhone" placeholder="e.g. +44 1782..." required class="w-full mt-1 p-1.5 border rounded">
+                            <input type="text" id="busPhone" placeholder="e.g. +44 1782..." required class="w-full mt-1 p-2 border rounded-lg">
                         </div>
                         <div>
                             <label class="block font-medium text-gray-700">Address Line 1</label>
-                            <input type="text" id="busAddress1" placeholder="e.g. Stafford Street" required class="w-full mt-1 p-1.5 border rounded">
+                            <input type="text" id="busAddress1" placeholder="e.g. Stafford Street" required class="w-full mt-1 p-2 border rounded-lg">
                         </div>
                         <div>
                             <label class="block font-medium text-gray-700">Address Line 2 (Optional)</label>
-                            <input type="text" id="busAddress2" placeholder="e.g. Suite 3 / Unit B" class="w-full mt-1 p-1.5 border rounded">
+                            <input type="text" id="busAddress2" placeholder="e.g. Suite 3 / Unit B" class="w-full mt-1 p-2 border rounded-lg">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-medium text-gray-700">Post Code</label>
-                                <input type="text" id="busPostcode" placeholder="e.g. ST1 5PT" oninput="lookupPostcode(this.value)" required class="w-full mt-1 p-1.5 border rounded uppercase">
+                                <input type="text" id="busPostcode" placeholder="e.g. ST1 5PT" oninput="lookupPostcode(this.value)" required class="w-full mt-1 p-2 border rounded-lg uppercase">
                             </div>
                             <div>
                                 <label class="block font-medium text-gray-700">Area</label>
-                                <input type="text" id="busArea" placeholder="Auto-populated area" readonly class="w-full mt-1 p-1.5 border rounded bg-gray-50 text-gray-600 font-semibold">
+                                <input type="text" id="busArea" placeholder="Auto-populated" readonly class="w-full mt-1 p-2 border rounded-lg bg-gray-50 text-gray-700 font-semibold">
                             </div>
                         </div>
-                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded font-bold transition">Save & Pin on Map</button>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg font-bold transition">Save & Pin on Map</button>
                     </form>
                 </div>
 
                 <!-- List Registered Businesses Directory -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Registered Businesses Directory</h2>
-                    <div id="businessesListContainer" class="space-y-2 text-xs max-h-[350px] overflow-y-auto">
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory</h2>
+                    <div id="businessesListContainer" class="space-y-2 text-sm max-h-[380px] overflow-y-auto">
                         <p class="text-gray-400 text-center py-4">No businesses registered yet.</p>
                     </div>
                 </div>
@@ -195,22 +195,22 @@
             document.getElementById('tabContentDrivers').classList.add('hidden');
             document.getElementById('tabContentBusinesses').classList.add('hidden');
 
-            document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
-            document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
-            document.getElementById('navTabBusinesses').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+            document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm transition';
+            document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm transition';
+            document.getElementById('navTabBusinesses').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-semibold text-sm transition';
 
             if (tab === 'active') {
                 document.getElementById('tabContentActive').classList.remove('hidden');
-                document.getElementById('navTabActive').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                document.getElementById('navTabActive').className = 'bg-blue-700 px-4 py-2 rounded-lg font-semibold text-sm transition';
                 fetchOrders();
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else if (tab === 'drivers') {
                 document.getElementById('tabContentDrivers').classList.remove('hidden');
-                document.getElementById('navTabDrivers').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                document.getElementById('navTabDrivers').className = 'bg-blue-700 px-4 py-2 rounded-lg font-semibold text-sm transition';
                 loadDriversManagement();
             } else if (tab === 'businesses') {
                 document.getElementById('tabContentBusinesses').classList.remove('hidden');
-                document.getElementById('navTabBusinesses').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                document.getElementById('navTabBusinesses').className = 'bg-blue-700 px-4 py-2 rounded-lg font-semibold text-sm transition';
                 loadBusinessesManagement();
             }
         }
@@ -302,12 +302,12 @@
                 const addr2Str = b.address2 ? `, ${b.address2}` : '';
                 const areaStr = b.area ? `(${b.area})` : '';
                 container.innerHTML += `
-                    <div class="bg-gray-50 p-2.5 rounded-lg border flex justify-between items-center">
+                    <div class="bg-gray-50 p-3 rounded-xl border flex justify-between items-center">
                         <div>
-                            <p class="font-bold text-gray-800">${b.name} <span class="text-gray-500 font-normal">(${b.phone})</span></p>
-                            <p class="text-gray-600 text-[11px]">${b.address1}${addr2Str}, ${b.postcode} <span class="text-blue-600 font-semibold">${areaStr}</span></p>
+                            <p class="font-bold text-gray-800 text-base">${b.name} <span class="text-gray-500 font-normal text-sm">(${b.phone})</span></p>
+                            <p class="text-gray-600 text-xs">${b.address1}${addr2Str}, ${b.postcode} <span class="text-blue-600 font-semibold">${areaStr}</span></p>
                         </div>
-                        <button onclick="deleteBusiness(${index})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition">Delete</button>
+                        <button onclick="deleteBusiness(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm transition">Delete</button>
                     </div>
                 `;
             });
@@ -380,12 +380,12 @@
 
                         activeTable.innerHTML += `
                             <tr class="border-b hover:bg-gray-50">
-                                <td class="p-2 font-bold">#${order.id} - ${order.customerName}<br><span class="text-[10px] text-gray-500">${order.customerPhone}</span></td>
-                                <td class="p-2 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
-                                <td class="p-2">
-                                    <select onchange="assignDriver('${order.id}', this.value)" class="border p-1 rounded text-xs w-full">${optionsHtml}</select>
+                                <td class="p-3 font-bold">#${order.id} - ${order.customerName}<br><span class="text-xs text-gray-500 font-normal">${order.customerPhone}</span></td>
+                                <td class="p-3 text-gray-700">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-3">
+                                    <select onchange="assignDriver('${order.id}', this.value)" class="border p-2 rounded-lg text-sm w-full">${optionsHtml}</select>
                                 </td>
-                                <td class="p-2"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${order.status || 'Pending'}</span></td>
+                                <td class="p-3"><span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-lg font-bold text-xs">${order.status || 'Pending'}</span></td>
                             </tr>
                         `;
                     });
@@ -404,10 +404,10 @@
 
                         completedTable.innerHTML += `
                             <tr class="border-b hover:bg-gray-50">
-                                <td class="p-2 font-bold">#${order.id} - ${order.customerName}</td>
-                                <td class="p-2 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
-                                <td class="p-2 text-gray-800 font-medium">${driverNameDisplay}</td>
-                                <td class="p-2"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Delivered</span></td>
+                                <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
+                                <td class="p-3 text-gray-700">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-3 text-gray-800 font-medium">${driverNameDisplay}</td>
+                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
                             </tr>
                         `;
                     });
@@ -476,13 +476,13 @@
             container.innerHTML = '';
             registered.forEach((drv, index) => {
                 container.innerHTML += `
-                    <div class="bg-gray-50 p-3 rounded-lg border flex justify-between items-center">
+                    <div class="bg-gray-50 p-4 rounded-xl border flex justify-between items-center">
                         <div>
-                            <p class="font-bold text-gray-800">${drv.firstName} ${drv.surname} (${drv.mobile})</p>
-                            <p class="text-gray-500">Address: ${drv.address} | Status: <span class="font-bold ${drv.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}">${drv.status}</span></p>
+                            <p class="font-bold text-gray-800 text-base">${drv.firstName} ${drv.surname} <span class="text-gray-500 font-normal text-sm">(${drv.mobile})</span></p>
+                            <p class="text-gray-600 text-sm">Address: ${drv.address} | Status: <span class="font-bold ${drv.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}">${drv.status}</span></p>
                         </div>
                         <div>
-                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded font-semibold transition">Approve</button>` : `<span class="text-emerald-600 font-bold">Approved</span>`}
+                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold transition">Approve</button>` : `<span class="text-emerald-600 font-bold">Approved</span>`}
                         </div>
                     </div>
                 `;
