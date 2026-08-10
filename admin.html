@@ -10,224 +10,113 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
+    <!-- Top Navigation Bar -->
     <nav class="bg-blue-600 text-white p-3 shadow-md flex justify-between items-center">
-        <h1 class="text-lg font-bold">Admin Dispatch Panel</h1>
-        <div class="space-x-3">
-            <button onclick="switchTab('orders')" id="btnOrdersTab" class="bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition">Orders & Map</button>
-            <button onclick="switchTab('businesses')" id="btnBusinessesTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Manage Businesses</button>
-            <button onclick="switchTab('drivers')" id="btnDriversTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Drivers Management & Earnings</button>
+        <h1 class="text-base font-bold">Delivery Admin Dashboard</h1>
+        <div class="space-x-2 text-xs">
+            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-3 py-1.5 rounded font-semibold transition">Active Orders & Map</button>
+            <button onclick="switchTab('completed')" id="navTabCompleted" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Completed Orders</button>
+            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Drivers</button>
         </div>
     </nav>
 
-    <div class="container mx-auto p-4">
+    <div class="container mx-auto p-4 max-w-6xl space-y-4">
         
-        <!-- SECTION 1: Orders & Map -->
-        <!-- Map column is now wider (col-span-2) and Order form is smaller (col-span-1) -->
-        <div id="ordersSection" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Left Column: Smaller Order Form & Live Drivers List -->
-            <div class="space-y-4 lg:col-span-1">
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h2 class="text-md font-semibold mb-3 text-gray-800 border-b pb-1.5">Create New Order</h2>
-                    <form id="orderForm" onsubmit="createOrder(event)" class="space-y-3 text-sm">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700">Customer Name</label>
-                            <input type="text" id="custName" required class="w-full mt-0.5 p-1.5 border rounded-md">
+        <!-- TAB 1: Active Orders & Map -->
+        <div id="tabContentActive" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Left: Create New Order Form -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Create New Order</h2>
+                    <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-2.5 text-xs">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-medium text-gray-700">Customer Name</label>
+                                <input type="text" id="orderCustName" required class="w-full mt-1 p-1.5 border rounded">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700">Customer Phone</label>
+                                <input type="text" id="orderCustPhone" required class="w-full mt-1 p-1.5 border rounded">
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700">Customer Phone</label>
-                            <input type="text" id="custPhone" required class="w-full mt-0.5 p-1.5 border rounded-md">
+                            <label class="block font-medium text-gray-700">Pickup Address</label>
+                            <input type="text" id="orderPickup" required class="w-full mt-1 p-1.5 border rounded">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700">Pickup Address</label>
-                            <input type="text" id="pickupAddr" required class="w-full mt-0.5 p-1.5 border rounded-md">
+                            <label class="block font-medium text-gray-700">Drop-off Address</label>
+                            <input type="text" id="orderDropoff" required class="w-full mt-1 p-1.5 border rounded">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700">Drop-off Address</label>
-                            <input type="text" id="dropAddr" required class="w-full mt-0.5 p-1.5 border rounded-md">
+                            <label class="block font-medium text-gray-700">Special Notes</label>
+                            <textarea id="orderNotes" rows="2" class="w-full mt-1 p-1.5 border rounded"></textarea>
                         </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-700">Special Notes</label>
-                            <textarea id="orderNotes" rows="2" class="w-full mt-0.5 p-1.5 border rounded-md"></textarea>
-                        </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold text-xs transition">Add Order to Server</button>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-bold transition">Add Order to Server</button>
                     </form>
                 </div>
 
-                <div class="bg-white p-3 rounded-xl shadow border">
-                    <h3 class="font-bold text-xs mb-1.5 text-gray-700 border-b pb-1">Live Drivers Location</h3>
-                    <div id="liveDriversList" class="text-xs text-gray-600 space-y-1">Loading live locations...</div>
+                <!-- Right: Map Moved Here -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Map View (Drivers & Businesses)</h2>
+                    <div id="adminMap" class="w-full h-[280px] rounded-lg"></div>
                 </div>
 
-                <!-- Bigger Map Section -->
-                <div class="bg-white p-3 rounded-xl shadow border">
-                    <h3 class="font-bold text-xs mb-1.5 text-gray-700 border-b pb-1">Live Map View (Drivers & Businesses)</h3>
-                    <div id="adminMap" class="w-full h-96 rounded-lg"></div>
-                </div>
             </div>
 
-            <!-- Right Column: Larger Deliveries Tables (Pending, Assigned, Completed) -->
-            <div class="lg:col-span-2 space-y-4">
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h2 class="text-md font-semibold mb-3 text-blue-800 border-b pb-1.5">📦 New Orders (Pending Assignment)</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50 text-gray-600 text-xs">
-                                    <th class="p-2.5 border-b">ID & Customer</th>
-                                    <th class="p-2.5 border-b">Route</th>
-                                    <th class="p-2.5 border-b">Status</th>
-                                    <th class="p-2.5 border-b">Assign Driver</th>
-                                </tr>
-                            </thead>
-                            <tbody id="newOrdersTableBody" class="text-xs text-gray-700">
-                                <tr><td colspan="4" class="p-3 text-center text-gray-400">Loading new orders...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h2 class="text-md font-semibold mb-3 text-orange-600 border-b pb-1.5">🛵 Assigned Orders (In Progress)</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50 text-gray-600 text-xs">
-                                    <th class="p-2.5 border-b">ID & Customer</th>
-                                    <th class="p-2.5 border-b">Route</th>
-                                    <th class="p-2.5 border-b">Assigned Driver</th>
-                                    <th class="p-2.5 border-b">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="assignedOrdersTableBody" class="text-xs text-gray-700">
-                                <tr><td colspan="4" class="p-3 text-center text-gray-400">No assigned orders.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h2 class="text-md font-semibold mb-3 text-emerald-700 border-b pb-1.5">✅ Completed / Delivered Orders</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-50 text-gray-600 text-xs">
-                                    <th class="p-2.5 border-b">ID & Customer</th>
-                                    <th class="p-2.5 border-b">Route</th>
-                                    <th class="p-2.5 border-b">Delivered By</th>
-                                    <th class="p-2.5 border-b">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="completedOrdersTableBody" class="text-xs text-gray-700">
-                                <tr><td colspan="4" class="p-3 text-center text-gray-400">No completed orders yet.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECTION 2: Manage Businesses Tab -->
-        <div id="businessesSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-1 bg-white p-5 rounded-lg shadow-md h-fit">
-                <h2 class="text-md font-semibold mb-3 text-gray-800 border-b pb-1.5">Add New Business</h2>
-                <form id="businessForm" onsubmit="createBusiness(event)" class="space-y-3 text-sm">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Business Name</label>
-                        <input type="text" id="busName" required placeholder="e.g. Mother Hubbard's Stoke" class="w-full mt-0.5 p-1.5 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Phone Number</label>
-                        <input type="text" id="busPhone" required placeholder="e.g. +44 1782..." class="w-full mt-0.5 p-1.5 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Post Code Lookup</label>
-                        <div class="flex gap-2 mt-0.5">
-                            <input type="text" id="busPostcode" placeholder="e.g. ST1 3JF" class="w-full p-1.5 border rounded-md uppercase text-xs">
-                            <button type="button" onclick="searchPostcodeAddresses()" class="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 text-xs font-semibold transition">Search</button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Address Line 1</label>
-                        <input type="text" id="busAddress1" placeholder="e.g. 123 Stafford Street" class="w-full mt-0.5 p-1.5 border rounded-md bg-white">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Area / City Bar</label>
-                        <input type="text" id="busArea" required placeholder="Area & City will load here" class="w-full mt-0.5 p-1.5 border rounded-md bg-gray-50 text-xs">
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 font-semibold text-xs transition">Save & Pin on Map</button>
-                </form>
-            </div>
-
-            <div class="md:col-span-2 bg-white p-5 rounded-lg shadow-md">
-                <h2 class="text-md font-semibold mb-3 text-indigo-800 border-b pb-1.5">🏢 Registered Businesses Directory</h2>
+            <!-- Active Orders List Section -->
+            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Active Orders & Assignment</h2>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left text-xs">
                         <thead>
-                            <tr class="bg-gray-50 text-gray-600 text-xs">
-                                <th class="p-2.5 border-b">Business Name</th>
-                                <th class="p-2.5 border-b">Phone</th>
-                                <th class="p-2.5 border-b">Address & Post Code</th>
-                                <th class="p-2.5 border-b text-center">Action</th>
+                            <tr class="bg-gray-50 text-gray-600 border-b">
+                                <th class="p-2.5">ID & Customer</th>
+                                <th class="p-2.5">Route</th>
+                                <th class="p-2.5">Status</th>
+                                <th class="p-2.5">Assign Driver</th>
                             </tr>
                         </thead>
-                        <tbody id="businessesTableBody" class="text-xs text-gray-700">
-                            <tr><td colspan="4" class="p-3 text-center text-gray-400">No businesses registered yet.</td></tr>
+                        <tbody id="activeOrdersTableBody">
+                            <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading active orders...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- SECTION 3: Drivers Management & Approvals Tab -->
-        <div id="driversSection" class="hidden space-y-6">
-            <div class="bg-amber-50 border border-amber-200 p-5 rounded-lg shadow-md">
-                <h2 class="text-md font-bold text-amber-800 mb-1">🔔 Pending Driver Sign-Up Requests</h2>
-                <p class="text-xs text-amber-700 mb-3">Review and approve new driver registrations so they can log into the driver app.</p>
-                <div class="overflow-x-auto bg-white rounded border">
-                    <table class="w-full text-left border-collapse">
+        <!-- TAB 2: Completed / Delivered Orders Page -->
+        <div id="tabContentCompleted" class="space-y-4 hidden">
+            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                <div class="flex justify-between items-center border-b pb-1.5">
+                    <h2 class="font-bold text-sm text-gray-800">Completed / Delivered Orders Archive</h2>
+                    <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-bold">0 Orders</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
                         <thead>
-                            <tr class="bg-gray-50 text-gray-600 text-xs">
-                                <th class="p-2.5 border-b">ID & Name</th>
-                                <th class="p-2.5 border-b">Mobile</th>
-                                <th class="p-2.5 border-b">Address</th>
-                                <th class="p-2.5 border-b text-center">Action</th>
+                            <tr class="bg-gray-50 text-gray-600 border-b">
+                                <th class="p-2.5">ID & Customer</th>
+                                <th class="p-2.5">Route</th>
+                                <th class="p-2.5">Delivered By</th>
+                                <th class="p-2.5">Status</th>
                             </tr>
                         </thead>
-                        <tbody id="pendingApprovalsTableBody" class="text-xs text-gray-700">
-                            <tr><td colspan="4" class="p-3 text-center text-gray-400">No pending sign-up requests.</td></tr>
+                        <tbody id="completedOrdersTableBody">
+                            <tr><td colspan="4" class="text-center py-6 text-gray-400">No completed orders found.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <div class="bg-white p-5 rounded-lg shadow-md">
-                <div class="flex justify-between items-center mb-4 border-b pb-3">
-                    <div>
-                        <h2 class="text-md font-bold text-gray-800">Approved Drivers Fleet Performance & Earnings</h2>
-                        <p class="text-xs text-gray-500 mt-0.5">Click on any driver to view shift history and earnings (£5.00 per delivery).</p>
-                    </div>
+        <!-- TAB 3: Manage Drivers Page -->
+        <div id="tabContentDrivers" class="space-y-4 hidden">
+            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Driver Approval & Management</h2>
+                <div id="driversListContainer" class="space-y-2 text-xs">
+                    <p class="text-gray-400 text-center py-4">No driver applications pending.</p>
                 </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 text-xs">
-                                <th class="p-2.5 border-b">Driver Name & ID</th>
-                                <th class="p-2.5 border-b">Phone</th>
-                                <th class="p-2.5 border-b">Current Status</th>
-                                <th class="p-2.5 border-b">Total Delivered Trips</th>
-                                <th class="p-2.5 border-b">Total Earnings</th>
-                                <th class="p-2.5 border-b text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="driversEarningsTableBody" class="text-xs text-gray-700">
-                            <tr><td colspan="6" class="p-3 text-center text-gray-400">Loading driver performance metrics...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="driverShiftDetailContainer" class="mt-4 hidden bg-gray-50 p-4 rounded-lg border text-xs"></div>
             </div>
         </div>
 
@@ -235,490 +124,205 @@
 
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
-        let globalOrders = [];
-        let activeDriverIdForDetails = null;
+        let adminMap = null;
+        let markersLayer = null;
 
         function switchTab(tab) {
-            const ordersSec = document.getElementById('ordersSection');
-            const businessSec = document.getElementById('businessesSection');
-            const driversSec = document.getElementById('driversSection');
-            
-            const btnOrders = document.getElementById('btnOrdersTab');
-            const btnBusiness = document.getElementById('btnBusinessesTab');
-            const btnDrivers = document.getElementById('btnDriversTab');
+            document.getElementById('tabContentActive').classList.add('hidden');
+            document.getElementById('tabContentCompleted').classList.add('hidden');
+            document.getElementById('tabContentDrivers').classList.add('hidden');
 
-            ordersSec.classList.add('hidden');
-            businessSec.classList.add('hidden');
-            driversSec.classList.add('hidden');
-            
-            btnOrders.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
-            btnBusiness.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
-            btnDrivers.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
+            document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+            document.getElementById('navTabCompleted').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+            document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
 
-            if (tab === 'orders') {
-                ordersSec.classList.remove('hidden');
-                btnOrders.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
-                setTimeout(() => { adminMap.invalidateSize(); }, 200);
-            } else if (tab === 'businesses') {
-                businessSec.classList.remove('hidden');
-                btnBusiness.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
-                renderBusinesses();
+            if (tab === 'active') {
+                document.getElementById('tabContentActive').classList.remove('hidden');
+                document.getElementById('navTabActive').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
+            } else if (tab === 'completed') {
+                document.getElementById('tabContentCompleted').classList.remove('hidden');
+                document.getElementById('navTabCompleted').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                fetchOrders();
             } else if (tab === 'drivers') {
-                driversSec.classList.remove('hidden');
-                btnDrivers.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
-                fetchDriverPerformance();
+                document.getElementById('tabContentDrivers').classList.remove('hidden');
+                document.getElementById('navTabDrivers').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                loadDriversManagement();
+            }
+        }
+
+        function initAdminMap() {
+            if (!adminMap) {
+                adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(adminMap);
+                markersLayer = L.layerGroup().addTo(adminMap);
+            }
+        }
+
+        async function handleCreateOrder(e) {
+            e.preventDefault();
+            const orderData = {
+                customerName: document.getElementById('orderCustName').value.trim(),
+                customerPhone: document.getElementById('orderCustPhone').value.trim(),
+                pickupAddress: document.getElementById('orderPickup').value.trim(),
+                dropoffAddress: document.getElementById('orderDropoff').value.trim(),
+                specialNotes: document.getElementById('orderNotes').value.trim()
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+                if (res.ok) {
+                    alert('Order created successfully!');
+                    document.getElementById('createOrderForm').reset();
+                    fetchOrders();
+                }
+            } catch (err) {
+                console.error('Error creating order:', err);
             }
         }
 
         async function fetchOrders() {
             try {
-                const response = await fetch(`${API_URL}/orders`);
-                globalOrders = await response.json();
-                renderCategorizedOrders(globalOrders);
-                if (!document.getElementById('driversSection').classList.contains('hidden')) {
-                    renderDriverPerformance();
-                }
-            } catch (error) {
-                console.error('Error fetching orders:', error);
-            }
-        }
+                const res = await fetch(`${API_URL}/orders`);
+                const orders = await res.json();
 
-        async function createOrder(event) {
-            event.preventDefault();
-            const newOrder = {
-                customerName: document.getElementById('custName').value,
-                customerPhone: document.getElementById('custPhone').value,
-                pickupAddress: document.getElementById('pickupAddr').value,
-                dropoffAddress: document.getElementById('dropAddr').value,
-                notes: document.getElementById('orderNotes').value
-            };
+                const activeTable = document.getElementById('activeOrdersTableBody');
+                const completedTable = document.getElementById('completedOrdersTableBody');
+                
+                const activeOrders = orders.filter(o => o.status !== 'Delivered');
+                const completedOrders = orders.filter(o => o.status === 'Delivered');
 
-            try {
-                const response = await fetch(`${API_URL}/orders`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newOrder)
-                });
+                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                let allDrivers = registeredDrivers.filter(d => d.status === 'Approved');
 
-                if (response.ok) {
-                    document.getElementById('orderForm').reset();
-                    fetchOrders();
-                }
-            } catch (error) {
-                console.error('Error creating order:', error);
-            }
-        }
-
-        async function searchPostcodeAddresses() {
-            const postcode = document.getElementById('busPostcode').value.trim();
-            if (!postcode) {
-                alert('Please enter a valid postcode first.');
-                return;
-            }
-
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(postcode)}&addressdetails=1`);
-                const data = await res.json();
-
-                if (data && data.length > 0) {
-                    const firstResult = data[0];
-                    document.getElementById('busArea').dataset.lat = firstResult.lat;
-                    document.getElementById('busArea').dataset.lng = firstResult.lon;
-
-                    let fullDesc = firstResult.display_name;
-                    let parts = fullDesc.split(',').map(p => p.trim());
-                    let filteredParts = parts.filter(p => !p.toUpperCase().includes(postcode.toUpperCase()));
-                    
-                    document.getElementById('busArea').value = filteredParts.join(', ');
-                    alert('Area details loaded successfully!');
+                // Render Active Orders Table
+                if (activeOrders.length === 0) {
+                    activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">No active orders found.</td></tr>`;
                 } else {
-                    alert('Postcode not found. Please type your area manually.');
+                    activeTable.innerHTML = '';
+                    activeOrders.forEach(order => {
+                        let optionsHtml = `<option value="">Select Driver</option>`;
+                        allDrivers.forEach(d => {
+                            optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
+                        });
+
+                        activeTable.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-2.5 font-bold">#${order.id} - ${order.customerName}<br><span class="text-[10px] text-gray-500">${order.customerPhone}</span></td>
+                                <td class="p-2.5 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${order.status || 'Pending'}</span></td>
+                                <td class="p-2.5">
+                                    <select onchange="assignDriver('${order.id}', this.value)" class="border p-1 rounded text-xs w-full">${optionsHtml}</select>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                // Render Completed Orders Table
+                document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
+                if (completedOrders.length === 0) {
+                    completedTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">No completed orders found.</td></tr>`;
+                } else {
+                    completedTable.innerHTML = '';
+                    completedOrders.forEach(order => {
+                        let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                        const assignedDriver = registeredDriversAll.find(d => String(d.id) === String(order.assignedDriverId));
+                        const driverNameDisplay = assignedDriver ? `${assignedDriver.firstName} ${assignedDriver.surname}` : `Driver #${order.assignedDriverId || 'N/A'}`;
+
+                        completedTable.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-2.5 font-bold">#${order.id} - ${order.customerName}</td>
+                                <td class="p-2.5 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-2.5 text-gray-800 font-medium">${driverNameDisplay}</td>
+                                <td class="p-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Delivered</span></td>
+                            </tr>
+                        `;
+                    });
                 }
             } catch (e) {
-                console.error("Error looking up postcode", e);
-                alert('Error connecting to location server.');
+                console.error('Error fetching orders:', e);
             }
-        }
-
-        async function createBusiness(event) {
-            event.preventDefault();
-            const name = document.getElementById('busName').value.trim();
-            const phone = document.getElementById('busPhone').value.trim();
-            const address1 = document.getElementById('busAddress1').value.trim();
-            const area = document.getElementById('busArea').value.trim();
-            const postcode = document.getElementById('busPostcode').value.trim().toUpperCase();
-
-            let lat = document.getElementById('busArea').dataset.lat;
-            let lng = document.getElementById('busArea').dataset.lng;
-
-            if (!lat || !lng) {
-                try {
-                    const fullQuery = `${area}, ${postcode}`;
-                    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`);
-                    const geoData = await geoRes.json();
-                    if (geoData && geoData.length > 0) {
-                        lat = parseFloat(geoData[0].lat);
-                        lng = parseFloat(geoData[0].lon);
-                    } else {
-                        lat = 53.0027;
-                        lng = -2.1794;
-                    }
-                } catch(e) {
-                    lat = 53.0027;
-                    lng = -2.1794;
-                }
-            } else {
-                lat = parseFloat(lat);
-                lng = parseFloat(lng);
-            }
-
-            const fullAddressCombined = address1 ? `${address1}, ${area} (${postcode})` : `${area} (${postcode})`;
-
-            const newBusiness = {
-                id: 'BUS-' + Math.floor(1000 + Math.random() * 9000),
-                name,
-                phone,
-                address: fullAddressCombined,
-                postcode,
-                lat,
-                lng
-            };
-
-            let savedBusinesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
-            savedBusinesses.push(newBusiness);
-            localStorage.setItem('admin_businesses', JSON.stringify(savedBusinesses));
-
-            document.getElementById('businessForm').reset();
-            alert('Business added successfully and pinned on the map!');
-            renderBusinesses();
-            updateAdminMap();
-        }
-
-        function renderBusinesses() {
-            let businesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
-            const tbody = document.getElementById('businessesTableBody');
-
-            if (businesses.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">No businesses registered yet.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = '';
-            businesses.forEach((b, index) => {
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-2.5 font-bold text-indigo-700">${b.name}</td>
-                        <td class="p-2.5 text-gray-600">${b.phone}</td>
-                        <td class="p-2.5 text-xs text-gray-500">${b.address}</td>
-                        <td class="p-2.5 text-center">
-                            <button onclick="deleteBusiness(${index})" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 transition">Delete</button>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        function deleteBusiness(index) {
-            let businesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
-            businesses.splice(index, 1);
-            localStorage.setItem('admin_businesses', JSON.stringify(businesses));
-            renderBusinesses();
-            updateAdminMap();
         }
 
         async function assignDriver(orderId, driverId) {
             if (!driverId) return;
             try {
-                const response = await fetch(`${API_URL}/orders/assign`, {
+                const res = await fetch(`${API_URL}/orders/assign`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderId, driverId })
                 });
-
-                if (response.ok) {
-                    fetchOrders();
-                }
-            } catch (error) {
-                console.error('Error assigning driver:', error);
+                if (res.ok) fetchOrders();
+            } catch (e) {
+                console.error('Error assigning driver:', e);
             }
         }
 
-        async function renderCategorizedOrders(orders) {
-            const newTbody = document.getElementById('newOrdersTableBody');
-            const assignedTbody = document.getElementById('assignedOrdersTableBody');
-            const completedTbody = document.getElementById('completedOrdersTableBody');
-
-            const res = await fetch(`${API_URL}/drivers/locations`);
-            const activeDrivers = await res.json(); 
-            const onlineDriverIds = Object.keys(activeDrivers);
-
-            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            let defaultDrivers = [
-                { id: '1', firstName: 'Ali', surname: 'Khan', status: 'Approved' },
-                { id: '2', firstName: 'Ahmed', surname: 'Raza', status: 'Approved' },
-                { id: '3', firstName: 'Usman', surname: 'Ali', status: 'Approved' }
-            ];
-            let allDrivers = [...defaultDrivers, ...registeredDrivers].filter(d => d.status === 'Approved');
-            let driversList = allDrivers.map(d => ({ id: d.id, name: `${d.firstName} ${d.surname}` }));
-
-            const newOrders = orders.filter(o => !o.assignedDriverId && o.status !== 'Delivered');
-            const assignedOrders = orders.filter(o => o.assignedDriverId && o.status !== 'Delivered');
-            const completedOrders = orders.filter(o => o.status === 'Delivered');
-
-            if (newOrders.length === 0) {
-                newTbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">No new orders pending assignment.</td></tr>`;
-            } else {
-                newTbody.innerHTML = '';
-                newOrders.forEach(order => {
-                    const trackingLink = `customer-track.html?id=${order.id}`;
-                    let optionsHtml = `<option value="">Select Online Driver</option>`;
-                    driversList.forEach(d => {
-                        const isOnline = onlineDriverIds.includes(d.id);
-                        const statusLabel = isOnline ? '' : ' (Offline)';
-                        optionsHtml += `<option value="${d.id}" ${!isOnline ? 'disabled class="text-gray-400"' : ''}>${d.name}${statusLabel}</option>`;
-                    });
-
-                    newTbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-2.5">
-                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
-                                <p class="text-[11px] text-gray-500">${order.customerPhone}</p>
-                                <a href="${trackingLink}" target="_blank" class="text-[11px] text-blue-600 underline mt-0.5 inline-block">Track Link</a>
-                            </td>
-                            <td class="p-2.5 text-xs">
-                                <p><strong>From:</strong> ${order.pickupAddress}</p>
-                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
-                            </td>
-                            <td class="p-2.5">
-                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800">${order.status}</span>
-                            </td>
-                            <td class="p-2.5">
-                                <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">${optionsHtml}</select>
-                            </td>
-                        </tr>`;
-                });
-            }
-
-            if (assignedOrders.length === 0) {
-                assignedTbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">No orders currently assigned/in progress.</td></tr>`;
-            } else {
-                assignedTbody.innerHTML = '';
-                assignedOrders.forEach(order => {
-                    const trackingLink = `customer-track.html?id=${order.id}`;
-                    const assignedDriver = driversList.find(d => String(d.id) === String(order.assignedDriverId));
-                    const driverNameDisplay = assignedDriver ? assignedDriver.name : `Driver #${order.assignedDriverId}`;
-
-                    assignedTbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-2.5">
-                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
-                                <p class="text-[11px] text-gray-500">${order.customerPhone}</p>
-                                <a href="${trackingLink}" target="_blank" class="text-[11px] text-blue-600 underline mt-0.5 inline-block">Track Link</a>
-                            </td>
-                            <td class="p-2.5 text-xs">
-                                <p><strong>From:</strong> ${order.pickupAddress}</p>
-                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
-                            </td>
-                            <td class="p-2.5 font-semibold text-orange-700">${driverNameDisplay}</td>
-                            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-orange-100 text-orange-800">${order.status}</span></td>
-                        </tr>`;
-                });
-            }
-
-            if (completedOrders.length === 0) {
-                completedTbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">No completed orders yet.</td></tr>`;
-            } else {
-                completedTbody.innerHTML = '';
-                completedOrders.forEach(order => {
-                    const trackingLink = `customer-track.html?id=${order.id}`;
-                    const assignedDriver = driversList.find(d => String(d.id) === String(order.assignedDriverId));
-                    const driverNameDisplay = assignedDriver ? assignedDriver.name : `Driver #${order.assignedDriverId}`;
-
-                    completedTbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-2.5">
-                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
-                                <p class="text-[11px] text-gray-500">${order.customerPhone}</p>
-                                <a href="${trackingLink}" target="_blank" class="text-[11px] text-blue-600 underline mt-0.5 inline-block">Track Link</a>
-                            </td>
-                            <td class="p-2.5 text-xs">
-                                <p><strong>From:</strong> ${order.pickupAddress}</p>
-                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
-                            </td>
-                            <td class="p-2.5 text-xs font-medium text-gray-600">${driverNameDisplay}</td>
-                            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">${order.status}</span></td>
-                        </tr>`;
-                });
-            }
-        }
-
-        // Leaflet Map Initialization
-        const adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(adminMap);
-
-        let mapMarkers = [];
-
-        async function updateAdminMap() {
-            mapMarkers.forEach(m => adminMap.removeLayer(m));
-            mapMarkers = [];
-
-            let businesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
-            businesses.forEach(b => {
-                if (b.lat && b.lng) {
-                    const marker = L.marker([b.lat, b.lng]).addTo(adminMap)
-                        .bindPopup(`<b>🏢 ${b.name}</b><br>${b.address}`);
-                    mapMarkers.push(marker);
-                }
-            });
-
+        async function fetchLiveDrivers() {
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
-                const locations = await res.json();
-                
-                let driverListHtml = '';
-                for (const [driverId, data] of Object.entries(locations)) {
-                    driverListHtml += `<div class="flex justify-between items-center bg-gray-50 p-1.5 rounded border mb-1">
-                        <span>🛵 Driver #${driverId}</span>
-                        <span class="text-[10px] text-green-600 font-semibold">Active</span>
-                    </div>`;
+                const drivers = await res.json();
+                if (markersLayer) markersLayer.clearLayers();
 
-                    const marker = L.marker([data.lat, data.lng]).addTo(adminMap)
-                        .bindPopup(`<b>🛵 Driver #${driverId}</b><br>Live Location`);
-                    mapMarkers.push(marker);
+                for (const [driverId, data] of Object.entries(drivers)) {
+                    if (data.lat && data.lng) {
+                        const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>Driver #${driverId}</b><br>Status: Online`);
+                        markersLayer.addLayer(marker);
+                    }
                 }
-
-                document.getElementById('liveDriversList').innerHTML = driverListHtml || '<span class="text-gray-400">No active drivers online.</span>';
             } catch (e) {
-                console.error("Error fetching live driver locations", e);
+                console.error('Error fetching driver locations:', e);
             }
         }
 
-        async function fetchDriverPerformance() {
-            try {
-                const res = await fetch(`${API_URL}/drivers`);
-                const serverDrivers = await res.json();
-                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                
-                let defaultDrivers = [
-                    { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000000001', address: 'Stoke', status: 'Approved' },
-                    { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000000002', address: 'Stoke', status: 'Approved' },
-                    { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000000003', address: 'Stoke', status: 'Approved' }
-                ];
+        function loadDriversManagement() {
+            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            const container = document.getElementById('driversListContainer');
+            if (registered.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-4">No driver applications pending.</p>`;
+                return;
+            }
+            container.innerHTML = '';
+            registered.forEach((drv, index) => {
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-3 rounded-lg border flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800">${drv.firstName} ${drv.surname} (${drv.mobile})</p>
+                            <p class="text-gray-500">Address: ${drv.address} | Status: <span class="font-bold ${drv.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}">${drv.status}</span></p>
+                        </div>
+                        <div>
+                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded font-semibold transition">Approve</button>` : `<span class="text-emerald-600 font-bold">Approved</span>`}
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
-                let allDrivers = [...defaultDrivers, ...serverDrivers, ...registeredDrivers];
-                let uniqueDriversMap = new Map();
-                allDrivers.forEach(d => uniqueDriversMap.set(String(d.id), d));
-                let finalDriversList = Array.from(uniqueDriversMap.values());
-
-                const pendingTbody = document.getElementById('pendingApprovalsTableBody');
-                const pendingDrivers = finalDriversList.filter(d => d.status === 'Pending');
-
-                if (pendingDrivers.length === 0) {
-                    pendingTbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">No pending sign-up requests.</td></tr>`;
-                } else {
-                    pendingTbody.innerHTML = '';
-                    pendingDrivers.forEach(d => {
-                        pendingTbody.innerHTML += `
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="p-2.5 font-bold">#${d.id} - ${d.firstName} ${d.surname}</td>
-                                <td class="p-2.5">${d.mobile}</td>
-                                <td class="p-2.5 text-gray-500">${d.address}</td>
-                                <td class="p-2.5 text-center space-x-1">
-                                    <button onclick="updateDriverApproval('${d.id}', 'Approved')" class="bg-emerald-600 text-white px-2.5 py-1 rounded text-xs hover:bg-emerald-700 font-semibold">Approve</button>
-                                </td>
-                            </tr>`;
-                    });
-                }
-
-                const earningsTbody = document.getElementById('driversEarningsTableBody');
-                const approvedDrivers = finalDriversList.filter(d => d.status === 'Approved');
-
-                if (approvedDrivers.length === 0) {
-                    earningsTbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-gray-400">No approved drivers found.</td></tr>`;
-                } else {
-                    earningsTbody.innerHTML = '';
-                    approvedDrivers.forEach(d => {
-                        const driverOrders = globalOrders.filter(o => String(o.assignedDriverId) === String(d.id) && o.status === 'Delivered');
-                        const totalTrips = driverOrders.length;
-                        const totalEarnings = totalTrips * 5.00;
-
-                        earningsTbody.innerHTML += `
-                            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="viewDriverShiftDetails('${d.id}', '${d.firstName} ${d.surname}')">
-                                <td class="p-2.5 font-bold text-blue-700">#${d.id} - ${d.firstName} ${d.surname}</td>
-                                <td class="p-2.5 text-gray-600">${d.mobile || 'N/A'}</td>
-                                <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-green-100 text-green-800">Approved</span></td>
-                                <td class="p-2.5 font-semibold">${totalTrips}</td>
-                                <td class="p-2.5 font-bold text-emerald-600">£${totalEarnings.toFixed(2)}</td>
-                                <td class="p-2.5 text-center">
-                                    <button class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">View Shifts</button>
-                                </td>
-                            </tr>`;
-                    });
-                }
-            } catch (error) {
-                console.error('Error fetching driver performance:', error);
+        function approveDriver(index) {
+            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            if (registered[index]) {
+                registered[index].status = 'Approved';
+                localStorage.setItem('registered_drivers', JSON.stringify(registered));
+                loadDriversManagement();
+                alert('Driver approved successfully!');
             }
         }
 
-        async function updateDriverApproval(driverId, newStatus) {
-            try {
-                let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                let found = registered.find(d => String(d.id) === String(driverId));
-                if (found) {
-                    found.status = newStatus;
-                    localStorage.setItem('registered_drivers', JSON.stringify(registered));
-                } else {
-                    await fetch(`${API_URL}/drivers/status`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ driverId, status: newStatus })
-                    });
-                }
-                alert(`Driver status updated to ${newStatus}`);
-                fetchDriverPerformance();
-            } catch (e) {
-                console.error("Error updating approval status", e);
-            }
-        }
-
-        function viewDriverShiftDetails(driverId, driverName) {
-            const container = document.getElementById('driverShiftDetailContainer');
-            container.classList.remove('hidden');
-            
-            let allShifts = JSON.parse(localStorage.getItem('driver_real_shifts') || '{}');
-            let driverShifts = allShifts[driverId] || [];
-
-            let html = `<h3 class="font-bold text-sm text-gray-800 mb-2">Shift History for ${driverName} (#${driverId})</h3>`;
-            if (driverShifts.length === 0) {
-                html += `<p class="text-gray-500">No shift records found for this driver.</p>`;
-            } else {
-                html += `<table class="w-full text-left bg-white border rounded">
-                    <thead><tr class="bg-gray-100 text-[11px]"><th class="p-2 border-b">Shift #</th><th class="p-2 border-b">Login Time</th><th class="p-2 border-b">Logout Time</th><th class="p-2 border-b">Status</th></tr></thead>
-                    <tbody>`;
-                driverShifts.forEach(s => {
-                    html += `<tr class="border-b text-[11px]">
-                        <td class="p-2">Shift ${s.shiftNo}</td>
-                        <td class="p-2">${s.loginTime}</td>
-                        <td class="p-2">${s.logoutTime || 'Active Now'}</td>
-                        <td class="p-2 font-semibold ${s.status === 'Ongoing' ? 'text-green-600' : 'text-gray-600'}">${s.status}</td>
-                    </tr>`;
-                });
-                html += `</tbody></table>`;
-            }
-            container.innerHTML = html;
-        }
-
-        // Auto Refresh data every 5 seconds
-        setInterval(() => {
+        window.onload = () => {
+            initAdminMap();
             fetchOrders();
-            updateAdminMap();
-        }, 5000);
-
-        // Initial Load
-        fetchOrders();
-        updateAdminMap();
+            fetchLiveDrivers();
+            setInterval(fetchOrders, 5000);
+            setInterval(fetchLiveDrivers, 4000);
+        };
     </script>
 </body>
 </html>
