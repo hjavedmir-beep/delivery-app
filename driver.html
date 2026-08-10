@@ -3,98 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Portal - Delivery App</title>
+    <title>Delivery Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
 
+    <!-- Top Navigation Bar -->
     <nav class="bg-blue-600 text-white p-3 shadow-md flex justify-between items-center">
-        <h1 class="text-lg font-bold">Driver Portal</h1>
-        <div id="driverNavInfo" class="text-xs hidden">
-            <span id="navDriverName" class="font-semibold mr-3"></span>
-            <button onclick="logoutDriver()" class="bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded text-white font-medium transition">Logout</button>
+        <h1 class="text-base font-bold">Delivery Admin Dashboard</h1>
+        <div class="space-x-2 text-xs">
+            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-3 py-1.5 rounded font-semibold transition">Active Orders & Map</button>
+            <button onclick="switchTab('completed')" id="navTabCompleted" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Completed Orders</button>
+            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Drivers</button>
         </div>
     </nav>
 
-    <div class="container mx-auto p-4 max-w-md">
+    <div class="container mx-auto p-4 max-w-6xl space-y-4">
         
-        <!-- Auth Container (Login / Sign Up) -->
-        <div id="authContainer" class="bg-white p-6 rounded-xl shadow-md space-y-4">
-            <div class="flex border-b pb-2 mb-4">
-                <button onclick="toggleAuthMode('signin')" id="tabSignIn" class="flex-1 pb-1 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition">Sign In</button>
-                <button onclick="toggleAuthMode('signup')" id="tabSignUp" class="flex-1 pb-1 font-semibold text-gray-400 text-sm transition">Sign Up</button>
+        <!-- TAB 1: Active Orders, Map & Order Creation -->
+        <div id="tabContentActive" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- Left: Create Order -->
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                        <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Create New Order</h2>
+                        <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-2.5 text-xs">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block font-medium text-gray-700">Customer Name</label>
+                                    <input type="text" id="orderCustName" required class="w-full mt-1 p-1.5 border rounded">
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-gray-700">Customer Phone</label>
+                                    <input type="text" id="orderCustPhone" required class="w-full mt-1 p-1.5 border rounded">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700">Pickup Address</label>
+                                <input type="text" id="orderPickup" required class="w-full mt-1 p-1.5 border rounded">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700">Drop-off Address</label>
+                                <input type="text" id="orderDropoff" required class="w-full mt-1 p-1.5 border rounded">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-gray-700">Special Notes</label>
+                                <textarea id="orderNotes" rows="2" class="w-full mt-1 p-1.5 border rounded"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-bold transition">Add Order to Server</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right: Live Map View (Moved to where completed orders were) -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Map View (Drivers & Businesses)</h2>
+                    <div id="adminMap" class="w-full h-[340px] rounded-lg"></div>
+                </div>
+
             </div>
 
-            <!-- Sign In Form -->
-            <form id="signInForm" onsubmit="handleSignIn(event)" class="space-y-3 text-sm">
-                <div>
-                    <label class="block text-xs font-medium text-gray-700">Mobile Number or Driver ID</label>
-                    <input type="text" id="loginId" required placeholder="e.g. 1 or +44..." class="w-full mt-1 p-2 border rounded-md">
+            <!-- Active Orders List Section -->
+            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Active Orders & Assignment</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 border-b">
+                                <th class="p-2.5">ID & Customer</th>
+                                <th class="p-2.5">Route</th>
+                                <th class="p-2.5">Status</th>
+                                <th class="p-2.5">Assign Driver</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeOrdersTableBody">
+                            <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading active orders...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700">Password</label>
-                    <input type="password" id="loginPassword" required class="w-full mt-1 p-2 border rounded-md">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white p-2.5 rounded-md hover:bg-blue-700 font-semibold text-xs transition">Sign In</button>
-            </form>
-
-            <!-- Sign Up Form -->
-            <form id="signUpForm" onsubmit="handleSignUp(event)" class="space-y-3 text-sm hidden">
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">First Name</label>
-                        <input type="text" id="regFirstName" required class="w-full mt-1 p-2 border rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Surname</label>
-                        <input type="text" id="regSurname" required class="w-full mt-1 p-2 border rounded-md">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700">Mobile Number</label>
-                    <input type="text" id="regMobile" required placeholder="+44..." class="w-full mt-1 p-2 border rounded-md">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700">Address / City</label>
-                    <input type="text" id="regAddress" required placeholder="Stoke-on-Trent" class="w-full mt-1 p-2 border rounded-md">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700">Password (Min 8 chars, 1 uppercase, 1 number)</label>
-                    <input type="password" id="regPassword" required class="w-full mt-1 p-2 border rounded-md">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700">Confirm Password</label>
-                    <input type="password" id="regConfirmPassword" required class="w-full mt-1 p-2 border rounded-md">
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white p-2.5 rounded-md hover:bg-emerald-700 font-semibold text-xs transition">Register Account</button>
-            </form>
+            </div>
         </div>
 
-        <!-- Driver Dashboard Container (Hidden until logged in) -->
-        <div id="dashboardContainer" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-md text-center space-y-3">
-                <h2 id="welcomeDriverTitle" class="font-bold text-gray-800 text-base">Welcome Driver</h2>
-                <div class="flex justify-center gap-3">
-                    <button id="btnGoOnline" onclick="toggleOnlineStatus(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition">Go Online</button>
-                    <button id="btnGoOffline" onclick="toggleOnlineStatus(false)" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition hidden">Go Offline</button>
-                </div>
-                <p id="onlineStatusText" class="text-xs text-gray-500">Status: Offline</p>
-            </div>
-
-            <!-- Assigned Orders List -->
+        <!-- TAB 2: Completed / Delivered Orders Page -->
+        <div id="tabContentCompleted" class="space-y-4 hidden">
             <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                <h3 class="font-bold text-sm text-gray-800 border-b pb-1.5">Your Assigned Orders</h3>
-                <div id="driverOrdersList" class="space-y-2 text-xs">
-                    <p class="text-gray-400 text-center py-3">No active orders assigned.</p>
+                <div class="flex justify-between items-center border-b pb-1.5">
+                    <h2 class="font-bold text-sm text-gray-800">Completed / Delivered Orders Archive</h2>
+                    <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-bold">0 Orders</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 border-b">
+                                <th class="p-2.5">ID & Customer</th>
+                                <th class="p-2.5">Route</th>
+                                <th class="p-2.5">Delivered By</th>
+                                <th class="p-2.5">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedOrdersTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center py-6 text-gray-400">No completed orders found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Live Map for Driver -->
-            <div class="bg-white p-3 rounded-xl shadow-md">
-                <h3 class="font-bold text-xs mb-1.5 text-gray-700 border-b pb-1">Your Live Location Tracking</h3>
-                <div id="driverMap" class="w-full h-[250px] rounded-lg"></div>
+        <!-- TAB 3: Manage Drivers Page -->
+        <div id="tabContentDrivers" class="space-y-4 hidden">
+            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Driver Approval & Management</h2>
+                <div id="driversListContainer" class="space-y-2 text-xs">
+                    <p class="text-gray-400 text-center py-4">No driver applications pending.</p>
+                </div>
             </div>
         </div>
 
@@ -102,252 +128,214 @@
 
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
-        let currentDriver = null;
-        let isOnline = false;
-        let locationInterval = null;
-        let driverMap = null;
-        let driverMarker = null;
+        let adminMap = null;
+        let markersLayer = null;
 
-        function toggleAuthMode(mode) {
-            const signInForm = document.getElementById('signInForm');
-            const signUpForm = document.getElementById('signUpForm');
-            const tabSignIn = document.getElementById('tabSignIn');
-            const tabSignUp = document.getElementById('tabSignUp');
+        function switchTab(tab) {
+            document.getElementById('tabContentActive').classList.add('hidden');
+            document.getElementById('tabContentCompleted').classList.add('hidden');
+            document.getElementById('tabContentDrivers').classList.add('hidden');
 
-            if (mode === 'signin') {
-                signInForm.classList.remove('hidden');
-                signUpForm.classList.add('hidden');
-                tabSignIn.className = 'flex-1 pb-1 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
-                tabSignUp.className = 'flex-1 pb-1 font-semibold text-gray-400 text-sm transition';
-            } else {
-                signInForm.classList.add('hidden');
-                signUpForm.classList.remove('hidden');
-                tabSignIn.className = 'flex-1 pb-1 font-semibold text-gray-400 text-sm transition';
-                tabSignUp.className = 'flex-1 pb-1 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition';
+            document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+            document.getElementById('navTabCompleted').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+            document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+
+            if (tab === 'active') {
+                document.getElementById('tabContentActive').classList.remove('hidden');
+                document.getElementById('navTabActive').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
+            } else if (tab === 'completed') {
+                document.getElementById('tabContentCompleted').classList.remove('hidden');
+                document.getElementById('navTabCompleted').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                fetchOrders();
+            } else if (tab === 'drivers') {
+                document.getElementById('tabContentDrivers').classList.remove('hidden');
+                document.getElementById('navTabDrivers').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                loadDriversManagement();
             }
         }
 
-        async function handleSignIn(e) {
-            e.preventDefault();
-            const loginId = document.getElementById('loginId').value.trim();
-            const password = document.getElementById('loginPassword').value;
-
-            try {
-                // Check local registered drivers first or API
-                let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                let found = registered.find(d => String(d.id) === loginId || d.mobile === loginId);
-
-                if (found) {
-                    if (found.status !== 'Approved') {
-                        alert('Your account is pending admin approval.');
-                        return;
-                    }
-                    if (found.password && found.password !== password) {
-                        alert('Incorrect password.');
-                        return;
-                    }
-                    currentDriver = found;
-                } else {
-                    // Default test drivers fallback
-                    if (loginId === '1' || loginId === '2' || loginId === '3') {
-                        currentDriver = { id: loginId, firstName: loginId === '1' ? 'Ali' : (loginId === '2' ? 'Ahmed' : 'Usman'), surname: 'Khan' };
-                    } else {
-                        alert('Driver not found or invalid credentials.');
-                        return;
-                    }
-                }
-
-                document.getElementById('authContainer').classList.add('hidden');
-                document.getElementById('dashboardContainer').classList.remove('hidden');
-                document.getElementById('driverNavInfo').classList.remove('hidden');
-                document.getElementById('navDriverName').innerText = `${currentDriver.firstName} ${currentDriver.surname}`;
-                document.getElementById('welcomeDriverTitle').innerText = `Welcome, ${currentDriver.firstName}`;
-
-                initDriverMap();
-                fetchDriverOrders();
-                setInterval(fetchDriverOrders, 5000);
-            } catch (err) {
-                console.error('Sign-in error:', err);
-                alert('Sign in failed. Please check connection.');
-            }
-        }
-
-        async function handleSignUp(e) {
-            e.preventDefault();
-            const firstName = document.getElementById('regFirstName').value.trim();
-            const surname = document.getElementById('regSurname').value.trim();
-            const mobile = document.getElementById('regMobile').value.trim();
-            const address = document.getElementById('regAddress').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const confirmPassword = document.getElementById('regConfirmPassword').value;
-
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-            if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-                alert('Password must be at least 8 characters long, contain at least one uppercase letter and one number.');
-                return;
-            }
-
-            const newDriverObj = {
-                id: 'DRV-' + Math.floor(1000 + Math.random() * 9000),
-                firstName,
-                surname,
-                mobile,
-                address,
-                password,
-                status: 'Pending'
-            };
-
-            try {
-                let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                registered.push(newDriverObj);
-                localStorage.setItem('registered_drivers', JSON.stringify(registered));
-
-                alert('Sign up request submitted successfully! Please wait for Admin approval before signing in.');
-                document.getElementById('signUpForm').reset();
-                toggleAuthMode('signin');
-            } catch (error) {
-                console.error('Error submitting sign up request', error);
-                alert('Error submitting sign up request. Please try again.');
-            }
-        }
-
-        function logoutDriver() {
-            currentDriver = null;
-            toggleOnlineStatus(false);
-            document.getElementById('dashboardContainer').classList.add('hidden');
-            document.getElementById('driverNavInfo').classList.add('hidden');
-            document.getElementById('authContainer').classList.remove('hidden');
-            document.getElementById('signInForm').reset();
-        }
-
-        function initDriverMap() {
-            if (!driverMap) {
-                driverMap = L.map('driverMap').setView([53.0027, -2.1794], 13);
+        function initAdminMap() {
+            if (!adminMap) {
+                adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '© OpenStreetMap'
-                }).addTo(driverMap);
-            } else {
-                setTimeout(() => { driverMap.invalidateSize(); }, 200);
+                }).addTo(adminMap);
+                markersLayer = L.layerGroup().addTo(adminMap);
             }
         }
 
-        function toggleOnlineStatus(status) {
-            isOnline = status;
-            const btnOnline = document.getElementById('btnGoOnline');
-            const btnOffline = document.getElementById('btnGoOffline');
-            const statusText = document.getElementById('onlineStatusText');
+        async function handleCreateOrder(e) {
+            e.preventDefault();
+            const orderData = {
+                customerName: document.getElementById('orderCustName').value.trim(),
+                customerPhone: document.getElementById('orderCustPhone').value.trim(),
+                pickupAddress: document.getElementById('orderPickup').value.trim(),
+                dropoffAddress: document.getElementById('orderDropoff').value.trim(),
+                specialNotes: document.getElementById('orderNotes').value.trim()
+            };
 
-            if (isOnline) {
-                btnOnline.classList.add('hidden');
-                btnOffline.classList.remove('hidden');
-                statusText.innerText = 'Status: Online (Broadcasting Location)';
-                statusText.className = 'text-xs text-emerald-600 font-bold';
-
-                startLocationTracking();
-            } else {
-                btnOffline.classList.add('hidden');
-                btnOnline.classList.remove('hidden');
-                statusText.innerText = 'Status: Offline';
-                statusText.className = 'text-xs text-gray-500';
-
-                if (locationInterval) clearInterval(locationInterval);
-                // Send offline status to server
-                if (currentDriver) {
-                    fetch(`${API_URL}/drivers/location`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ driverId: currentDriver.id, lat: null, lng: null, offline: true })
-                    }).catch(e => console.log(e));
-                }
-            }
-        }
-
-        function startLocationTracking() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(updatePosition, handleGeoError, { enableHighAccuracy: true });
-                locationInterval = setInterval(() => {
-                    navigator.geolocation.getCurrentPosition(updatePosition, handleGeoError, { enableHighAccuracy: true });
-                }, 4000);
-            } else {
-                alert('Geolocation is not supported by your browser.');
-            }
-        }
-
-        function updatePosition(position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-
-            if (driverMap) {
-                driverMap.setView([lat, lng], 15);
-                if (!driverMarker) {
-                    driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('You are here');
-                } else {
-                    driverMarker.setLatLng([lat, lng]);
-                }
-            }
-
-            if (currentDriver && isOnline) {
-                fetch(`${API_URL}/drivers/location`, {
+            try {
+                const res = await fetch(`${API_URL}/orders`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ driverId: currentDriver.id, lat, lng })
-                }).catch(err => console.error('Error sending location:', err));
+                    body: JSON.stringify(orderData)
+                });
+                if (res.ok) {
+                    alert('Order created successfully!');
+                    document.getElementById('createOrderForm').reset();
+                    fetchOrders();
+                } else {
+                    alert('Failed to create order.');
+                }
+            } catch (err) {
+                console.error('Error creating order:', err);
+                alert('Connection error while creating order.');
             }
         }
 
-        function handleGeoError(err) {
-            console.warn(`ERROR(${err.code}): ${err.message}`);
-        }
-
-        async function fetchDriverOrders() {
-            if (!currentDriver) return;
+        async function fetchOrders() {
             try {
                 const res = await fetch(`${API_URL}/orders`);
                 const orders = await res.json();
-                const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id) && o.status !== 'Delivered');
 
-                const container = document.getElementById('driverOrdersList');
-                if (myOrders.length === 0) {
-                    container.innerHTML = `<p class="text-gray-400 text-center py-3">No active orders assigned.</p>`;
-                    return;
+                const activeTable = document.getElementById('activeOrdersTableBody');
+                const completedTable = document.getElementById('completedOrdersTableBody');
+                
+                const activeOrders = orders.filter(o => o.status !== 'Delivered');
+                const completedOrders = orders.filter(o => o.status === 'Delivered');
+
+                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                let defaultDrivers = [
+                    { id: '1', firstName: 'Ali', surname: 'Khan', status: 'Approved' },
+                    { id: '2', firstName: 'Ahmed', surname: 'Raza', status: 'Approved' },
+                    { id: '3', firstName: 'Usman', surname: 'Ali', status: 'Approved' }
+                ];
+                let allDrivers = [...defaultDrivers, ...registeredDrivers].filter(d => d.status === 'Approved');
+
+                // Render Active Orders Table
+                if (activeOrders.length === 0) {
+                    activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">No active orders found.</td></tr>`;
+                } else {
+                    activeTable.innerHTML = '';
+                    activeOrders.forEach(order => {
+                        let optionsHtml = `<option value="">Select Driver</option>`;
+                        allDrivers.forEach(d => {
+                            optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
+                        });
+
+                        activeTable.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-2.5 font-bold">#${order.id} - ${order.customerName}<br><span class="text-[10px] text-gray-500">${order.customerPhone}</span></td>
+                                <td class="p-2.5 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${order.status || 'Pending'}</span></td>
+                                <td class="p-2.5">
+                                    <select onchange="assignDriver('${order.id}', this.value)" class="border p-1 rounded text-xs w-full">${optionsHtml}</select>
+                                </td>
+                            </tr>
+                        `;
+                    });
                 }
 
-                container.innerHTML = '';
-                myOrders.forEach(order => {
-                    container.innerHTML += `
-                        <div class="bg-gray-50 p-3 rounded-lg border space-y-1.5">
-                            <p class="font-bold text-gray-800">Order #${order.id} - ${order.customerName}</p>
-                            <p class="text-gray-600"><strong>Pickup:</strong> ${order.pickupAddress}</p>
-                            <p class="text-gray-600"><strong>Drop-off:</strong> ${order.dropoffAddress}</p>
-                            <button onclick="markDelivered('${order.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded font-semibold transition mt-2">Mark as Delivered</button>
-                        </div>
-                    `;
-                });
+                // Render Completed Orders Table
+                document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
+                if (completedOrders.length === 0) {
+                    completedTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">No completed orders found.</td></tr>`;
+                } else {
+                    completedTable.innerHTML = '';
+                    completedOrders.forEach(order => {
+                        const assignedDriver = allDrivers.find(d => String(d.id) === String(order.assignedDriverId));
+                        const driverNameDisplay = assignedDriver ? `${assignedDriver.firstName} ${assignedDriver.surname}` : `Driver #${order.assignedDriverId || 'N/A'}`;
+
+                        completedTable.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-2.5 font-bold">#${order.id} - ${order.customerName}</td>
+                                <td class="p-2.5 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-2.5 text-gray-800 font-medium">${driverNameDisplay}</td>
+                                <td class="p-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Delivered</span></td>
+                            </tr>
+                        `;
+                    });
+                }
             } catch (e) {
-                console.error("Error fetching driver orders", e);
+                console.error('Error fetching orders:', e);
             }
         }
 
-        async function markDelivered(orderId) {
+        async function assignDriver(orderId, driverId) {
+            if (!driverId) return;
             try {
-                const res = await fetch(`${API_URL}/orders/status`, {
+                const res = await fetch(`${API_URL}/orders/assign`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId, status: 'Delivered' })
+                    body: JSON.stringify({ orderId, driverId })
                 });
                 if (res.ok) {
-                    alert('Order marked as delivered successfully!');
-                    fetchDriverOrders();
+                    fetchOrders();
                 }
             } catch (e) {
-                console.error("Error updating order status", e);
-                alert('Error updating order status.');
+                console.error('Error assigning driver:', e);
             }
         }
+
+        async function fetchLiveDrivers() {
+            try {
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const drivers = await res.json();
+                if (markersLayer) markersLayer.clearLayers();
+
+                for (const [driverId, data] of Object.entries(drivers)) {
+                    if (data.lat && data.lng) {
+                        const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>Driver #${driverId}</b><br>Status: Online`);
+                        markersLayer.addLayer(marker);
+                    }
+                }
+            } catch (e) {
+                console.error('Error fetching driver locations:', e);
+            }
+        }
+
+        function loadDriversManagement() {
+            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            const container = document.getElementById('driversListContainer');
+            if (registered.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-4">No driver applications pending.</p>`;
+                return;
+            }
+            container.innerHTML = '';
+            registered.forEach((drv, index) => {
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-3 rounded-lg border flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800">${drv.firstName} ${drv.surname} (${drv.mobile})</p>
+                            <p class="text-gray-500">Address: ${drv.address} | Status: <span class="font-bold ${drv.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}">${drv.status}</span></p>
+                        </div>
+                        <div>
+                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded font-semibold transition">Approve</button>` : `<span class="text-emerald-600 font-bold">Approved</span>`}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function approveDriver(index) {
+            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            if (registered[index]) {
+                registered[index].status = 'Approved';
+                localStorage.setItem('registered_drivers', JSON.stringify(registered));
+                loadDriversManagement();
+                alert('Driver approved successfully!');
+            }
+        }
+
+        window.onload = () => {
+            initAdminMap();
+            fetchOrders();
+            fetchLiveDrivers();
+            setInterval(fetchOrders, 5000);
+            setInterval(fetchLiveDrivers, 4000);
+        };
     </script>
 </body>
 </html>
