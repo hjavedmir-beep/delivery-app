@@ -64,7 +64,6 @@
         let map = null;
         let marker = null;
 
-        // شفٹس کا ریکارڈ لوکل اسٹوریج میں سیو کرنے کے لیے
         let shiftLogs = JSON.parse(localStorage.getItem('shiftLogs') || '[]');
         let currentShiftStart = localStorage.getItem('currentShiftStart') || null;
 
@@ -79,9 +78,10 @@
                 isOnline = localStorage.getItem('isOnline') === 'true';
                 fetchOrders();
             } else {
-                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
                 document.getElementById('dashboardSection').classList.add('hidden');
             }
+            renderScreen();
         }
 
         function loginDriver() {
@@ -138,7 +138,6 @@
                 localStorage.setItem('currentShiftStart', currentShiftStart);
                 startLocationTracking();
             } else {
-                // شفٹ ختم ہونے پر ریکارڈ لسٹ میں محفوظ کرنا
                 if (currentShiftStart) {
                     shiftLogs.unshift({
                         date: dateString,
@@ -155,6 +154,7 @@
 
         function renderScreen() {
             const container = document.getElementById('mainTabContainer');
+            if (!container) return;
 
             if (currentNav === 'home') {
                 const activeOrders = globalOrders.filter(o => o.status !== 'Delivered');
@@ -252,9 +252,9 @@
                     <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Profile</div>
                     <div class="p-4 text-center">
                         <div class="bg-white p-6 rounded-2xl shadow border mb-4">
-                            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">${currentDriverName.charAt(0)}</div>
-                            <h3 class="font-bold text-gray-800 text-base">${currentDriverName}</h3>
-                            <p class="text-xs text-gray-500 mb-4">Rider ID: #${currentDriverId}</p>
+                            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">${currentDriverName ? currentDriverName.charAt(0) : 'D'}</div>
+                            <h3 class="font-bold text-gray-800 text-base">${currentDriverName || 'Driver'}</h3>
+                            <p class="text-xs text-gray-500 mb-4">Rider ID: #${currentDriverId || 'N/A'}</p>
                             <button onclick="logoutDriver()" class="w-full bg-red-500 text-white py-2.5 rounded-xl font-semibold text-xs">Logout</button>
                         </div>
                     </div>`;
@@ -262,6 +262,9 @@
         }
 
         function initMap() {
+            const mapContainer = document.getElementById('driverMap');
+            if (!mapContainer) return;
+
             if (map) {
                 map.remove();
                 map = null;
@@ -273,8 +276,10 @@
                 navigator.geolocation.getCurrentPosition(position => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-                    map.setView([lat, lng], 15);
-                    marker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
+                    if(map) {
+                        map.setView([lat, lng], 15);
+                        marker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
+                    }
                 });
             }
         }
