@@ -1,345 +1,45 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Delivery App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-</head>
-<body class="bg-gray-100 font-sans">
+async function handleSignUp(e) {
+    e.preventDefault();
+    const firstName = document.getElementById('regFirstName').value.trim();
+    const surname = document.getElementById('regSurname').value.trim();
+    const mobile = document.getElementById('regMobile').value.trim();
+    const address = document.getElementById('regAddress').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
 
-    <!-- AUTHENTICATION CONTAINER -->
-    <div id="authContainer" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-            <h1 id="authTitle" class="text-2xl font-bold text-center mb-6 text-blue-600">Driver Sign In</h1>
-            
-            <!-- Sign In Form -->
-            <form id="signInForm" onsubmit="handleSignIn(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Mobile Number / Driver ID</label>
-                    <input type="text" id="signInPhone" required placeholder="e.g. 1 or +447000..." class="w-full mt-1 p-3 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="signInPassword" required class="w-full mt-1 p-3 border rounded-lg">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 font-semibold transition">Sign In</button>
-                <div class="text-center mt-4">
-                    <p class="text-sm text-gray-600">Don't have an account? <button type="button" onclick="toggleAuthMode('signup')" class="text-blue-600 font-semibold underline">Sign Up</button></p>
-                </div>
-            </form>
+    if (password !== confirmPassword) {
+        alert('Passwords do not match!');
+        return;
+    }
 
-            <!-- Sign Up Form -->
-            <form id="signUpForm" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">First Name</label>
-                    <input type="text" id="regFirstName" required class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Surname</label>
-                    <input type="text" id="regSurname" required class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
-                    <input type="text" id="regMobile" required class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Address</label>
-                    <textarea id="regAddress" required class="w-full mt-1 p-2 border rounded-lg" rows="2"></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="regPassword" required placeholder="Min 8 chars (1 uppercase, 1 number)" class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Retype Password</label>
-                    <input type="password" id="regConfirmPassword" required class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white p-3 rounded-lg hover:bg-emerald-700 font-semibold transition">Submit Sign Up Request</button>
-                <div class="text-center mt-4">
-                    <p class="text-sm text-gray-600">Already have an account? <button type="button" onclick="toggleAuthMode('signin')" class="text-blue-600 font-semibold underline">Sign In</button></p>
-                </div>
-            </form>
-        </div>
-    </div>
+    if (password.length < 8) {
+        alert('Password must be at least 8 characters long.');
+        return;
+    }
 
-    <!-- MAIN DRIVER DASHBOARD -->
-    <div id="driverDashboard" class="hidden container mx-auto p-4 max-w-2xl space-y-6">
-        <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center">
-            <div>
-                <h1 id="driverWelcomeName" class="text-xl font-bold text-gray-800">Driver Portal</h1>
-                <p id="driverPhoneDisplay" class="text-xs text-gray-500"></p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <button onclick="logoutDriver()" class="text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-300 transition">Logout</button>
-                <button id="statusToggleBtn" onclick="toggleOnlineStatus()" class="px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-red-500 text-white">
-                    🔴 Offline
-                </button>
-            </div>
-        </div>
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+        alert('Password must contain at least one uppercase letter and at least one number.');
+        return;
+    }
 
-        <div class="bg-white p-6 rounded-xl shadow-md">
-            <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2">Assigned Orders For You</h2>
-            <div id="assignedOrdersList" class="space-y-4">
-                <p class="text-gray-400 text-sm">Loading assigned orders...</p>
-            </div>
-        </div>
+    const newDriverObj = { firstName, surname, mobile, address, password };
 
-        <div class="bg-white p-6 rounded-xl shadow-md">
-            <h2 class="text-lg font-semibold mb-2 text-gray-800">Your Current Location</h2>
-            <p id="gpsStatus" class="text-xs text-gray-500 mb-3">Acquiring GPS location...</p>
-            <div id="driverMap" class="w-full h-64 rounded-lg border"></div>
-        </div>
-    </div>
+    try {
+        const response = await fetch(`${API_URL}/drivers/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newDriverObj)
+        });
 
-    <script>
-        const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
-        let currentDriver = null;
-        let isOnline = false;
-        let watchId = null;
-        let driverMap = null;
-        let driverMarker = null;
-
-        window.onload = function() {
-            const savedDriver = localStorage.getItem('logged_in_driver');
-            if (savedDriver) {
-                currentDriver = JSON.parse(savedDriver);
-                showDashboard();
-            }
-        };
-
-        function toggleAuthMode(mode) {
-            const signInForm = document.getElementById('signInForm');
-            const signUpForm = document.getElementById('signUpForm');
-            const authTitle = document.getElementById('authTitle');
-
-            if (mode === 'signup') {
-                signInForm.classList.add('hidden');
-                signUpForm.classList.remove('hidden');
-                authTitle.innerText = 'Driver Sign Up Request';
-            } else {
-                signUpForm.classList.add('hidden');
-                signInForm.classList.remove('hidden');
-                authTitle.innerText = 'Driver Sign In';
-            }
-        }
-
-        function handleSignIn(e) {
-            e.preventDefault();
-            const inputVal = document.getElementById('signInPhone').value.trim();
-            const inputPass = document.getElementById('signInPassword').value;
-            
-            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            let defaultDrivers = [
-                { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', password: 'Password1', status: 'Approved' },
-                { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', password: 'Password2', status: 'Approved' },
-                { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', password: 'Password3', status: 'Approved' }
-            ];
-
-            let allDrivers = [...defaultDrivers, ...registeredDrivers];
-            let found = allDrivers.find(d => (d.id === inputVal || d.mobile.includes(inputVal)) && d.password === inputPass);
-
-            if (found) {
-                if (found.status !== 'Approved') {
-                    alert('Your account is pending admin approval. Please wait for the admin to approve your request.');
-                    return;
-                }
-                currentDriver = {
-                    id: found.id,
-                    name: `${found.firstName} ${found.surname}`,
-                    mobile: found.mobile || inputVal
-                };
-                localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
-                showDashboard();
-            } else {
-                alert('Invalid Mobile/ID, Password, or account pending approval!');
-            }
-        }
-
-        function handleSignUp(e) {
-            e.preventDefault();
-            const firstName = document.getElementById('regFirstName').value.trim();
-            const surname = document.getElementById('regSurname').value.trim();
-            const mobile = document.getElementById('regMobile').value.trim();
-            const address = document.getElementById('regAddress').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const confirmPassword = document.getElementById('regConfirmPassword').value;
-
-            if (password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
-            }
-
-            if (password.length < 8) {
-                alert('Password must be at least 8 characters long.');
-                return;
-            }
-
-            if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-                alert('Password must contain at least one uppercase letter and at least one number.');
-                return;
-            }
-
-            const newDriverObj = {
-                id: String(Math.floor(100 + Math.random() * 900)),
-                firstName,
-                surname,
-                mobile,
-                address,
-                password,
-                status: 'Pending' // Requires admin approval
-            };
-
-            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            registeredDrivers.push(newDriverObj);
-            localStorage.setItem('registered_drivers', JSON.stringify(registeredDrivers));
-
+        if (response.ok) {
             alert('Sign up request submitted successfully! Please wait for Admin approval before signing in.');
             toggleAuthMode('signin');
             document.getElementById('signUpForm').reset();
+        } else {
+            alert('Error submitting sign up request. Please try again.');
         }
-
-        function showDashboard() {
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('driverDashboard').classList.remove('hidden');
-            document.getElementById('driverWelcomeName').innerText = `Welcome, ${currentDriver.name} (ID: #${currentDriver.id})`;
-            document.getElementById('driverPhoneDisplay').innerText = `Mobile: ${currentDriver.mobile}`;
-
-            initMap();
-            fetchAssignedOrders();
-            setInterval(fetchAssignedOrders, 4000);
-        }
-
-        function logoutDriver() {
-            if (isOnline) toggleOnlineStatus();
-            localStorage.removeItem('logged_in_driver');
-            location.reload();
-        }
-
-        function initMap() {
-            if (!driverMap) {
-                driverMap = L.map('driverMap').setView([53.0027, -2.1794], 14);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(driverMap);
-            }
-        }
-
-        function toggleOnlineStatus() {
-            isOnline = !isOnline;
-            const btn = document.getElementById('statusToggleBtn');
-            const gpsStatus = document.getElementById('gpsStatus');
-
-            if (isOnline) {
-                btn.className = 'px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-emerald-600 text-white animate-pulse';
-                btn.innerText = '🟢 Online';
-                startLocationTracking();
-            } else {
-                btn.className = 'px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-red-500 text-white';
-                btn.innerText = '🔴 Offline';
-                stopLocationTracking();
-                gpsStatus.innerText = 'You are currently offline.';
-            }
-        }
-
-        function startLocationTracking() {
-            if (navigator.geolocation) {
-                document.getElementById('gpsStatus').innerText = 'Locating via GPS...';
-                watchId = navigator.geolocation.watchPosition(
-                    position => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        document.getElementById('gpsStatus').innerText = `Live GPS Active (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
-
-                        if (driverMap) {
-                            driverMap.setView([lat, lng], 15);
-                            if (driverMarker) {
-                                driverMarker.setLatLng([lat, lng]);
-                            } else {
-                                driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('You are here').openPopup();
-                            }
-                        }
-
-                        fetch(`${API_URL}/drivers/location`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ driverId: currentDriver.id, lat, lng })
-                        }).catch(err => console.error("Error sending location", err));
-                    },
-                    error => {
-                        document.getElementById('gpsStatus').innerText = 'GPS Error: ' + error.message;
-                    },
-                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-                );
-            } else {
-                alert('Geolocation is not supported by your browser');
-            }
-        }
-
-        function stopLocationTracking() {
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            fetch(`${API_URL}/drivers/location`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ driverId: currentDriver.id, lat: null, lng: null })
-            }).catch(err => console.error(err));
-        }
-
-        async function fetchAssignedOrders() {
-            if (!currentDriver) return;
-            try {
-                const res = await fetch(`${API_URL}/orders`);
-                const orders = await res.json();
-                const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
-
-                const container = document.getElementById('assignedOrdersList');
-                if (myOrders.length === 0) {
-                    container.innerHTML = `<p class="text-xs text-gray-400">No active orders assigned to you right now.</p>`;
-                    return;
-                }
-
-                container.innerHTML = '';
-                myOrders.forEach(order => {
-                    const isDelivered = order.status === 'Delivered';
-                    container.innerHTML += `
-                        <div class="border p-4 rounded-lg bg-gray-50 space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-gray-800">Order #${order.id} - ${order.customerName}</span>
-                                <span class="px-2 py-1 rounded text-xs font-semibold ${isDelivered ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}">${order.status}</span>
-                            </div>
-                            <p class="text-xs text-gray-600"><strong>Phone:</strong> ${order.customerPhone}</p>
-                            <p class="text-xs text-gray-600"><strong>Pickup:</strong> ${order.pickupAddress}</p>
-                            <p class="text-xs text-gray-600"><strong>Drop-off:</strong> ${order.dropoffAddress}</p>
-                            ${order.notes ? `<p class="text-xs text-blue-600"><strong>Notes:</strong> ${order.notes}</p>` : ''}
-                            
-                            ${!isDelivered ? `
-                                <button onclick="markDelivered('${order.id}')" class="w-full mt-2 bg-emerald-600 text-white py-2 rounded-md text-xs font-bold hover:bg-emerald-700 transition">Mark as Delivered (£5.00)</button>
-                            ` : `<p class="text-xs text-emerald-600 font-bold text-center mt-2">✓ Completed & Earned (£5.00)</p>`}
-                        </div>
-                    `;
-                });
-            } catch (e) {
-                console.error("Error fetching assigned orders", e);
-            }
-        }
-
-        async function markDelivered(orderId) {
-            try {
-                const res = await fetch(`${API_URL}/orders/status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId, status: 'Delivered' })
-                });
-                if (res.ok) {
-                    fetchAssignedOrders();
-                }
-            } catch (e) {
-                console.error("Error updating status", e);
-            }
-        }
-    </script>
-</body>
-</html>
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Network error. Please check your connection.');
+    }
+}
