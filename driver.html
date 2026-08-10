@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Delivery App</title>
+    <title>Driver Delivery App - Wallet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-100 font-sans text-sm pb-24">
 
-    <!-- Top Navigation Header / Wallet Header -->
-    <nav class="bg-[#5835bc] text-white p-4 shadow-md sticky top-0 z-50 rounded-b-3xl">
-        <div class="flex justify-between items-center mb-3">
+    <!-- Top Wallet Header -->
+    <div class="bg-[#5835bc] text-white pt-5 pb-8 px-4 rounded-b-[30px] shadow-md sticky top-0 z-50">
+        <div class="flex justify-between items-center mb-4">
             <h1 class="text-xl font-bold tracking-wide">Wallet</h1>
             <button onclick="logoutDriver()" id="logoutBtn" class="bg-[#4828a0] hover:bg-[#3b2085] px-3 py-1 rounded-lg font-bold text-xs transition hidden">Logout</button>
         </div>
 
         <!-- Daily / Weekly / Monthly Switcher Tabs -->
-        <div class="flex bg-[#4828a0] p-1 rounded-xl text-xs font-semibold gap-1">
-            <button onclick="switchWalletTab('daily')" id="walletTabDaily" class="flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center">Daily</button>
-            <button onclick="switchWalletTab('weekly')" id="walletTabWeekly" class="flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center">Weekly</button>
-            <button onclick="switchWalletTab('monthly')" id="walletTabMonthly" class="flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center">Monthly</button>
+        <div class="flex bg-[#4828a0]/80 p-1 rounded-2xl text-xs font-semibold gap-1 border border-[#6b42db]">
+            <button onclick="switchWalletTab('daily')" id="walletTabDaily" class="flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center">Daily</button>
+            <button onclick="switchWalletTab('weekly')" id="walletTabWeekly" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Weekly</button>
+            <button onclick="switchWalletTab('monthly')" id="walletTabMonthly" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Monthly</button>
         </div>
-    </nav>
+    </div>
 
     <div class="container mx-auto p-4 max-w-xl space-y-4">
         
@@ -66,19 +66,19 @@
         <!-- SECTION 2: Main Driver Dashboard (Hidden until logged in) -->
         <div id="driverDashboard" class="space-y-4 hidden">
             
-            <!-- MAIN TAB CONTENT: WALLET / EARNINGS -->
+            <!-- TAB CONTENT: WALLET / EARNINGS -->
             <div id="tabContentWallet" class="space-y-4">
                 
                 <!-- Main Earnings Display Card -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm text-center space-y-1 border border-gray-100">
+                <div class="bg-white p-6 rounded-2xl shadow-sm text-center space-y-1.5 border border-gray-100">
                     <h2 id="walletMainAmount" class="text-3xl font-extrabold text-[#5835bc]">£0.00</h2>
-                    <div class="flex justify-center items-center gap-1.5 text-gray-500 text-xs font-semibold pt-1">
-                        <span class="bg-[#5835bc]/10 text-[#5835bc] px-2 py-0.5 rounded-full font-bold">💼</span>
+                    <div class="flex justify-center items-center gap-1.5 text-gray-400 text-xs font-semibold pt-0.5">
+                        <span class="text-base">👝</span>
                         <span id="walletEarningsLabel">Today's earnings</span>
                     </div>
                 </div>
 
-                <!-- Shift Toggle & Status Card -->
+                <!-- Shift Status Control Bar -->
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
                     <div>
                         <div id="displayDriverFullName" class="font-bold text-gray-900 text-sm">Driver Name</div>
@@ -92,52 +92,58 @@
                     </div>
                 </div>
 
-                <!-- Detailed Metrics List -->
+                <!-- Details Section Header -->
+                <div class="font-bold text-gray-900 text-sm px-1 pt-1">Details</div>
+
+                <!-- Detailed Metrics White Card Container -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100 text-sm">
-                    <div class="p-4 font-bold text-gray-800">Details</div>
                     
+                    <!-- Delivery fee -->
                     <div class="p-4 flex justify-between items-center">
-                        <div class="flex items-center gap-3 text-gray-700">
-                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">£</span>
-                            <span>Delivery fee</span>
+                        <div class="flex items-center gap-3 text-gray-800">
+                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">£</div>
+                            <span class="font-medium">Delivery fee</span>
                         </div>
-                        <span id="statDeliveryFee" class="font-extrabold text-gray-900">£0.00</span>
+                        <span id="statDeliveryFee" class="font-extrabold text-gray-900 text-base">£0.00</span>
                     </div>
 
+                    <!-- Number of trips -->
                     <div class="p-4 flex justify-between items-center">
-                        <div class="flex items-center gap-3 text-gray-700">
-                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">📄</span>
-                            <span>Number of trips</span>
+                        <div class="flex items-center gap-3 text-gray-800">
+                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">📄</div>
+                            <span class="font-medium">Number of trips</span>
                         </div>
-                        <span id="statTripsCount" class="font-extrabold text-gray-900">0</span>
+                        <span id="statTripsCount" class="font-extrabold text-gray-900 text-base">0</span>
                     </div>
 
+                    <!-- Time Connected -->
                     <div class="p-4 flex justify-between items-center">
-                        <div class="flex items-center gap-3 text-gray-700">
-                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">⏱️</span>
-                            <span>Time Connected</span>
+                        <div class="flex items-center gap-3 text-gray-800">
+                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">🕒</div>
+                            <span class="font-medium">Time Connected</span>
                         </div>
-                        <span id="statTimeConnected" class="font-extrabold text-gray-900">00h:00m</span>
+                        <span id="statTimeConnected" class="font-extrabold text-gray-900 text-base">00h:00m</span>
                     </div>
 
+                    <!-- Distance -->
                     <div class="p-4 flex justify-between items-center">
-                        <div class="flex items-center gap-3 text-gray-700">
-                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">📍</span>
-                            <span>Distance</span>
+                        <div class="flex items-center gap-3 text-gray-800">
+                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">📍</div>
+                            <span class="font-medium">Distance</span>
                         </div>
-                        <span id="statDistance" class="font-extrabold text-gray-900">0.00 Miles</span>
+                        <span id="statDistance" class="font-extrabold text-gray-900 text-base">0.00Miles</span>
                     </div>
                 </div>
 
-                <!-- Earnings Log Card -->
-                <div class="space-y-2">
-                    <div class="font-bold text-gray-800 text-sm px-1">Earnings</div>
+                <!-- Earnings Log Section -->
+                <div class="space-y-2 pt-2">
+                    <div class="font-bold text-gray-900 text-sm px-1">Earnings</div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
                         <div>
                             <div id="earningsDateLabel" class="font-bold text-gray-900 text-sm">Monday, August 10th, 2026</div>
-                            <div id="earningsSubTripText" class="text-xs text-gray-500 mt-0.5">0 trips</div>
+                            <div id="earningsSubTripText" class="text-xs text-gray-400 mt-0.5">0 trips</div>
                         </div>
-                        <span class="text-gray-400 font-bold">›</span>
+                        <span class="text-gray-400 font-bold text-lg">›</span>
                     </div>
                 </div>
 
@@ -178,19 +184,17 @@
 
     </div>
 
-    <!-- Bottom Navigation Bar matching the image reference -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2.5 px-6 flex justify-around items-center z-50 shadow-lg">
-        <button onclick="switchDriverTab('orders')" id="navBtnOrders" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition">
-            <span class="text-lg">📦</span>
-            <span class="text-[10px] font-bold mt-0.5">Orders</span>
+    <!-- Bottom Navigation Bar matching reference layout -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2.5 px-8 flex justify-around items-center z-50 shadow-lg">
+        <button onclick="switchDriverTab('orders')" id="navBtnOrders" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1">
+            <span class="text-xl">🏠</span>
         </button>
-        <button onclick="switchDriverTab('wallet')" id="navBtnWallet" class="flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full">
-            <span class="text-lg font-bold">💼</span>
-            <span class="text-[10px] font-bold mt-0.5">Wallet</span>
+        <button onclick="switchDriverTab('wallet')" id="navBtnWallet" class="flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs">
+            <span class="text-base">👝</span>
+            <span>Wallet</span>
         </button>
-        <button onclick="switchDriverTab('profile')" id="navBtnProfile" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition">
-            <span class="text-lg">👤</span>
-            <span class="text-[10px] font-bold mt-0.5">Profile</span>
+        <button onclick="switchDriverTab('profile')" id="navBtnProfile" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1">
+            <span class="text-xl">👤</span>
         </button>
     </div>
 
@@ -201,8 +205,7 @@
         let locationInterval = null;
         let driverMap = null;
         let driverMarker = null;
-        let currentWalletFilter = 'daily'; // daily, weekly, monthly
-        let shiftStartTime = null;
+        let currentWalletFilter = 'daily';
         let connectedSeconds = 0;
         let timerInterval = null;
 
@@ -211,37 +214,39 @@
             document.getElementById('tabContentOrders').classList.add('hidden');
             document.getElementById('tabContentProfile').classList.add('hidden');
 
-            document.getElementById('navBtnWallet').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition py-1 px-3 rounded-full';
-            document.getElementById('navBtnOrders').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition py-1 px-3 rounded-full';
-            document.getElementById('navBtnProfile').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition py-1 px-3 rounded-full';
+            document.getElementById('navBtnWallet').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1';
+            document.getElementById('navBtnOrders').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1';
+            document.getElementById('navBtnProfile').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1';
 
             if (tab === 'wallet') {
                 document.getElementById('tabContentWallet').classList.remove('hidden');
-                document.getElementById('navBtnWallet').className = 'flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full';
+                document.getElementById('navBtnWallet').className = 'flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs';
             } else if (tab === 'orders') {
                 document.getElementById('tabContentOrders').classList.remove('hidden');
-                document.getElementById('navBtnOrders').className = 'flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full';
+                document.getElementById('navBtnOrders').className = 'flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs';
+                document.getElementById('navBtnOrders').innerHTML = '<span class="text-base">📦</span><span>Orders</span>';
                 setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 200);
             } else if (tab === 'profile') {
                 document.getElementById('tabContentProfile').classList.remove('hidden');
-                document.getElementById('navBtnProfile').className = 'flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full';
+                document.getElementById('navBtnProfile').className = 'flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs';
+                document.getElementById('navBtnProfile').innerHTML = '<span class="text-base">👤</span><span>Profile</span>';
             }
         }
 
         function switchWalletTab(filter) {
             currentWalletFilter = filter;
-            document.getElementById('walletTabDaily').className = 'flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center';
-            document.getElementById('walletTabWeekly').className = 'flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center';
-            document.getElementById('walletTabMonthly').className = 'flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center';
+            document.getElementById('walletTabDaily').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
+            document.getElementById('walletTabWeekly').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
+            document.getElementById('walletTabMonthly').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
 
             if (filter === 'daily') {
-                document.getElementById('walletTabDaily').className = 'flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletTabDaily').className = 'flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
                 document.getElementById('walletEarningsLabel').innerText = "Today's earnings";
             } else if (filter === 'weekly') {
-                document.getElementById('walletTabWeekly').className = 'flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletTabWeekly').className = 'flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
                 document.getElementById('walletEarningsLabel').innerText = "This week's earnings";
             } else if (filter === 'monthly') {
-                document.getElementById('walletTabMonthly').className = 'flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletTabMonthly').className = 'flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
                 document.getElementById('walletEarningsLabel').innerText = "This month's earnings";
             }
             fetchDriverAssignedOrders();
@@ -355,7 +360,6 @@
                 initDriverMap(53.0027, -2.1794);
             }
 
-            // Set current date string
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('earningsDateLabel').innerText = new Date().toLocaleDateString('en-US', options);
 
@@ -395,7 +399,6 @@
                     connectedSeconds++;
                     const hrs = String(Math.floor(connectedSeconds / 3600)).padStart(2, '0');
                     const mins = String(Math.floor((connectedSeconds % 3600) / 60)).padStart(2, '0');
-                    const secs = String(connectedSeconds % 60).padStart(2, '0');
                     document.getElementById('statTimeConnected').innerText = `${hrs}h:${mins}m`;
                 }, 1000);
 
