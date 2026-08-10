@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Maps JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <nav class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-xl font-bold">Admin Dispatch Panel</h1>
+        <span class="text-sm bg-blue-700 px-3 py-1 rounded">Connected to Server</span>
+    </nav>
+
+    <div class="container mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Left Column: Create Order, Live Drivers & Live Map -->
+        <div class="space-y-6 md:col-span-1">
+            <!-- Create Order Form -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Create New Order</h2>
+                <form id="orderForm" onsubmit="createOrder(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                        <input type="text" id="custName" required class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+                        <input type="text" id="custPhone" required class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Pickup Address</label>
+                        <input type="text" id="pickupAddr" required class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Drop-off Address</label>
+                        <input type="text" id="dropAddr" required class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Special Notes</label>
+                        <textarea id="orderNotes" class="w-full mt-1 p-2 border rounded-md"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold transition">Add Order to Server</button>
+                </form>
+            </div>
+
+            <!-- Live Drivers Location Box -->
+            <div class="bg-white p-4 rounded-xl shadow border">
+                <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Drivers Location</h3>
+                <div id="liveDriversList" class="text-xs text-gray-600">
+                    Loading live locations...
+                </div>
+            </div>
+
+            <!-- Live Map View Box -->
+            <div class="bg-white p-4 rounded-xl shadow border">
+                <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Map View</h3>
+                <div id="adminMap" class="w-full h-64 rounded-lg"></div>
+            </div>
+        </div>
+
+        <!-- Right Column: Orders Queue -->
+        <div class="md:col-span-2 space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Live Orders Queue</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm">
+                                <th class="p-3 border-b">ID & Customer</th>
+                                <th class="p-3 border-b">Route</th>
+                                <th class="p-3 border-b">Status</th>
+                                <th class="p-3 border-b">Assign Driver</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody" class="text-sm text-gray-700">
+                            <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = 'https://alumni-skinny-morbidly.ngrok-free.dev/api';
+
+        async function fetchOrders() {
+            try {
+                const response = await fetch(`${API_URL}/orders`);
+                const orders = await response.json();
+                renderOrders(orders);
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+            }
+        }
+
+        async function createOrder(event) {
+            event.preventDefault();
+            
+            const newOrder = {
+                customerName: document.getElementById('custName').value,
+                customerPhone: document.getElementById('custPhone').value,
+                pickupAddress: document.getElementById('pickupAddr').value,
+                dropoffAddress: document.getElementById('dropAddr').value,
+                notes: document.getElementById('orderNotes').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newOrder)
+                });
+
+                if (response.ok) {
+                    document.getElementById('orderForm').reset();
+                    fetchOrders();
+                }
+            } catch (error) {
+                console.error('Error creating order:', error);
+            }
+        }
+
+        async function assignDriver(orderId, driverId) {
+            if (!driverId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/orders/assign`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId, driverId })
+                });
+
+                if (response.ok) {
+                    fetchOrders();
+                }
+            } catch (error) {
+                console.error('Error assigning driver:', error);
+            }
+        }
+
+        function renderOrders(orders) {
+            const tbody = document.getElementById('ordersTableBody');
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No active orders.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            orders.forEach(order => {
+                // کسٹمر کے لیے ٹریکنگ لنک بنانے کا طریقہ (اگر ضرورت ہو تو استعمال کر سکتے ہیں)
+                const trackingLink = `customer-track.html?id=${order.id}`;
+
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3">
+                            <p class="font-bold">#${order.id} - ${order.customerName}</p>
+                            <p class="text-xs text-gray-500">${order.customerPhone}</p>
+                            <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
+                        </td>
+                        <td class="p-3 text-xs">
+                            <p><strong>From:</strong> ${order.pickupAddress}</p>
+                            <p><strong>To:</strong> ${order.dropoffAddress}</p>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">
+                                ${order.status}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded">
+                                <option value="">Select Driver</option>
+                                <option value="1">Ali Khan</option>
+                                <option value="2">Ahmed Raza</option>
+                                <option value="3">Usman Ali</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // ڈرائیورز کی لائیو لوکیشن لانے کا فنکشن
+        async function fetchDriversLocations() {
+            try {
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const locations = await res.json();
+                
+                const container = document.getElementById('liveDriversList');
+                const driverIds = Object.keys(locations);
+
+                if (driverIds.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400">No active drivers online.</p>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                driverIds.forEach(id => {
+                    const loc = locations[id];
+                    container.innerHTML += `
+                        <div class="flex justify-between py-1 border-b">
+                            <span><strong>Driver ID ${id}</strong></span>
+                            <span class="text-green-600 font-mono">Lat: ${loc.lat.toFixed(4)}, Lng: ${loc.lng.toFixed(4)}</span>
+                        </div>`;
+                });
+            } catch (e) {
+                console.error("Error fetching driver locations", e);
+            }
+        }
+
+        // --- ایڈمن میپ انٹیگریشن ---
+        let adminMap = L.map('adminMap').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
+
+        let driverMarkers = {};
+
+        async function updateAdminMap() {
+            try {
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const locations = await res.json();
+
+                Object.keys(locations).forEach(id => {
+                    const loc = locations[id];
+                    if (driverMarkers[id]) {
+                        driverMarkers[id].setLatLng([loc.lat, loc.lng]);
+                    } else {
+                        driverMarkers[id] = L.marker([loc.lat, loc.lng]).addTo(adminMap).bindPopup(`Driver ID: ${id}`);
+                    }
+                });
+            } catch (e) {
+                console.error("Map update error", e);
+            }
+        }
+
+        // صفحہ کھلتے ہی ڈیٹا لوڈ کریں اور ہر 3 سیکنڈ بعد آٹو ریفریش کریں
+        fetchOrders();
+        fetchDriversLocations();
+        updateAdminMap();
+
+        setInterval(() => {
+            fetchOrders();
+            fetchDriversLocations();
+            updateAdminMap();
+        }, 3000);
+    </script>
+</body>
+</html>

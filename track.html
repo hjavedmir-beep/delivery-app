@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Order</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
+        <h1 class="text-xl font-bold text-gray-800 mb-4 text-center">Live Order Tracking</h1>
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="orderIdInput" placeholder="Enter Order ID (e.g. 3148)" class="flex-1 p-2 border rounded-lg text-sm">
+            <button onclick="trackOrder()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Track</button>
+        </div>
+        <div id="trackingResult" class="p-4 bg-gray-50 rounded-xl border text-sm text-center text-gray-500">
+            Enter your order ID above to check status.
+        </div>
+    </div>
+
+    <script>
+        async function trackOrder() {
+            const id = document.getElementById('orderIdInput').value.trim();
+            const resultBox = document.getElementById('trackingResult');
+            if(!id) return;
+
+            try {
+                const res = await fetch(`http://localhost:3000/api/orders`);
+                const orders = await res.json();
+                const order = orders.find(o => o.id === id);
+
+                if(!order) {
+                    resultBox.innerHTML = `<span class="text-red-500">Order not found! Please check ID.</span>`;
+                    return;
+                }
+
+                resultBox.innerHTML = `
+                    <div class="text-left">
+                        <p class="font-bold text-gray-800 mb-1">Order #${order.id}</p>
+                        <p class="text-xs text-gray-600 mb-2"><strong>Customer:</strong> ${order.customerName}</p>
+                        <div class="p-2 bg-blue-50 text-blue-800 font-bold rounded text-center text-xs">
+                            Status: ${order.status}
+                        </div>
+                    </div>`;
+            } catch(err) {
+                resultBox.innerHTML = `<span class="text-red-500">Error connecting to server.</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

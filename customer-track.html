@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Order</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <div class="bg-blue-600 text-white p-4 shadow text-center font-bold text-lg">
+        Live Order Tracking
+    </div>
+
+    <div class="p-4 bg-white shadow-sm flex justify-between items-center text-sm">
+        <div>
+            <p class="font-bold text-gray-800">Order ID: <span id="orderIdText">#----</span></p>
+            <p class="text-gray-500 text-xs" id="orderStatus">Status: Loading...</p>
+        </div>
+        <div class="text-right">
+            <p class="text-xs text-gray-500">Assigned Driver</p>
+            <p class="font-bold text-gray-800" id="driverName">Not Assigned</p>
+        </div>
+    </div>
+
+    <!-- لائیو میپ کنٹینر -->
+    <div id="map" class="flex-1 w-full"></div>
+
+    <script>
+        const API_URL = 'https://alumni-skinny-morbidly.ngrok-free.dev/api';
+        
+        // URL سے آرڈر ID حاصل کریں (مثلاً: customer-track.html?id=123)
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('id');
+        document.getElementById('orderIdText').innerText = `#${orderId || 'N/A'}`;
+
+        let map = L.map('map').setView([51.505, -0.09], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        let marker = null;
+
+        async function trackOrder() {
+            try {
+                const res = await fetch(`${API_URL}/orders`);
+                const orders = await res.json();
+                const order = orders.find(o => String(o.id) === String(orderId));
+
+                if (!order) return;
+
+                document.getElementById('orderStatus').innerText = `Status: ${order.status}`;
+                document.getElementById('driverName').innerText = order.assignedDriverName || `Driver #${order.assignedDriverId || 'None'}`;
+
+                if (order.assignedDriverId) {
+                    const locRes = await fetch(`${API_URL}/drivers/locations`);
+                    const locations = await locRes.json();
+                    const driverLoc = locations[order.assignedDriverId];
+
+                    if (driverLoc) {
+                        const lat = driverLoc.lat;
+                        const lng = driverLoc.lng;
+
+                        if (!marker) {
+                            marker = L.marker([lat, lng]).addTo(map).bindPopup('Driver is here').openPopup();
+                        } else {
+                            marker.setLatLng([lat, lng]);
+                        }
+                        map.setView([lat, lng], 15);
+                    }
+                }
+            } catch (e) {
+                console.error("Tracking error", e);
+            }
+        }
+
+        if (orderId) {
+            setInterval(trackOrder, 3000);
+            trackOrder();
+        }
+    </script>
+</body>
+</html>
