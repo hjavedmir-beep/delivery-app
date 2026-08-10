@@ -14,6 +14,7 @@
         <h1 class="text-xl font-bold">Admin Dispatch Panel</h1>
         <div class="space-x-4">
             <button onclick="switchTab('orders')" id="btnOrdersTab" class="bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition">Orders & Map</button>
+            <button onclick="switchTab('businesses')" id="btnBusinessesTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Manage Businesses</button>
             <button onclick="switchTab('drivers')" id="btnDriversTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Drivers Management & Earnings</button>
         </div>
     </nav>
@@ -56,7 +57,7 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-xl shadow border">
-                    <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Map View</h3>
+                    <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Map View (Drivers & Businesses)</h3>
                     <div id="adminMap" class="w-full h-64 rounded-lg"></div>
                 </div>
             </div>
@@ -121,10 +122,53 @@
             </div>
         </div>
 
-        <!-- SECTION 2: Drivers Management & Approvals Tab -->
+        <!-- SECTION 2: Manage Businesses Tab -->
+        <div id="businessesSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-1 bg-white p-6 rounded-lg shadow-md h-fit">
+                <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Add New Business</h2>
+                <form id="businessForm" onsubmit="createBusiness(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Business Name</label>
+                        <input type="text" id="busName" required placeholder="e.g. Mother Hubbard's Stoke" class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <input type="text" id="busPhone" required placeholder="e.g. +44 1782..." class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Street Address</label>
+                        <input type="text" id="busAddress" required placeholder="e.g. Stafford Street" class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Post Code</label>
+                        <input type="text" id="busPostcode" required placeholder="e.g. ST1 1AA" class="w-full mt-1 p-2 border rounded-md">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 font-semibold transition">Save & Pin on Map</button>
+                </form>
+            </div>
+
+            <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold mb-4 text-indigo-800 border-b pb-2">🏢 Registered Businesses Directory</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm">
+                                <th class="p-3 border-b">Business Name</th>
+                                <th class="p-3 border-b">Phone</th>
+                                <th class="p-3 border-b">Address & Post Code</th>
+                                <th class="p-3 border-b text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="businessesTableBody" class="text-sm text-gray-700">
+                            <tr><td colspan="4" class="p-4 text-center text-gray-400">No businesses registered yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Drivers Management & Approvals Tab -->
         <div id="driversSection" class="hidden space-y-6">
-            
-            <!-- Pending Sign-Up Approvals Notification Box -->
             <div class="bg-amber-50 border border-amber-200 p-6 rounded-lg shadow-md">
                 <h2 class="text-lg font-bold text-amber-800 mb-2">🔔 Pending Driver Sign-Up Requests</h2>
                 <p class="text-xs text-amber-700 mb-4">Review and approve new driver registrations so they can log into the driver app.</p>
@@ -145,7 +189,6 @@
                 </div>
             </div>
 
-            <!-- Fleet Performance & Earnings -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
                     <div>
@@ -185,21 +228,32 @@
 
         function switchTab(tab) {
             const ordersSec = document.getElementById('ordersSection');
+            const businessSec = document.getElementById('businessesSection');
             const driversSec = document.getElementById('driversSection');
+            
             const btnOrders = document.getElementById('btnOrdersTab');
+            const btnBusiness = document.getElementById('btnBusinessesTab');
             const btnDrivers = document.getElementById('btnDriversTab');
+
+            ordersSec.classList.add('hidden');
+            businessSec.classList.add('hidden');
+            driversSec.classList.add('hidden');
+            
+            btnOrders.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
+            btnBusiness.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
+            btnDrivers.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
 
             if (tab === 'orders') {
                 ordersSec.classList.remove('hidden');
-                driversSec.classList.add('hidden');
                 btnOrders.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
-                btnDrivers.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
                 setTimeout(() => { adminMap.invalidateSize(); }, 200);
-            } else {
-                ordersSec.classList.add('hidden');
+            } else if (tab === 'businesses') {
+                businessSec.classList.remove('hidden');
+                btnBusiness.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
+                renderBusinesses();
+            } else if (tab === 'drivers') {
                 driversSec.classList.remove('hidden');
                 btnDrivers.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
-                btnOrders.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
                 fetchDriverPerformance();
             }
         }
@@ -241,6 +295,82 @@
             } catch (error) {
                 console.error('Error creating order:', error);
             }
+        }
+
+        async function createBusiness(event) {
+            event.preventDefault();
+            const name = document.getElementById('busName').value.trim();
+            const phone = document.getElementById('busPhone').value.trim();
+            const address = document.getElementById('busAddress').value.trim();
+            const postcode = document.getElementById('busPostcode').value.trim();
+
+            const fullQuery = `${address}, ${postcode}`;
+            try {
+                // Using OpenStreetMap Nominatim API for Geocoding Address & Postcode
+                const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`);
+                const geoData = await geoRes.json();
+
+                let lat = 53.0027; // Default Stoke-on-Trent coordinates if not found
+                let lng = -2.1794;
+
+                if (geoData && geoData.length > 0) {
+                    lat = parseFloat(geoData[0].lat);
+                    lng = parseFloat(geoData[0].lon);
+                }
+
+                const newBusiness = {
+                    id: 'BUS-' + Math.floor(1000 + Math.random() * 9000),
+                    name,
+                    phone,
+                    address,
+                    postcode,
+                    lat,
+                    lng
+                };
+
+                let savedBusinesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
+                savedBusinesses.push(newBusiness);
+                localStorage.setItem('admin_businesses', JSON.stringify(savedBusinesses));
+
+                document.getElementById('businessForm').reset();
+                alert('Business added successfully and pinned on the map!');
+                renderBusinesses();
+                updateAdminMap();
+            } catch (e) {
+                console.error("Error geocoding business address", e);
+                alert('Error processing location coordinates.');
+            }
+        }
+
+        function renderBusinesses() {
+            let businesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
+            const tbody = document.getElementById('businessesTableBody');
+
+            if (businesses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No businesses registered yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            businesses.forEach((b, index) => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-bold text-indigo-700">${b.name}</td>
+                        <td class="p-3 text-gray-600">${b.phone}</td>
+                        <td class="p-3 text-xs text-gray-500">${b.address}, <strong>${b.postcode}</strong></td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteBusiness(${index})" class="bg-red-500 text-white px-2.5 py-1 rounded text-xs hover:bg-red-600 transition">Delete</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function deleteBusiness(index) {
+            let businesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
+            businesses.splice(index, 1);
+            localStorage.setItem('admin_businesses', JSON.stringify(businesses));
+            renderBusinesses();
+            updateAdminMap();
         }
 
         async function assignDriver(orderId, driverId) {
@@ -566,9 +696,30 @@
         let adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
         let driverMarkers = {};
+        let businessMarkers = [];
 
         async function updateAdminMap() {
             try {
+                // Clear existing business markers from map
+                businessMarkers.forEach(m => adminMap.removeLayer(m));
+                businessMarkers = [];
+
+                // Render Businesses on Map
+                let businesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
+                businesses.forEach(b => {
+                    if (b.lat && b.lng) {
+                        const marker = L.marker([b.lat, b.lng], {
+                            icon: L.divIcon({
+                                className: 'custom-bus-pin',
+                                html: '<div style="background-color:#4f46e5; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:10px; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,0.3);">🏢 ' + b.name + '</div>',
+                                iconSize: [100, 30]
+                            })
+                        }).addTo(adminMap).bindPopup(`<b>${b.name}</b><br>📞 ${b.phone}<br>${b.address}, ${b.postcode}`);
+                        businessMarkers.push(marker);
+                    }
+                });
+
+                // Render Drivers on Map
                 const res = await fetch(`${API_URL}/drivers/locations`);
                 const locations = await res.json();
                 let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
@@ -583,7 +734,7 @@
                     if (driverMarkers[id]) {
                         driverMarkers[id].setLatLng([loc.lat, loc.lng]);
                     } else {
-                        driverMarkers[id] = L.marker([loc.lat, loc.lng]).addTo(adminMap).bindPopup(`${driverName} (ID: ${id})`);
+                        driverMarkers[id] = L.marker([loc.lat, loc.lng]).addTo(adminMap).bindPopup(`🛵 ${driverName} (ID: ${id})`);
                     }
                 });
             } catch (e) {
