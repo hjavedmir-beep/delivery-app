@@ -130,11 +130,24 @@
         <div id="tabContentDrivers" class="space-y-5 hidden">
             <div class="bg-white p-5 rounded-xl shadow-md space-y-5">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h2 class="font-bold text-base text-gray-800">Driver Directory, Real-Time Shifts & Live Earnings</h2>
+                    <h2 class="font-bold text-base text-gray-800">Driver Directory & Live Deliveries Tracker</h2>
                     <button onclick="loadDriversManagement()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Drivers</button>
                 </div>
-                <div id="driversListContainer" class="space-y-4 text-sm">
-                    <p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-800 border-b font-bold">
+                                <th class="p-3">Driver Name</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Phone Number</th>
+                                <th class="p-3">Total Deliveries</th>
+                                <th class="p-3 text-right">Action / Approval</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driversTableBody">
+                            <tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No driver applications pending or registered.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -492,56 +505,35 @@
 
         function loadDriversManagement() {
             let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            const container = document.getElementById('driversListContainer');
-            if (!container) return;
+            const tableBody = document.getElementById('driversTableBody');
+            if (!tableBody) return;
 
             if (registered.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No driver applications pending or registered.</td></tr>`;
                 return;
             }
 
-            container.innerHTML = '';
+            tableBody.innerHTML = '';
             registered.forEach((drv, index) => {
                 const isOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
                 const driverCompletedOrders = allOrdersCache.filter(o => String(o.assignedDriverId) === String(drv.id) && o.status === 'Delivered');
-                
-                const RATE_PER_ORDER = 5.00;
-                const realTimeEarnings = driverCompletedOrders.length * RATE_PER_ORDER;
 
-                let currentShiftStatus = isOnline ? '<span class="text-emerald-700 font-bold">Active Shift In Progress</span>' : '<span class="text-gray-500">Shift Ended / Offline</span>';
-                let shiftStartDisplay = drv.lastLoginTime || (isOnline ? 'Today, Live Online' : 'N/A');
-                let shiftEndDisplay = isOnline ? 'Ongoing...' : (drv.lastLogoutTime || 'Offline');
-
-                container.innerHTML += `
-                    <div class="bg-gray-50 p-5 rounded-xl border-2 space-y-4">
-                        <div class="flex flex-wrap justify-between items-start gap-3 border-b pb-3">
-                            <div>
-                                <div class="flex items-center gap-3">
-                                    <h3 class="font-bold text-gray-900 text-lg">${drv.firstName} ${drv.surname}</h3>
-                                    ${isOnline 
-                                        ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> ONLINE</span>`
-                                        : `<span class="bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold">OFFLINE</span>`
-                                    }
-                                </div>
-                                <p class="text-gray-600 text-sm mt-1">📞 Phone: <a href="tel:${drv.mobile}" class="text-blue-600 font-bold hover:underline">${drv.mobile}</a> | 🏠 Address: <span class="font-medium text-gray-800">${drv.address || 'N/A'}</span></p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">Approval: ${drv.status}</span>
-                                ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition">Approve Driver</button>` : ''}
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center flex-wrap gap-2">
-                                <h4 class="font-bold text-gray-800 text-sm">⏱ Real-Time Shift & Live Earnings Tracker</h4>
-                                <span class="text-xs font-bold text-gray-700 bg-gray-200 px-2.5 py-1 rounded-lg">Live Session Total: <span class="text-emerald-700 font-extrabold">£${realTimeEarnings.toFixed(2)}</span> (${driverCompletedOrders.length} delivered)</span>
-                            </div>
-                            <div class="bg-white p-3 rounded-lg border text-xs space-y-1 text-gray-700">
-                                <p><strong>Shift State:</strong> ${currentShiftStatus}</p>
-                                <p><strong>Shift Start:</strong> ${shiftStartDisplay} | <strong>Shift End:</strong> ${shiftEndDisplay}</p>
-                            </div>
-                        </div>
-                    </div>
+                tableBody.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-bold text-gray-900">${drv.firstName} ${drv.surname}</td>
+                        <td class="p-3">
+                            ${isOnline 
+                                ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Online</span>`
+                                : `<span class="bg-gray-200 text-gray-600 px-2.5 py-1 rounded-full text-xs font-bold">Offline</span>`
+                            }
+                        </td>
+                        <td class="p-3 text-gray-700 font-medium"><a href="tel:${drv.mobile}" class="text-blue-600 hover:underline">${drv.mobile}</a></td>
+                        <td class="p-3 font-bold text-gray-900">${driverCompletedOrders.length}</td>
+                        <td class="p-3 text-right space-x-2">
+                            <span class="font-bold px-2.5 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${drv.status}</span>
+                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold text-xs transition">Approve</button>` : ''}
+                        </td>
+                    </tr>
                 `;
             });
         }
