@@ -13,10 +13,11 @@
     <!-- Top Navigation Bar -->
     <nav class="bg-blue-600 text-white p-3 shadow-md flex justify-between items-center">
         <h1 class="text-base font-bold">Delivery Admin Dashboard</h1>
-        <div class="space-x-2 text-xs">
+        <div class="space-x-1 text-xs">
             <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-3 py-1.5 rounded font-semibold transition">Active Orders & Map</button>
             <button onclick="switchTab('completed')" id="navTabCompleted" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Completed Orders</button>
             <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Drivers</button>
+            <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Businesses</button>
         </div>
     </nav>
 
@@ -122,6 +123,35 @@
             </div>
         </div>
 
+        <!-- TAB 4: Manage Businesses Page -->
+        <div id="tabContentBusinesses" class="space-y-4 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Add Business Form -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Add New Business</h2>
+                    <form id="addBusinessForm" onsubmit="handleAddBusiness(event)" class="space-y-2.5 text-xs">
+                        <div>
+                            <label class="block font-medium text-gray-700">Business Name</label>
+                            <input type="text" id="busName" required class="w-full mt-1 p-1.5 border rounded">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-gray-700">Business Address / Location</label>
+                            <input type="text" id="busAddress" required class="w-full mt-1 p-1.5 border rounded">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-bold transition">Save Business</button>
+                    </form>
+                </div>
+
+                <!-- List Registered Businesses -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Registered Businesses</h2>
+                    <div id="businessesListContainer" class="space-y-2 text-xs max-h-[250px] overflow-y-auto">
+                        <p class="text-gray-400 text-center py-4">No businesses registered yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -133,10 +163,12 @@
             document.getElementById('tabContentActive').classList.add('hidden');
             document.getElementById('tabContentCompleted').classList.add('hidden');
             document.getElementById('tabContentDrivers').classList.add('hidden');
+            document.getElementById('tabContentBusinesses').classList.add('hidden');
 
             document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
             document.getElementById('navTabCompleted').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
             document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+            document.getElementById('navTabBusinesses').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
 
             if (tab === 'active') {
                 document.getElementById('tabContentActive').classList.remove('hidden');
@@ -150,6 +182,10 @@
                 document.getElementById('tabContentDrivers').classList.remove('hidden');
                 document.getElementById('navTabDrivers').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
                 loadDriversManagement();
+            } else if (tab === 'businesses') {
+                document.getElementById('tabContentBusinesses').classList.remove('hidden');
+                document.getElementById('navTabBusinesses').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
+                loadBusinessesManagement();
             }
         }
 
@@ -169,14 +205,6 @@
             if (!pickupSelect) return;
 
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            
-            // Fallback default options if none exist in localStorage yet
-            if (businesses.length === 0) {
-                businesses = [
-                    { name: "Mother Hubbard's - Main Branch", address: "Stoke-on-Trent" },
-                    { name: "Mother Hubbard's - Branch 2", address: "Hanley, Stoke-on-Trent" }
-                ];
-            }
 
             let optionsHtml = '<option value="">Select Registered Business</option>';
             businesses.forEach(b => {
@@ -184,6 +212,55 @@
                 optionsHtml += `<option value="${displayName}">${displayName}</option>`;
             });
             pickupSelect.innerHTML = optionsHtml;
+        }
+
+        function handleAddBusiness(e) {
+            e.preventDefault();
+            const name = document.getElementById('busName').value.trim();
+            const address = document.getElementById('busAddress').value.trim();
+
+            if (!name || !address) return;
+
+            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
+            businesses.push({ id: Date.now(), name, address });
+            localStorage.setItem('registered_businesses', JSON.stringify(businesses));
+
+            document.getElementById('addBusinessForm').reset();
+            loadBusinessesManagement();
+            loadRegisteredBusinesses();
+            alert('Business added successfully!');
+        }
+
+        function loadBusinessesManagement() {
+            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
+            const container = document.getElementById('businessesListContainer');
+            if (!container) return;
+
+            if (businesses.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-4">No businesses registered yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            businesses.forEach((b, index) => {
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-2.5 rounded-lg border flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800">${b.name}</p>
+                            <p class="text-gray-500 text-[11px]">${b.address}</p>
+                        </div>
+                        <button onclick="deleteBusiness(${index})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition">Delete</button>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteBusiness(index) {
+            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
+            businesses.splice(index, 1);
+            localStorage.setItem('registered_businesses', JSON.stringify(businesses));
+            loadBusinessesManagement();
+            loadRegisteredBusinesses();
         }
 
         async function handleCreateOrder(e) {
@@ -195,6 +272,11 @@
                 dropoffAddress: document.getElementById('orderDropoff').value.trim(),
                 specialNotes: document.getElementById('orderNotes').value.trim()
             };
+
+            if (!orderData.pickupAddress) {
+                alert('Please select a registered business for pickup.');
+                return;
+            }
 
             try {
                 const res = await fetch(`${API_URL}/orders`, {
@@ -344,6 +426,7 @@
         window.onload = () => {
             initAdminMap();
             loadRegisteredBusinesses();
+            loadBusinessesManagement();
             fetchOrders();
             fetchLiveDrivers();
             setInterval(fetchOrders, 5000);
