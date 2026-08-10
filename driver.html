@@ -45,7 +45,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://alumni-skinny-morbidly.ngrok-free.dev/api';
+        const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
         let currentDriverId = localStorage.getItem('driverId') || null;
         let currentDriverName = localStorage.getItem('driverName') || '';
         let activeTab = 'jobs';
@@ -95,7 +95,7 @@
                 const orders = await res.json();
                 const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriverId));
 
-                // نیا آرڈر آنے پر ساؤنڈ الرट بجانا
+                // نیا آرڈر آنے پر ساؤنڈ الرٹ بجانا
                 if (activeTab === 'jobs' && myOrders.length > lastOrderCount && lastOrderCount !== 0) {
                     alertSound.play().catch(e => console.log("Audio play blocked"));
                 }
