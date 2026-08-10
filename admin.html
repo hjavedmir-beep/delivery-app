@@ -208,6 +208,7 @@
                 document.getElementById('tabContentActive').classList.remove('hidden');
                 document.getElementById('navTabActive').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
                 fetchOrders();
+                refreshMapPins();
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else if (tab === 'drivers') {
                 document.getElementById('tabContentDrivers').classList.remove('hidden');
@@ -270,7 +271,7 @@
             pickupSelect.innerHTML = optionsHtml;
         }
 
-        function handleAddBusiness(e) {
+        async function handleAddBusiness(e) {
             e.preventDefault();
             const name = document.getElementById('busName').value.trim();
             const phone = document.getElementById('busPhone').value.trim();
@@ -281,15 +282,30 @@
 
             if (!name || !phone || !address1 || !postcode) return;
 
+            // Fetch latitude and longitude from postcodes.io so we can pin it on the map
+            let lat = null;
+            let lng = null;
+            try {
+                const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+                const data = await res.json();
+                if (data.status === 200 && data.result) {
+                    lat = data.result.latitude;
+                    lng = data.result.longitude;
+                }
+            } catch (err) {
+                console.error('Error fetching business coordinates:', err);
+            }
+
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            businesses.push({ id: Date.now(), name, phone, address1, address2, postcode, area });
+            businesses.push({ id: Date.now(), name, phone, address1, address2, postcode, area, lat, lng });
             localStorage.setItem('registered_businesses', JSON.stringify(businesses));
 
             document.getElementById('addBusinessForm').reset();
             document.getElementById('busArea').value = '';
             loadBusinessesManagement();
             loadRegisteredBusinesses();
-            alert('Business saved and pinned successfully!');
+            refreshMapPins();
+            alert('Business saved and pinned on map successfully!');
         }
 
         function loadBusinessesManagement() {
@@ -324,6 +340,7 @@
             localStorage.setItem('registered_businesses', JSON.stringify(businesses));
             loadBusinessesManagement();
             loadRegisteredBusinesses();
+            refreshMapPins();
         }
 
         async function handleCreateOrder(e) {
@@ -372,14 +389,12 @@
 
                 let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
                 
-                // FILTER: Only include approved drivers who have active live location coordinates (meaning they are online)
                 let onlineDrivers = registeredDrivers.filter(d => {
                     const isApproved = d.status === 'Approved';
                     const hasLiveLocation = onlineDriversCache[d.id] && onlineDriversCache[d.id].lat && onlineDriversCache[d.id].lng;
                     return isApproved && hasLiveLocation;
                 });
 
-                // Render Active Orders Table
                 if (activeOrders.length === 0) {
                     activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
                 } else {
@@ -403,7 +418,6 @@
                     });
                 }
 
-                // Render Completed Orders Table
                 document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
                 if (completedOrders.length === 0) {
                     completedTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>`;
@@ -456,18 +470,15 @@
                 let updated = false;
                 const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-                // Detect shift start / end transitions in real-time
                 registeredDriversAll.forEach(drv => {
                     const hasLoc = drivers[drv.id] && drivers[drv.id].lat && drivers[drv.id].lng;
                     const wasOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
 
                     if (hasLoc && !wasOnline) {
-                        // Driver just came online -> Record Shift Start
                         drv.lastShiftStart = currentTimeStr;
                         drv.lastShiftEnd = 'Ongoing...';
                         updated = true;
                     } else if (!hasLoc && wasOnline) {
-                        // Driver just went offline -> Record Shift End
                         drv.lastShiftEnd = currentTimeStr;
                         updated = true;
                     }
@@ -478,7 +489,7 @@
                 }
 
                 onlineDriversCache = drivers; 
-                if (markersLayer) markersLayer.clearLayers();
+                refreshMapPins();
 
                 const driversWidget = document.getElementById('liveDriversListWidget');
                 let activeDriversCount = 0;
@@ -491,9 +502,6 @@
                         const drvName = drvObj ? `${drvObj.firstName} ${drvObj.surname}` : `Driver #${driverId}`;
                         
                         driverHtml += `<div class="text-emerald-800 font-bold text-sm">• ${drvName} (Online)</div>`;
-
-                        const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>${drvName}</b><br>Status: Online`);
-                        markersLayer.addLayer(marker);
                     }
                 }
 
@@ -510,6 +518,34 @@
                 }
             } catch (e) {
                 console.error('Error fetching driver locations:', e);
+            }
+        }
+
+        // Combines plotting both registered businesses and live drivers on the map
+        function refreshMapPins() {
+            if (!markersLayer) return;
+            markersLayer.clearLayers();
+
+            // 1. Pin Registered Businesses
+            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
+            businesses.forEach(b => {
+                if (b.lat && b.lng) {
+                    // Custom style or standard marker for business
+                    const marker = L.marker([b.lat, b.lng]).bindPopup(`<b>🏢 ${b.name} (Business)</b><br>${b.address1}, ${b.postcode}`);
+                    markersLayer.addLayer(marker);
+                }
+            });
+
+            // 2. Pin Live Drivers
+            let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            for (const [driverId, data] of Object.entries(onlineDriversCache)) {
+                if (data.lat && data.lng) {
+                    const drvObj = registeredDriversAll.find(d => String(d.id) === String(driverId));
+                    const drvName = drvObj ? `${drvObj.firstName} ${drvObj.surname}` : `Driver #${driverId}`;
+                    
+                    const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>🚗 ${drvName}</b><br>Status: Online`);
+                    markersLayer.addLayer(marker);
+                }
             }
         }
 
