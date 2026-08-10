@@ -141,7 +141,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Post Code</label>
-                        <input type="text" id="busPostcode" required placeholder="e.g. ST1 1AA" class="w-full mt-1 p-2 border rounded-md">
+                        <input type="text" id="busPostcode" required placeholder="e.g. ST1 1AA" class="w-full mt-1 p-2 border rounded-md uppercase">
                     </div>
                     <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 font-semibold transition">Save & Pin on Map</button>
                 </form>
@@ -302,15 +302,15 @@
             const name = document.getElementById('busName').value.trim();
             const phone = document.getElementById('busPhone').value.trim();
             const address = document.getElementById('busAddress').value.trim();
-            const postcode = document.getElementById('busPostcode').value.trim();
+            const postcode = document.getElementById('busPostcode').value.trim().toUpperCase();
 
             const fullQuery = `${address}, ${postcode}`;
             try {
-                // Using OpenStreetMap Nominatim API for Geocoding Address & Postcode
+                // Using OpenStreetMap Nominatim API to get accurate lat/lng from address and postcode
                 const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`);
                 const geoData = await geoRes.json();
 
-                let lat = 53.0027; // Default Stoke-on-Trent coordinates if not found
+                let lat = 53.0027; // Default Stoke-on-Trent coordinates
                 let lng = -2.1794;
 
                 if (geoData && geoData.length > 0) {
@@ -322,7 +322,7 @@
                     id: 'BUS-' + Math.floor(1000 + Math.random() * 9000),
                     name,
                     phone,
-                    address,
+                    address: `${address}, ${postcode}`,
                     postcode,
                     lat,
                     lng
@@ -357,7 +357,7 @@
                     <tr class="border-b hover:bg-gray-50">
                         <td class="p-3 font-bold text-indigo-700">${b.name}</td>
                         <td class="p-3 text-gray-600">${b.phone}</td>
-                        <td class="p-3 text-xs text-gray-500">${b.address}, <strong>${b.postcode}</strong></td>
+                        <td class="p-3 text-xs text-gray-500">${b.address}</td>
                         <td class="p-3 text-center">
                             <button onclick="deleteBusiness(${index})" class="bg-red-500 text-white px-2.5 py-1 rounded text-xs hover:bg-red-600 transition">Delete</button>
                         </td>
@@ -700,11 +700,9 @@
 
         async function updateAdminMap() {
             try {
-                // Clear existing business markers from map
                 businessMarkers.forEach(m => adminMap.removeLayer(m));
                 businessMarkers = [];
 
-                // Render Businesses on Map
                 let businesses = JSON.parse(localStorage.getItem('admin_businesses') || '[]');
                 businesses.forEach(b => {
                     if (b.lat && b.lng) {
@@ -714,12 +712,11 @@
                                 html: '<div style="background-color:#4f46e5; color:white; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:10px; white-space:nowrap; box-shadow:0 2px 4px rgba(0,0,0,0.3);">🏢 ' + b.name + '</div>',
                                 iconSize: [100, 30]
                             })
-                        }).addTo(adminMap).bindPopup(`<b>${b.name}</b><br>📞 ${b.phone}<br>${b.address}, ${b.postcode}`);
+                        }).addTo(adminMap).bindPopup(`<b>${b.name}</b><br>📞 ${b.phone}<br>${b.address}`);
                         businessMarkers.push(marker);
                     }
                 });
 
-                // Render Drivers on Map
                 const res = await fetch(`${API_URL}/drivers/locations`);
                 const locations = await res.json();
                 let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
