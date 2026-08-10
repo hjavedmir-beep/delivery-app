@@ -3,338 +3,518 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delivery Admin Dashboard</title>
+    <title>Driver Delivery App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans text-sm pb-24">
 
-    <!-- Top Navigation Bar -->
-    <nav class="bg-blue-600 text-white p-3 shadow-md flex justify-between items-center">
-        <h1 class="text-base font-bold">Delivery Admin Dashboard</h1>
-        <div class="space-x-2 text-xs">
-            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-3 py-1.5 rounded font-semibold transition">Active Orders & Map</button>
-            <button onclick="switchTab('completed')" id="navTabCompleted" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Completed Orders</button>
-            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Drivers</button>
+    <!-- Top Navigation Header / Wallet Header -->
+    <nav class="bg-[#5835bc] text-white p-4 shadow-md sticky top-0 z-50 rounded-b-3xl">
+        <div class="flex justify-between items-center mb-3">
+            <h1 class="text-xl font-bold tracking-wide">Wallet</h1>
+            <button onclick="logoutDriver()" id="logoutBtn" class="bg-[#4828a0] hover:bg-[#3b2085] px-3 py-1 rounded-lg font-bold text-xs transition hidden">Logout</button>
+        </div>
+
+        <!-- Daily / Weekly / Monthly Switcher Tabs -->
+        <div class="flex bg-[#4828a0] p-1 rounded-xl text-xs font-semibold gap-1">
+            <button onclick="switchWalletTab('daily')" id="walletTabDaily" class="flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center">Daily</button>
+            <button onclick="switchWalletTab('weekly')" id="walletTabWeekly" class="flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center">Weekly</button>
+            <button onclick="switchWalletTab('monthly')" id="walletTabMonthly" class="flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center">Monthly</button>
         </div>
     </nav>
 
-    <div class="container mx-auto p-4 max-w-6xl space-y-4">
+    <div class="container mx-auto p-4 max-w-xl space-y-4">
         
-        <!-- TAB 1: Active Orders, Map & Order Creation -->
-        <div id="tabContentActive" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- SECTION 1: Driver Registration / Login Card -->
+        <div id="authCard" class="bg-white p-5 rounded-2xl shadow-sm space-y-4 border border-gray-100">
+            <h2 class="font-bold text-base text-gray-800 border-b pb-2">Driver Access & Registration</h2>
+            
+            <div id="registrationFormContainer">
+                <p class="text-xs text-gray-600 mb-3">Register your details below to apply for a delivery account.</p>
+                <form id="driverRegForm" onsubmit="handleDriverRegister(event)" class="space-y-3 text-sm">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold text-gray-700 text-xs">First Name</label>
+                            <input type="text" id="regFirstName" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700 text-xs">Surname</label>
+                            <input type="text" id="regSurname" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 text-xs">Mobile Number</label>
+                        <input type="tel" id="regMobile" required class="w-full mt-1 p-2 border rounded-lg text-sm" placeholder="e.g. 07123456789">
+                    </div>
+                    <button type="submit" class="w-full bg-[#5835bc] hover:bg-[#4828a0] text-white p-2.5 rounded-xl font-bold transition">Register Account</button>
+                </form>
+            </div>
+
+            <div class="border-t pt-3 mt-3">
+                <label class="block font-semibold text-gray-700 text-xs mb-1">Or Select Existing Registered Driver:</label>
+                <div class="flex gap-2">
+                    <select id="existingDriverSelect" class="border p-2 rounded-lg text-sm bg-white flex-grow">
+                        <option value="">Select your name...</option>
+                    </select>
+                    <button onclick="loginExistingDriver()" class="bg-[#5835bc] hover:bg-[#4828a0] text-white px-4 py-2 rounded-lg font-bold text-xs transition">Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Main Driver Dashboard (Hidden until logged in) -->
+        <div id="driverDashboard" class="space-y-4 hidden">
+            
+            <!-- MAIN TAB CONTENT: WALLET / EARNINGS -->
+            <div id="tabContentWallet" class="space-y-4">
                 
-                <!-- Left: Create Order -->
-                <div class="space-y-4">
-                    <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                        <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Create New Order</h2>
-                        <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-2.5 text-xs">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block font-medium text-gray-700">Customer Name</label>
-                                    <input type="text" id="orderCustName" required class="w-full mt-1 p-1.5 border rounded">
-                                </div>
-                                <div>
-                                    <label class="block font-medium text-gray-700">Customer Phone</label>
-                                    <input type="text" id="orderCustPhone" required class="w-full mt-1 p-1.5 border rounded">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block font-medium text-gray-700">Pickup Address</label>
-                                <input type="text" id="orderPickup" required class="w-full mt-1 p-1.5 border rounded">
-                            </div>
-                            <div>
-                                <label class="block font-medium text-gray-700">Drop-off Address</label>
-                                <input type="text" id="orderDropoff" required class="w-full mt-1 p-1.5 border rounded">
-                            </div>
-                            <div>
-                                <label class="block font-medium text-gray-700">Special Notes</label>
-                                <textarea id="orderNotes" rows="2" class="w-full mt-1 p-1.5 border rounded"></textarea>
-                            </div>
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-bold transition">Add Order to Server</button>
-                        </form>
+                <!-- Main Earnings Display Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm text-center space-y-1 border border-gray-100">
+                    <h2 id="walletMainAmount" class="text-3xl font-extrabold text-[#5835bc]">£0.00</h2>
+                    <div class="flex justify-center items-center gap-1.5 text-gray-500 text-xs font-semibold pt-1">
+                        <span class="bg-[#5835bc]/10 text-[#5835bc] px-2 py-0.5 rounded-full font-bold">💼</span>
+                        <span id="walletEarningsLabel">Today's earnings</span>
                     </div>
                 </div>
 
-                <!-- Right: Live Map View (Moved to where completed orders were) -->
-                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Map View (Drivers & Businesses)</h2>
-                    <div id="adminMap" class="w-full h-[340px] rounded-lg"></div>
+                <!-- Shift Toggle & Status Card -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <div id="displayDriverFullName" class="font-bold text-gray-900 text-sm">Driver Name</div>
+                        <span id="displayApprovalBadge" class="text-xs font-bold text-amber-600">Status: Pending</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="shiftStatusIndicator" class="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">Offline</span>
+                        <button id="toggleShiftBtn" onclick="toggleShift()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm" disabled>
+                            Go Online
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Detailed Metrics List -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100 text-sm">
+                    <div class="p-4 font-bold text-gray-800">Details</div>
+                    
+                    <div class="p-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3 text-gray-700">
+                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">£</span>
+                            <span>Delivery fee</span>
+                        </div>
+                        <span id="statDeliveryFee" class="font-extrabold text-gray-900">£0.00</span>
+                    </div>
+
+                    <div class="p-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3 text-gray-700">
+                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">📄</span>
+                            <span>Number of trips</span>
+                        </div>
+                        <span id="statTripsCount" class="font-extrabold text-gray-900">0</span>
+                    </div>
+
+                    <div class="p-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3 text-gray-700">
+                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">⏱️</span>
+                            <span>Time Connected</span>
+                        </div>
+                        <span id="statTimeConnected" class="font-extrabold text-gray-900">00h:00m</span>
+                    </div>
+
+                    <div class="p-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3 text-gray-700">
+                            <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs border border-emerald-100">📍</span>
+                            <span>Distance</span>
+                        </div>
+                        <span id="statDistance" class="font-extrabold text-gray-900">0.00 Miles</span>
+                    </div>
+                </div>
+
+                <!-- Earnings Log Card -->
+                <div class="space-y-2">
+                    <div class="font-bold text-gray-800 text-sm px-1">Earnings</div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <div id="earningsDateLabel" class="font-bold text-gray-900 text-sm">Monday, August 10th, 2026</div>
+                            <div id="earningsSubTripText" class="text-xs text-gray-500 mt-0.5">0 trips</div>
+                        </div>
+                        <span class="text-gray-400 font-bold">›</span>
+                    </div>
                 </div>
 
             </div>
 
-            <!-- Active Orders List Section -->
-            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Active Orders & Assignment</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 border-b">
-                                <th class="p-2.5">ID & Customer</th>
-                                <th class="p-2.5">Route</th>
-                                <th class="p-2.5">Status</th>
-                                <th class="p-2.5">Assign Driver</th>
-                            </tr>
-                        </thead>
-                        <tbody id="activeOrdersTableBody">
-                            <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading active orders...</td></tr>
-                        </tbody>
-                    </table>
+            <!-- TAB CONTENT: ORDERS / DELIVERIES -->
+            <div id="tabContentOrders" class="space-y-4 hidden">
+                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h3 class="font-bold text-base text-gray-800">📦 Assigned Delivery Orders</h3>
+                        <button onclick="fetchDriverAssignedOrders()" class="text-xs text-[#5835bc] font-bold hover:underline">Refresh</button>
+                    </div>
+                    <div id="assignedOrdersContainer" class="space-y-3">
+                        <p class="text-gray-400 text-center py-6 font-semibold text-xs">No active orders assigned to you right now.</p>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- TAB 2: Completed / Delivered Orders Page -->
-        <div id="tabContentCompleted" class="space-y-4 hidden">
-            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                <div class="flex justify-between items-center border-b pb-1.5">
-                    <h2 class="font-bold text-sm text-gray-800">Completed / Delivered Orders Archive</h2>
-                    <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-bold">0 Orders</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 border-b">
-                                <th class="p-2.5">ID & Customer</th>
-                                <th class="p-2.5">Route</th>
-                                <th class="p-2.5">Delivered By</th>
-                                <th class="p-2.5">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="completedOrdersTableBody">
-                            <tr>
-                                <td colspan="4" class="text-center py-6 text-gray-400">No completed orders found.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- Live GPS Map View -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-2 border border-gray-100">
+                    <h3 class="font-bold text-base text-gray-800 border-b pb-2">🗺️ Your Current GPS Location</h3>
+                    <div id="driverMap" class="w-full h-[220px] rounded-xl"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- TAB 3: Manage Drivers Page -->
-        <div id="tabContentDrivers" class="space-y-4 hidden">
-            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Driver Approval & Management</h2>
-                <div id="driversListContainer" class="space-y-2 text-xs">
-                    <p class="text-gray-400 text-center py-4">No driver applications pending.</p>
+            <!-- TAB CONTENT: PROFILE / ACCOUNT -->
+            <div id="tabContentProfile" class="space-y-4 hidden">
+                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100 text-center py-10">
+                    <div class="w-16 h-16 bg-[#5835bc]/10 text-[#5835bc] rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-2" id="profileInitial">D</div>
+                    <h3 id="profileName" class="font-bold text-lg text-gray-900">Driver Name</h3>
+                    <p id="profilePhone" class="text-xs text-gray-500">Phone number</p>
+                    <div class="pt-4">
+                        <button onclick="logoutDriver()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs transition">Logout Account</button>
+                    </div>
                 </div>
             </div>
+
         </div>
 
     </div>
 
+    <!-- Bottom Navigation Bar matching the image reference -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2.5 px-6 flex justify-around items-center z-50 shadow-lg">
+        <button onclick="switchDriverTab('orders')" id="navBtnOrders" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition">
+            <span class="text-lg">📦</span>
+            <span class="text-[10px] font-bold mt-0.5">Orders</span>
+        </button>
+        <button onclick="switchDriverTab('wallet')" id="navBtnWallet" class="flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full">
+            <span class="text-lg font-bold">💼</span>
+            <span class="text-[10px] font-bold mt-0.5">Wallet</span>
+        </button>
+        <button onclick="switchDriverTab('profile')" id="navBtnProfile" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition">
+            <span class="text-lg">👤</span>
+            <span class="text-[10px] font-bold mt-0.5">Profile</span>
+        </button>
+    </div>
+
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
-        let adminMap = null;
-        let markersLayer = null;
+        let currentDriver = null;
+        let isOnline = false;
+        let locationInterval = null;
+        let driverMap = null;
+        let driverMarker = null;
+        let currentWalletFilter = 'daily'; // daily, weekly, monthly
+        let shiftStartTime = null;
+        let connectedSeconds = 0;
+        let timerInterval = null;
 
-        function switchTab(tab) {
-            document.getElementById('tabContentActive').classList.add('hidden');
-            document.getElementById('tabContentCompleted').classList.add('hidden');
-            document.getElementById('tabContentDrivers').classList.add('hidden');
+        function switchDriverTab(tab) {
+            document.getElementById('tabContentWallet').classList.add('hidden');
+            document.getElementById('tabContentOrders').classList.add('hidden');
+            document.getElementById('tabContentProfile').classList.add('hidden');
 
-            document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
-            document.getElementById('navTabCompleted').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
-            document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
+            document.getElementById('navBtnWallet').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition py-1 px-3 rounded-full';
+            document.getElementById('navBtnOrders').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition py-1 px-3 rounded-full';
+            document.getElementById('navBtnProfile').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition py-1 px-3 rounded-full';
 
-            if (tab === 'active') {
-                document.getElementById('tabContentActive').classList.remove('hidden');
-                document.getElementById('navTabActive').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
-                setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
-            } else if (tab === 'completed') {
-                document.getElementById('tabContentCompleted').classList.remove('hidden');
-                document.getElementById('navTabCompleted').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
-                fetchOrders();
-            } else if (tab === 'drivers') {
-                document.getElementById('tabContentDrivers').classList.remove('hidden');
-                document.getElementById('navTabDrivers').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
-                loadDriversManagement();
+            if (tab === 'wallet') {
+                document.getElementById('tabContentWallet').classList.remove('hidden');
+                document.getElementById('navBtnWallet').className = 'flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full';
+            } else if (tab === 'orders') {
+                document.getElementById('tabContentOrders').classList.remove('hidden');
+                document.getElementById('navBtnOrders').className = 'flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full';
+                setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 200);
+            } else if (tab === 'profile') {
+                document.getElementById('tabContentProfile').classList.remove('hidden');
+                document.getElementById('navBtnProfile').className = 'flex flex-col items-center text-[#5835bc] transition bg-[#5835bc]/10 px-5 py-1.5 rounded-full';
             }
         }
 
-        function initAdminMap() {
-            if (!adminMap) {
-                adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
+        function switchWalletTab(filter) {
+            currentWalletFilter = filter;
+            document.getElementById('walletTabDaily').className = 'flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center';
+            document.getElementById('walletTabWeekly').className = 'flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center';
+            document.getElementById('walletTabMonthly').className = 'flex-1 py-2 rounded-lg text-white hover:bg-[#5835bc]/50 transition text-center';
+
+            if (filter === 'daily') {
+                document.getElementById('walletTabDaily').className = 'flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletEarningsLabel').innerText = "Today's earnings";
+            } else if (filter === 'weekly') {
+                document.getElementById('walletTabWeekly').className = 'flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletEarningsLabel').innerText = "This week's earnings";
+            } else if (filter === 'monthly') {
+                document.getElementById('walletTabMonthly').className = 'flex-1 py-2 rounded-lg bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletEarningsLabel').innerText = "This month's earnings";
+            }
+            fetchDriverAssignedOrders();
+        }
+
+        function initDriverMap(lat, lng) {
+            if (!driverMap) {
+                driverMap = L.map('driverMap').setView([lat || 53.0027, lng || -2.1794], 14);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '© OpenStreetMap'
-                }).addTo(adminMap);
-                markersLayer = L.layerGroup().addTo(adminMap);
+                }).addTo(driverMap);
+            } else {
+                driverMap.setView([lat, lng], 14);
+            }
+
+            if (driverMarker) {
+                driverMarker.setLatLng([lat, lng]);
+            } else {
+                driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('<b>You are here</b>');
             }
         }
 
-        async function handleCreateOrder(e) {
-            e.preventDefault();
-            const orderData = {
-                customerName: document.getElementById('orderCustName').value.trim(),
-                customerPhone: document.getElementById('orderCustPhone').value.trim(),
-                pickupAddress: document.getElementById('orderPickup').value.trim(),
-                dropoffAddress: document.getElementById('orderDropoff').value.trim(),
-                specialNotes: document.getElementById('orderNotes').value.trim()
-            };
+        function loadExistingDriversDropdown() {
+            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            const select = document.getElementById('existingDriverSelect');
+            if (!select) return;
 
-            try {
-                const res = await fetch(`${API_URL}/orders`, {
+            let html = '<option value="">Select your name...</option>';
+            registered.forEach((d, idx) => {
+                html += `<option value="${idx}">${d.firstName} ${d.surname} (${d.mobile}) - [${d.status}]</option>`;
+            });
+            select.innerHTML = html;
+        }
+
+        function handleDriverRegister(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const surname = document.getElementById('regSurname').value.trim();
+            const mobile = document.getElementById('regMobile').value.trim();
+
+            if (!firstName || !surname || !mobile) return;
+
+            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            const existingIndex = registered.findIndex(d => d.mobile === mobile);
+            let newDriver;
+
+            if (existingIndex !== -1) {
+                newDriver = registered[existingIndex];
+            } else {
+                newDriver = {
+                    id: 'drv_' + Date.now(),
+                    firstName,
+                    surname,
+                    mobile,
+                    status: 'Pending'
+                };
+                registered.push(newDriver);
+                localStorage.setItem('registered_drivers', JSON.stringify(registered));
+                alert('Registration submitted successfully! Waiting for admin approval.');
+            }
+
+            setLoggedInDriver(newDriver);
+        }
+
+        function loginExistingDriver() {
+            const select = document.getElementById('existingDriverSelect');
+            const idx = select.value;
+            if (idx === '') {
+                alert('Please select a driver profile.');
+                return;
+            }
+
+            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            const drv = registered[idx];
+            if (drv) setLoggedInDriver(drv);
+        }
+
+        function setLoggedInDriver(drv) {
+            currentDriver = drv;
+            localStorage.setItem('logged_in_driver', JSON.stringify(drv));
+
+            document.getElementById('authCard').classList.add('hidden');
+            document.getElementById('driverDashboard').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('displayDriverFullName').innerText = `${drv.firstName} ${drv.surname}`;
+            document.getElementById('profileName').innerText = `${drv.firstName} ${drv.surname}`;
+            document.getElementById('profilePhone').innerText = drv.mobile;
+            document.getElementById('profileInitial').innerText = drv.firstName.charAt(0).toUpperCase();
+
+            const badge = document.getElementById('displayApprovalBadge');
+            const toggleBtn = document.getElementById('toggleShiftBtn');
+
+            if (drv.status === 'Approved') {
+                badge.className = 'text-xs font-bold text-emerald-600';
+                badge.innerText = 'Status: Approved';
+                toggleBtn.disabled = false;
+                toggleBtn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
+            } else {
+                badge.className = 'text-xs font-bold text-amber-600';
+                badge.innerText = 'Status: Pending Approval';
+                toggleBtn.disabled = true;
+                toggleBtn.className = 'bg-gray-300 text-gray-500 px-4 py-2 rounded-xl font-bold text-xs cursor-not-allowed';
+            }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    initDriverMap(pos.coords.latitude, pos.coords.longitude);
+                }, () => { initDriverMap(53.0027, -2.1794); });
+            } else {
+                initDriverMap(53.0027, -2.1794);
+            }
+
+            // Set current date string
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('earningsDateLabel').innerText = new Date().toLocaleDateString('en-US', options);
+
+            fetchDriverAssignedOrders();
+        }
+
+        function logoutDriver() {
+            localStorage.removeItem('logged_in_driver');
+            if (isOnline) toggleShift();
+            currentDriver = null;
+            document.getElementById('driverDashboard').classList.add('hidden');
+            document.getElementById('logoutBtn').classList.add('hidden');
+            document.getElementById('authCard').classList.remove('hidden');
+            loadExistingDriversDropdown();
+        }
+
+        function toggleShift() {
+            if (!currentDriver || currentDriver.status !== 'Approved') return;
+
+            const toggleBtn = document.getElementById('toggleShiftBtn');
+            const indicator = document.getElementById('shiftStatusIndicator');
+
+            if (!isOnline) {
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser');
+                    return;
+                }
+
+                isOnline = true;
+                toggleBtn.innerText = 'Go Offline';
+                toggleBtn.className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
+                indicator.innerText = 'Online';
+                indicator.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 animate-pulse';
+
+                connectedSeconds = 0;
+                timerInterval = setInterval(() => {
+                    connectedSeconds++;
+                    const hrs = String(Math.floor(connectedSeconds / 3600)).padStart(2, '0');
+                    const mins = String(Math.floor((connectedSeconds % 3600) / 60)).padStart(2, '0');
+                    const secs = String(connectedSeconds % 60).padStart(2, '0');
+                    document.getElementById('statTimeConnected').innerText = `${hrs}h:${mins}m`;
+                }, 1000);
+
+                sendCurrentLocation();
+                locationInterval = setInterval(sendCurrentLocation, 4000);
+            } else {
+                isOnline = false;
+                clearInterval(locationInterval);
+                clearInterval(timerInterval);
+                toggleBtn.innerText = 'Go Online';
+                toggleBtn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
+                indicator.innerText = 'Offline';
+                indicator.className = 'px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600';
+
+                fetch(`${API_URL}/drivers/location`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(orderData)
-                });
-                if (res.ok) {
-                    alert('Order created successfully!');
-                    document.getElementById('createOrderForm').reset();
-                    fetchOrders();
-                } else {
-                    alert('Failed to create order.');
-                }
-            } catch (err) {
-                console.error('Error creating order:', err);
-                alert('Connection error while creating order.');
+                    body: JSON.stringify({ driverId: currentDriver.id, lat: null, lng: null })
+                }).catch(err => console.error(err));
             }
         }
 
-        async function fetchOrders() {
+        function sendCurrentLocation() {
+            if (!isOnline || !currentDriver) return;
+
+            navigator.geolocation.getCurrentPosition(async pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                initDriverMap(lat, lng);
+
+                try {
+                    await fetch(`${API_URL}/drivers/location`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ driverId: currentDriver.id, lat, lng })
+                    });
+                } catch (err) {
+                    console.error(err);
+                }
+            }, err => { console.error(err); }, { enableHighAccuracy: true });
+        }
+
+        async function fetchDriverAssignedOrders() {
+            if (!currentDriver) return;
+
             try {
                 const res = await fetch(`${API_URL}/orders`);
                 const orders = await res.json();
 
-                const activeTable = document.getElementById('activeOrdersTableBody');
-                const completedTable = document.getElementById('completedOrdersTableBody');
+                const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
+                const completedOrders = myOrders.filter(o => o.status === 'Delivered');
                 
-                const activeOrders = orders.filter(o => o.status !== 'Delivered');
-                const completedOrders = orders.filter(o => o.status === 'Delivered');
+                const RATE_PER_ORDER = 5.00;
+                const totalEarned = completedOrders.length * RATE_PER_ORDER;
 
-                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                let defaultDrivers = [
-                    { id: '1', firstName: 'Ali', surname: 'Khan', status: 'Approved' },
-                    { id: '2', firstName: 'Ahmed', surname: 'Raza', status: 'Approved' },
-                    { id: '3', firstName: 'Usman', surname: 'Ali', status: 'Approved' }
-                ];
-                let allDrivers = [...defaultDrivers, ...registeredDrivers].filter(d => d.status === 'Approved');
+                document.getElementById('walletMainAmount').innerText = `£${totalEarned.toFixed(2)}`;
+                document.getElementById('statDeliveryFee').innerText = `£${totalEarned.toFixed(2)}`;
+                document.getElementById('statTripsCount').innerText = completedOrders.length;
+                document.getElementById('earningsSubTripText').innerText = `${completedOrders.length} trips`;
 
-                // Render Active Orders Table
-                if (activeOrders.length === 0) {
-                    activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">No active orders found.</td></tr>`;
-                } else {
-                    activeTable.innerHTML = '';
-                    activeOrders.forEach(order => {
-                        let optionsHtml = `<option value="">Select Driver</option>`;
-                        allDrivers.forEach(d => {
-                            optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
-                        });
-
-                        activeTable.innerHTML += `
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="p-2.5 font-bold">#${order.id} - ${order.customerName}<br><span class="text-[10px] text-gray-500">${order.customerPhone}</span></td>
-                                <td class="p-2.5 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
-                                <td class="p-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${order.status || 'Pending'}</span></td>
-                                <td class="p-2.5">
-                                    <select onchange="assignDriver('${order.id}', this.value)" class="border p-1 rounded text-xs w-full">${optionsHtml}</select>
-                                </td>
-                            </tr>
-                        `;
-                    });
+                const container = document.getElementById('assignedOrdersContainer');
+                if (myOrders.length === 0) {
+                    container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold text-xs">No active orders assigned to you right now.</p>`;
+                    return;
                 }
 
-                // Render Completed Orders Table
-                document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
-                if (completedOrders.length === 0) {
-                    completedTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">No completed orders found.</td></tr>`;
-                } else {
-                    completedTable.innerHTML = '';
-                    completedOrders.forEach(order => {
-                        const assignedDriver = allDrivers.find(d => String(d.id) === String(order.assignedDriverId));
-                        const driverNameDisplay = assignedDriver ? `${assignedDriver.firstName} ${assignedDriver.surname}` : `Driver #${order.assignedDriverId || 'N/A'}`;
-
-                        completedTable.innerHTML += `
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="p-2.5 font-bold">#${order.id} - ${order.customerName}</td>
-                                <td class="p-2.5 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
-                                <td class="p-2.5 text-gray-800 font-medium">${driverNameDisplay}</td>
-                                <td class="p-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Delivered</span></td>
-                            </tr>
-                        `;
-                    });
-                }
-            } catch (e) {
-                console.error('Error fetching orders:', e);
+                container.innerHTML = '';
+                myOrders.forEach(order => {
+                    const isDelivered = order.status === 'Delivered';
+                    container.innerHTML += `
+                        <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-gray-900 text-sm">Order #${order.id} — ${order.customerName}</span>
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isDelivered ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}">${order.status || 'Assigned'}</span>
+                            </div>
+                            <p class="text-xs text-gray-700">📞 Phone: <a href="tel:${order.customerPhone}" class="text-[#5835bc] font-bold hover:underline">${order.customerPhone}</a></p>
+                            <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
+                            <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
+                            ${order.specialNotes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.specialNotes}</p>` : ''}
+                            
+                            ${!isDelivered ? `
+                                <button onclick="markOrderDelivered('${order.id}')" class="w-full mt-2 bg-[#5835bc] hover:bg-[#4828a0] text-white py-2 rounded-xl font-bold text-xs transition">
+                                    Mark as Delivered (£5.00 Earned)
+                                </button>
+                            ` : `<p class="text-emerald-700 font-bold text-xs text-center pt-1">✅ Delivery Completed</p>`}
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error(err);
             }
         }
 
-        async function assignDriver(orderId, driverId) {
-            if (!driverId) return;
+        async function markOrderDelivered(orderId) {
             try {
-                const res = await fetch(`${API_URL}/orders/assign`, {
+                const res = await fetch(`${API_URL}/orders/status`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId, driverId })
+                    body: JSON.stringify({ orderId, status: 'Delivered' })
                 });
                 if (res.ok) {
-                    fetchOrders();
+                    alert('Order marked as delivered! £5.00 added to your wallet.');
+                    fetchDriverAssignedOrders();
                 }
-            } catch (e) {
-                console.error('Error assigning driver:', e);
-            }
-        }
-
-        async function fetchLiveDrivers() {
-            try {
-                const res = await fetch(`${API_URL}/drivers/locations`);
-                const drivers = await res.json();
-                if (markersLayer) markersLayer.clearLayers();
-
-                for (const [driverId, data] of Object.entries(drivers)) {
-                    if (data.lat && data.lng) {
-                        const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>Driver #${driverId}</b><br>Status: Online`);
-                        markersLayer.addLayer(marker);
-                    }
-                }
-            } catch (e) {
-                console.error('Error fetching driver locations:', e);
-            }
-        }
-
-        function loadDriversManagement() {
-            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            const container = document.getElementById('driversListContainer');
-            if (registered.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center py-4">No driver applications pending.</p>`;
-                return;
-            }
-            container.innerHTML = '';
-            registered.forEach((drv, index) => {
-                container.innerHTML += `
-                    <div class="bg-gray-50 p-3 rounded-lg border flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-gray-800">${drv.firstName} ${drv.surname} (${drv.mobile})</p>
-                            <p class="text-gray-500">Address: ${drv.address} | Status: <span class="font-bold ${drv.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'}">${drv.status}</span></p>
-                        </div>
-                        <div>
-                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded font-semibold transition">Approve</button>` : `<span class="text-emerald-600 font-bold">Approved</span>`}
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function approveDriver(index) {
-            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            if (registered[index]) {
-                registered[index].status = 'Approved';
-                localStorage.setItem('registered_drivers', JSON.stringify(registered));
-                loadDriversManagement();
-                alert('Driver approved successfully!');
+            } catch (err) {
+                console.error(err);
             }
         }
 
         window.onload = () => {
-            initAdminMap();
-            fetchOrders();
-            fetchLiveDrivers();
-            setInterval(fetchOrders, 5000);
-            setInterval(fetchLiveDrivers, 4000);
+            loadExistingDriversDropdown();
+            const savedDriver = localStorage.getItem('logged_in_driver');
+            if (savedDriver) {
+                try {
+                    setLoggedInDriver(JSON.parse(savedDriver));
+                } catch (e) {
+                    console.error(e);
+                }
+            }
         };
     </script>
 </body>
