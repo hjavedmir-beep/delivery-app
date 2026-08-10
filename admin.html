@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Delivery App</title>
+    <title>Delivery Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Leaflet Maps CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,314 +12,570 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <!-- AUTHENTICATION CONTAINER (Sign In / Sign Up) -->
-    <div id="authContainer" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-            <h1 id="authTitle" class="text-2xl font-bold text-center mb-6 text-blue-600">Driver Sign In</h1>
-            
-            <!-- Sign In Form -->
-            <form id="signInForm" onsubmit="handleSignIn(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Mobile Number / Driver ID</label>
-                    <input type="text" id="signInPhone" required placeholder="e.g. 1 or +447000..." class="w-full mt-1 p-3 border rounded-lg">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 font-semibold transition">Sign In</button>
-                <div class="text-center mt-4">
-                    <p class="text-sm text-gray-600">Don't have an account? <button type="button" onclick="toggleAuthMode('signup')" class="text-blue-600 font-semibold underline">Sign Up</button></p>
-                </div>
-            </form>
-
-            <!-- Sign Up Form (Hidden by default) -->
-            <form id="signUpForm" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">First Name</label>
-                    <input type="text" id="regFirstName" required class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Surname</label>
-                    <input type="text" id="regSurname" required class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
-                    <input type="text" id="regMobile" required class="w-full mt-1 p-2 border rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Address</label>
-                    <textarea id="regAddress" required class="w-full mt-1 p-2 border rounded-lg" rows="2"></textarea>
-                </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white p-3 rounded-lg hover:bg-emerald-700 font-semibold transition">Complete Sign Up</button>
-                <div class="text-center mt-4">
-                    <p class="text-sm text-gray-600">Already have an account? <button type="button" onclick="toggleAuthMode('signin')" class="text-blue-600 font-semibold underline">Sign In</button></p>
-                </div>
-            </form>
+    <nav class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-xl font-bold">Admin Dispatch Panel</h1>
+        <div class="space-x-4">
+            <button onclick="switchTab('orders')" id="btnOrdersTab" class="bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition">Orders & Map</button>
+            <button onclick="switchTab('drivers')" id="btnDriversTab" class="bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75">Drivers Management & Earnings</button>
         </div>
-    </div>
+    </nav>
 
-    <!-- MAIN DRIVER DASHBOARD (Hidden until signed in) -->
-    <div id="driverDashboard" class="hidden container mx-auto p-4 max-w-2xl space-y-6">
+    <div class="container mx-auto p-6">
         
-        <!-- Header & Status Toggle -->
-        <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center">
-            <div>
-                <h1 id="driverWelcomeName" class="text-xl font-bold text-gray-800">Driver Portal</h1>
-                <p id="driverPhoneDisplay" class="text-xs text-gray-500"></p>
+        <!-- SECTION 1: Orders & Live Map View (Default) -->
+        <div id="ordersSection" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Left Column: Create Order, Live Drivers & Live Map -->
+            <div class="space-y-6 md:col-span-1">
+                <!-- Create Order Form -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Create New Order</h2>
+                    <form id="orderForm" onsubmit="createOrder(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Customer Name</label>
+                            <input type="text" id="custName" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Customer Phone</label>
+                            <input type="text" id="custPhone" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pickup Address</label>
+                            <input type="text" id="pickupAddr" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Drop-off Address</label>
+                            <input type="text" id="dropAddr" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Special Notes</label>
+                            <textarea id="orderNotes" class="w-full mt-1 p-2 border rounded-md"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 font-semibold transition">Add Order to Server</button>
+                    </form>
+                </div>
+
+                <!-- Live Drivers Location Box -->
+                <div class="bg-white p-4 rounded-xl shadow border">
+                    <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Drivers Location</h3>
+                    <div id="liveDriversList" class="text-xs text-gray-600 space-y-1">
+                        Loading live locations...
+                    </div>
+                </div>
+
+                <!-- Live Map View Box -->
+                <div class="bg-white p-4 rounded-xl shadow border">
+                    <h3 class="font-bold text-sm mb-2 text-gray-700 border-b pb-1">Live Map View</h3>
+                    <div id="adminMap" class="w-full h-64 rounded-lg"></div>
+                </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <button onclick="logoutDriver()" class="text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-300 transition">Logout</button>
-                <button id="statusToggleBtn" onclick="toggleOnlineStatus()" class="px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-red-500 text-white">
-                    🔴 Offline
-                </button>
+
+            <!-- Right Column: 3 Categorized Order Tables -->
+            <div class="md:col-span-2 space-y-6">
+                
+                <!-- 1. New Orders Tab/Section -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2">
+                        <span>📦 New Orders (Pending Assignment)</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 text-sm">
+                                    <th class="p-3 border-b">ID & Customer</th>
+                                    <th class="p-3 border-b">Route</th>
+                                    <th class="p-3 border-b">Status</th>
+                                    <th class="p-3 border-b">Assign Driver</th>
+                                </tr>
+                            </thead>
+                            <tbody id="newOrdersTableBody" class="text-sm text-gray-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading new orders...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. Assigned Orders Tab/Section -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-orange-600 border-b pb-2">
+                        <span>🛵 Assigned Orders (In Progress)</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 text-sm">
+                                    <th class="p-3 border-b">ID & Customer</th>
+                                    <th class="p-3 border-b">Route</th>
+                                    <th class="p-3 border-b">Assigned Driver</th>
+                                    <th class="p-3 border-b">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignedOrdersTableBody" class="text-sm text-gray-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">No assigned orders.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. Completed Orders Tab/Section -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-lg font-semibold mb-4 text-emerald-700 border-b pb-2">
+                        <span>✅ Completed / Delivered Orders</span>
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 text-sm">
+                                    <th class="p-3 border-b">ID & Customer</th>
+                                    <th class="p-3 border-b">Route</th>
+                                    <th class="p-3 border-b">Delivered By</th>
+                                    <th class="p-3 border-b">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="completedOrdersTableBody" class="text-sm text-gray-700">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-400">No completed orders yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- Assigned Orders Box -->
-        <div class="bg-white p-6 rounded-xl shadow-md">
-            <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2">Assigned Orders For You</h2>
-            <div id="assignedOrdersList" class="space-y-4">
-                <p class="text-gray-400 text-sm">Loading assigned orders...</p>
-            </div>
-        </div>
+        <!-- SECTION 2: Drivers Management & Earnings Tab (Hidden by default) -->
+        <div id="driversSection" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Drivers Fleet Performance, Shift Logs & Earnings</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Click on any driver to view real-time online/offline shift logs and earnings (£5.00 per delivery).</p>
+                    </div>
+                </div>
 
-        <!-- Live GPS Map View -->
-        <div class="bg-white p-6 rounded-xl shadow-md">
-            <h2 class="text-lg font-semibold mb-2 text-gray-800">Your Current Location</h2>
-            <p id="gpsStatus" class="text-xs text-gray-500 mb-3">Acquiring GPS location...</p>
-            <div id="driverMap" class="w-full h-64 rounded-lg border"></div>
+                <!-- Drivers Earnings & Shift Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm">
+                                <th class="p-3 border-b">Driver Name & ID</th>
+                                <th class="p-3 border-b">Phone</th>
+                                <th class="p-3 border-b">Current Status</th>
+                                <th class="p-3 border-b">Total Delivered Trips</th>
+                                <th class="p-3 border-b">Total Earnings</th>
+                                <th class="p-3 border-b text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driversEarningsTableBody" class="text-sm text-gray-700">
+                            <tr><td colspan="6" class="p-4 text-center text-gray-400">Loading driver performance metrics...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Expanded Driver Shift Detail Modal/Container -->
+                <div id="driverShiftDetailContainer" class="mt-6 hidden bg-gray-50 p-4 rounded-lg border">
+                    <!-- Dynamic details will be loaded here -->
+                </div>
+            </div>
         </div>
 
     </div>
 
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
-        let currentDriver = null;
-        let isOnline = false;
-        let watchId = null;
-        let driverMap = null;
-        let driverMarker = null;
+        let globalOrders = [];
+        let activeDriverIdForDetails = null; // To keep track of currently open shift detail view
 
-        // Check if driver was already logged in via localStorage
-        window.onload = function() {
-            const savedDriver = localStorage.getItem('logged_in_driver');
-            if (savedDriver) {
-                currentDriver = JSON.parse(savedDriver);
-                showDashboard();
-            }
-        };
+        // Main Tab Switching
+        function switchTab(tab) {
+            const ordersSec = document.getElementById('ordersSection');
+            const driversSec = document.getElementById('driversSection');
+            const btnOrders = document.getElementById('btnOrdersTab');
+            const btnDrivers = document.getElementById('btnDriversTab');
 
-        function toggleAuthMode(mode) {
-            const signInForm = document.getElementById('signInForm');
-            const signUpForm = document.getElementById('signUpForm');
-            const authTitle = document.getElementById('authTitle');
-
-            if (mode === 'signup') {
-                signInForm.classList.add('hidden');
-                signUpForm.classList.remove('hidden');
-                authTitle.innerText = 'Driver Sign Up';
+            if (tab === 'orders') {
+                ordersSec.classList.remove('hidden');
+                driversSec.classList.add('hidden');
+                btnOrders.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
+                btnDrivers.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
+                setTimeout(() => { adminMap.invalidateSize(); }, 200);
             } else {
-                signUpForm.classList.add('hidden');
-                signInForm.classList.remove('hidden');
-                authTitle.innerText = 'Driver Sign In';
+                ordersSec.classList.add('hidden');
+                driversSec.classList.remove('hidden');
+                btnDrivers.className = 'bg-blue-700 px-3 py-1.5 rounded text-sm font-semibold transition';
+                btnOrders.className = 'bg-blue-800 px-3 py-1.5 rounded text-sm font-semibold transition opacity-75';
+                fetchDriverPerformance();
             }
         }
 
-        function handleSignIn(e) {
-            e.preventDefault();
-            const inputVal = document.getElementById('signInPhone').value.trim();
-            
-            // Default built-in drivers or locally registered drivers
-            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            let defaultDrivers = [
-                { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', address: 'Stoke-on-Trent' },
-                { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', address: 'Stoke-on-Trent' },
-                { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', address: 'Stoke-on-Trent' }
+        async function fetchOrders() {
+            try {
+                const response = await fetch(`${API_URL}/orders`);
+                globalOrders = await response.json();
+                renderCategorizedOrders(globalOrders);
+                if (!document.getElementById('driversSection').classList.contains('hidden')) {
+                    renderDriverPerformance();
+                }
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+            }
+        }
+
+        async function createOrder(event) {
+            event.preventDefault();
+            const newOrder = {
+                customerName: document.getElementById('custName').value,
+                customerPhone: document.getElementById('custPhone').value,
+                pickupAddress: document.getElementById('pickupAddr').value,
+                dropoffAddress: document.getElementById('dropAddr').value,
+                notes: document.getElementById('orderNotes').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newOrder)
+                });
+
+                if (response.ok) {
+                    document.getElementById('orderForm').reset();
+                    fetchOrders();
+                }
+            } catch (error) {
+                console.error('Error creating order:', error);
+            }
+        }
+
+        async function assignDriver(orderId, driverId) {
+            if (!driverId) return;
+            try {
+                const response = await fetch(`${API_URL}/orders/assign`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId, driverId })
+                });
+
+                if (response.ok) {
+                    fetchOrders();
+                }
+            } catch (error) {
+                console.error('Error assigning driver:', error);
+            }
+        }
+
+        async function renderCategorizedOrders(orders) {
+            const newTbody = document.getElementById('newOrdersTableBody');
+            const assignedTbody = document.getElementById('assignedOrdersTableBody');
+            const completedTbody = document.getElementById('completedOrdersTableBody');
+
+            const res = await fetch(`${API_URL}/drivers/locations`);
+            const activeDrivers = await res.json(); 
+            const onlineDriverIds = Object.keys(activeDrivers);
+
+            const driversList = [
+                { id: '1', name: 'Ali Khan' },
+                { id: '2', name: 'Ahmed Raza' },
+                { id: '3', name: 'Usman Ali' }
             ];
 
-            let allDrivers = [...defaultDrivers, ...registeredDrivers];
-            let found = allDrivers.find(d => d.id === inputVal || d.mobile.includes(inputVal));
+            const newOrders = orders.filter(o => !o.assignedDriverId && o.status !== 'Delivered');
+            const assignedOrders = orders.filter(o => o.assignedDriverId && o.status !== 'Delivered');
+            const completedOrders = orders.filter(o => o.status === 'Delivered');
 
-            if (found) {
-                currentDriver = {
-                    id: found.id || String(Date.now()),
-                    name: `${found.firstName} ${found.surname}`,
-                    mobile: found.mobile || found.phone || inputVal
-                };
-                localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
-                showDashboard();
+            // 1. New Orders
+            if (newOrders.length === 0) {
+                newTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No new orders pending assignment.</td></tr>`;
             } else {
-                alert('Driver not found! Please check your ID/Mobile or Sign Up.');
+                newTbody.innerHTML = '';
+                newOrders.forEach(order => {
+                    const trackingLink = `customer-track.html?id=${order.id}`;
+                    let optionsHtml = `<option value="">Select Online Driver</option>`;
+                    driversList.forEach(d => {
+                        const isOnline = onlineDriverIds.includes(d.id);
+                        const statusLabel = isOnline ? '' : ' (Offline)';
+                        optionsHtml += `
+                            <option value="${d.id}" ${!isOnline ? 'disabled class="text-gray-400"' : ''}>
+                                ${d.name}${statusLabel}
+                            </option>`;
+                    });
+
+                    newTbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3">
+                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
+                                <p class="text-xs text-gray-500">${order.customerPhone}</p>
+                                <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p><strong>From:</strong> ${order.pickupAddress}</p>
+                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800">${order.status}</span>
+                            </td>
+                            <td class="p-3">
+                                <select onchange="assignDriver('${order.id}', this.value)" class="text-xs border p-1 rounded w-full">
+                                    ${optionsHtml}
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                });
             }
-        }
 
-        function handleSignUp(e) {
-            e.preventDefault();
-            const firstName = document.getElementById('regFirstName').value.trim();
-            const surname = document.getElementById('regSurname').value.trim();
-            const mobile = document.getElementById('regMobile').value.trim();
-            const address = document.getElementById('regAddress').value.trim();
-
-            const newDriverObj = {
-                id: String(Math.floor(100 + Math.random() * 900)),
-                firstName,
-                surname,
-                mobile,
-                address
-            };
-
-            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            registeredDrivers.push(newDriverObj);
-            localStorage.setItem('registered_drivers', JSON.stringify(registeredDrivers));
-
-            currentDriver = {
-                id: newDriverObj.id,
-                name: `${firstName} ${surname}`,
-                mobile: mobile
-            };
-            localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
-            alert(`Sign up successful! Your assigned Driver ID is #${newDriverObj.id}`);
-            showDashboard();
-        }
-
-        function showDashboard() {
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('driverDashboard').classList.remove('hidden');
-            document.getElementById('driverWelcomeName').innerText = `Welcome, ${currentDriver.name} (ID: #${currentDriver.id})`;
-            document.getElementById('driverPhoneDisplay').innerText = `Mobile: ${currentDriver.mobile}`;
-
-            initMap();
-            fetchAssignedOrders();
-            setInterval(fetchAssignedOrders, 4000);
-        }
-
-        function logoutDriver() {
-            if (isOnline) toggleOnlineStatus();
-            localStorage.removeItem('logged_in_driver');
-            location.reload();
-        }
-
-        function initMap() {
-            if (!driverMap) {
-                driverMap = L.map('driverMap').setView([53.0027, -2.1794], 14);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(driverMap);
-            }
-        }
-
-        function toggleOnlineStatus() {
-            isOnline = !isOnline;
-            const btn = document.getElementById('statusToggleBtn');
-            const gpsStatus = document.getElementById('gpsStatus');
-
-            if (isOnline) {
-                btn.className = 'px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-emerald-600 text-white animate-pulse';
-                btn.innerText = '🟢 Online';
-                startLocationTracking();
+            // 2. Assigned Orders
+            if (assignedOrders.length === 0) {
+                assignedTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No orders currently assigned/in progress.</td></tr>`;
             } else {
-                btn.className = 'px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-red-500 text-white';
-                btn.innerText = '🔴 Offline';
-                stopLocationTracking();
-                gpsStatus.innerText = 'You are currently offline.';
+                assignedTbody.innerHTML = '';
+                assignedOrders.forEach(order => {
+                    const trackingLink = `customer-track.html?id=${order.id}`;
+                    const assignedDriver = driversList.find(d => String(d.id) === String(order.assignedDriverId));
+                    const driverNameDisplay = assignedDriver ? assignedDriver.name : `Driver #${order.assignedDriverId}`;
+
+                    assignedTbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3">
+                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
+                                <p class="text-xs text-gray-500">${order.customerPhone}</p>
+                                <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p><strong>From:</strong> ${order.pickupAddress}</p>
+                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
+                            </td>
+                            <td class="p-3 font-semibold text-orange-700">${driverNameDisplay}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">${order.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
             }
-        }
 
-        function startLocationTracking() {
-            if (navigator.geolocation) {
-                document.getElementById('gpsStatus').innerText = 'Locating via GPS...';
-                watchId = navigator.geolocation.watchPosition(
-                    position => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        document.getElementById('gpsStatus').innerText = `Live GPS Active (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
-
-                        if (driverMap) {
-                            driverMap.setView([lat, lng], 15);
-                            if (driverMarker) {
-                                driverMarker.setLatLng([lat, lng]);
-                            } else {
-                                driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('You are here').openPopup();
-                            }
-                        }
-
-                        // Send location to server
-                        fetch(`${API_URL}/drivers/location`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ driverId: currentDriver.id, lat, lng })
-                        }).catch(err => console.error("Error sending location", err));
-                    },
-                    error => {
-                        document.getElementById('gpsStatus').innerText = 'GPS Error: ' + error.message;
-                    },
-                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-                );
+            // 3. Completed Orders
+            if (completedOrders.length === 0) {
+                completedTbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No completed orders yet.</td></tr>`;
             } else {
-                alert('Geolocation is not supported by your browser');
+                completedTbody.innerHTML = '';
+                completedOrders.forEach(order => {
+                    const trackingLink = `customer-track.html?id=${order.id}`;
+                    const assignedDriver = driversList.find(d => String(d.id) === String(order.assignedDriverId));
+                    const driverNameDisplay = assignedDriver ? assignedDriver.name : `Driver #${order.assignedDriverId}`;
+
+                    completedTbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3">
+                                <p class="font-bold">#${order.id} - ${order.customerName}</p>
+                                <p class="text-xs text-gray-500">${order.customerPhone}</p>
+                                <a href="${trackingLink}" target="_blank" class="text-xs text-blue-600 underline mt-1 inline-block">Track Link</a>
+                            </td>
+                            <td class="p-3 text-xs">
+                                <p><strong>From:</strong> ${order.pickupAddress}</p>
+                                <p><strong>To:</strong> ${order.dropoffAddress}</p>
+                            </td>
+                            <td class="p-3 text-xs font-medium text-gray-600">${driverNameDisplay}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">${order.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                });
             }
         }
 
-        function stopLocationTracking() {
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            // Send offline signal (remove location)
-            fetch(`${API_URL}/drivers/location`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ driverId: currentDriver.id, lat: null, lng: null })
-            }).catch(err => console.error(err));
+        async function fetchDriverPerformance() {
+            fetchOrders();
         }
 
-        async function fetchAssignedOrders() {
-            if (!currentDriver) return;
+        // Real-Time Shift Tracker Engine using localStorage to capture actual online/offline toggles
+        function updateRealTimeShifts(locations) {
+            const drivers = ['1', '2', '3'];
+            let allShifts = JSON.parse(localStorage.getItem('driver_real_shifts') || '{}');
+            const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' (' + new Date().toLocaleDateString() + ')';
+
+            drivers.forEach(id => {
+                if (!allShifts[id]) allShifts[id] = [];
+                const isCurrentlyOnline = locations[id] ? true : false;
+                const activeShift = allShifts[id].find(s => s.status === 'Ongoing');
+
+                if (isCurrentlyOnline && !activeShift) {
+                    // Driver came online -> Open new shift
+                    allShifts[id].push({
+                        shiftNo: allShifts[id].length + 1,
+                        loginTime: nowStr,
+                        logoutTime: 'Active / Current',
+                        status: 'Ongoing'
+                    });
+                } else if (!isCurrentlyOnline && activeShift) {
+                    // Driver went offline -> Close active shift
+                    activeShift.logoutTime = nowStr;
+                    activeShift.status = 'Completed Shift';
+                }
+            });
+
+            localStorage.setItem('driver_real_shifts', JSON.stringify(allShifts));
+            
+            // Refresh detailed view if currently opened for a driver
+            if (activeDriverIdForDetails) {
+                const driverObj = [{ id: '1', name: 'Ali Khan' }, { id: '2', name: 'Ahmed Raza' }, { id: '3', name: 'Usman Ali' }].find(d => d.id === activeDriverIdForDetails);
+                if (driverObj) viewDriverShifts(driverObj.id, driverObj.name);
+            }
+        }
+
+        async function renderDriverPerformance() {
             try {
-                const res = await fetch(`${API_URL}/orders`);
-                const orders = await res.json();
-                const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const locations = await res.json();
 
-                const container = document.getElementById('assignedOrdersList');
-                if (myOrders.length === 0) {
-                    container.innerHTML = `<p class="text-xs text-gray-400">No active orders assigned to you right now.</p>`;
+                // Trigger real-time shift recording check
+                updateRealTimeShifts(locations);
+
+                const drivers = [
+                    { id: '1', name: 'Ali Khan', phone: '+44 7000 111222' },
+                    { id: '2', name: 'Ahmed Raza', phone: '+44 7000 333444' },
+                    { id: '3', name: 'Usman Ali', phone: '+44 7000 555666' }
+                ];
+
+                const tbody = document.getElementById('driversEarningsTableBody');
+                tbody.innerHTML = '';
+
+                drivers.forEach(driver => {
+                    const isOnline = locations[driver.id] ? true : false;
+                    
+                    const driverDeliveredOrders = globalOrders.filter(o => {
+                        const matchesDriver = String(o.assignedDriverId) === String(driver.id);
+                        const isDelivered = o.status === 'Delivered';
+                        return matchesDriver && isDelivered;
+                    });
+
+                    const deliveredCount = driverDeliveredOrders.length;
+                    const totalEarnings = deliveredCount * 5.00;
+
+                    tbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3 font-bold">#${driver.id} - ${driver.name}</td>
+                            <td class="p-3 text-xs text-gray-500">${driver.phone}</td>
+                            <td class="p-3">
+                                ${isOnline ? '<span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800 font-semibold">🟢 Online</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-800 font-semibold">🔴 Offline</span>'}
+                            </td>
+                            <td class="p-3 font-semibold text-gray-700">${deliveredCount} Trips</td>
+                            <td class="p-3 font-bold text-emerald-600 text-base">£${totalEarnings.toFixed(2)}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="viewDriverShifts('${driver.id}', '${driver.name}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition">View Shifts & Logs</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                console.error("Error rendering driver performance", e);
+            }
+        }
+
+        // Real shift logs & earnings breakdown when clicking a driver
+        function viewDriverShifts(driverId, driverName) {
+            activeDriverIdForDetails = driverId;
+            const container = document.getElementById('driverShiftDetailContainer');
+            container.classList.remove('hidden');
+
+            try {
+                let allShifts = JSON.parse(localStorage.getItem('driver_real_shifts') || '{}');
+                let shifts = allShifts[driverId] || [];
+
+                let shiftHtml = `
+                    <div class="flex justify-between items-center mb-3 border-b pb-2">
+                        <h3 class="font-bold text-gray-800">Real-Time Shift History & Earnings Logs for: <span class="text-blue-600">${driverName} (ID: ${driverId})</span></h3>
+                        <button onclick="activeDriverIdForDetails=null; document.getElementById('driverShiftDetailContainer').classList.add('hidden')" class="text-gray-500 hover:text-red-600 text-xs font-bold">✕ Close</button>
+                    </div>
+                    <div class="space-y-2">
+                `;
+
+                if (shifts.length === 0) {
+                    shiftHtml += `<p class="text-xs text-gray-400">No shift activity recorded yet. Driver has not come online.</p>`;
+                } else {
+                    shifts.forEach(s => {
+                        shiftHtml += `
+                            <div class="bg-white p-3 rounded border flex justify-between items-center text-xs">
+                                <div>
+                                    <p class="font-bold text-gray-700">Shift #${s.shiftNo} — <span class="${s.status === 'Ongoing' ? 'text-emerald-600 animate-pulse' : 'text-gray-600'} font-semibold">${s.status}</span></p>
+                                    <p class="text-gray-500 mt-0.5">🟢 Online: ${s.loginTime} &nbsp;|&nbsp; 🔴 Offline: ${s.logoutTime}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-emerald-600 text-sm">£5.00 / Shift Log</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                shiftHtml += `</div>`;
+                container.innerHTML = shiftHtml;
+            } catch (e) {
+                console.error("Error loading real shift details", e);
+            }
+        }
+
+        async function fetchDriversLocations() {
+            try {
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const locations = await res.json();
+                
+                const container = document.getElementById('liveDriversList');
+                const driverIds = Object.keys(locations);
+
+                if (driverIds.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400">No active drivers online.</p>';
                     return;
                 }
 
                 container.innerHTML = '';
-                myOrders.forEach(order => {
-                    const isDelivered = order.status === 'Delivered';
+                driverIds.forEach(id => {
+                    const loc = locations[id];
+                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
                     container.innerHTML += `
-                        <div class="border p-4 rounded-lg bg-gray-50 space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-gray-800">Order #${order.id} - ${order.customerName}</span>
-                                <span class="px-2 py-1 rounded text-xs font-semibold ${isDelivered ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}">${order.status}</span>
-                            </div>
-                            <p class="text-xs text-gray-600"><strong>Phone:</strong> ${order.customerPhone}</p>
-                            <p class="text-xs text-gray-600"><strong>Pickup:</strong> ${order.pickupAddress}</p>
-                            <p class="text-xs text-gray-600"><strong>Drop-off:</strong> ${order.dropoffAddress}</p>
-                            ${order.notes ? `<p class="text-xs text-blue-600"><strong>Notes:</strong> ${order.notes}</p>` : ''}
-                            
-                            ${!isDelivered ? `
-                                <button onclick="markDelivered('${order.id}')" class="w-full mt-2 bg-emerald-600 text-white py-2 rounded-md text-xs font-bold hover:bg-emerald-700 transition">Mark as Delivered (£5.00)</button>
-                            ` : `<p class="text-xs text-emerald-600 font-bold text-center mt-2">✓ Completed & Earned (£5.00)</p>`}
-                        </div>
-                    `;
+                        <div class="flex justify-between py-1 border-b items-center">
+                            <span><strong>${driverName}</strong></span>
+                            <span class="text-green-600 font-mono">Lat: ${loc.lat.toFixed(4)}, Lng: ${loc.lng.toFixed(4)}</span>
+                        </div>`;
                 });
             } catch (e) {
-                console.error("Error fetching assigned orders", e);
+                console.error("Error fetching driver locations", e);
             }
         }
 
-        async function markDelivered(orderId) {
+        let adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(adminMap);
+
+        let driverMarkers = {};
+
+        async function updateAdminMap() {
             try {
-                const res = await fetch(`${API_URL}/orders/status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId, status: 'Delivered' })
+                const res = await fetch(`${API_URL}/drivers/locations`);
+                const locations = await res.json();
+
+                Object.keys(locations).forEach(id => {
+                    const loc = locations[id];
+                    let driverName = id == '1' ? 'Ali Khan' : id == '2' ? 'Ahmed Raza' : id == '3' ? 'Usman Ali' : `Driver #${id}`;
+                    
+                    if (driverMarkers[id]) {
+                        driverMarkers[id].setLatLng([loc.lat, loc.lng]);
+                    } else {
+                        driverMarkers[id] = L.marker([loc.lat, loc.lng]).addTo(adminMap).bindPopup(`${driverName} (ID: ${id})`);
+                    }
                 });
-                if (res.ok) {
-                    fetchAssignedOrders();
-                }
             } catch (e) {
-                console.error("Error updating status", e);
+                console.error("Map update error", e);
             }
         }
+
+        fetchOrders();
+        fetchDriversLocations();
+        updateAdminMap();
+
+        setInterval(() => {
+            fetchOrders();
+            fetchDriversLocations();
+            updateAdminMap();
+        }, 3000);
     </script>
 </body>
 </html>
