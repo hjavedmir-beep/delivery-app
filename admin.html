@@ -149,7 +149,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Area / City Bar</label>
                         <input type="text" id="busArea" required placeholder="Area & City will load here automatically" class="w-full mt-1 p-2 border rounded-md bg-gray-50">
-                        <p class="text-[11px] text-gray-500 mt-1">💡 Clicking Search will automatically populate this area bar.</p>
+                        <p class="text-[11px] text-gray-500 mt-1">💡 Clicking Search will automatically fetch and clean the area name here.</p>
                     </div>
                     <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 font-semibold transition">Save & Pin on Map</button>
                 </form>
@@ -322,8 +322,13 @@
                     document.getElementById('busArea').dataset.lat = firstResult.lat;
                     document.getElementById('busArea').dataset.lng = firstResult.lon;
 
-                    // صرف علاقے اور شہر کا نام ایریا بار میں آئے گا
-                    document.getElementById('busArea').value = firstResult.display_name;
+                    // پوسٹ کوڈ کو نکال کر صرف علاقے، ٹاؤن اور ملک کا نام ایریا بار میں ڈالیں گے
+                    let fullDesc = firstResult.display_name;
+                    let parts = fullDesc.split(',').map(p => p.trim());
+                    // آخر سے پوسٹ کوڈ یا پن کوڈ ہٹا دیں تاکہ وہ ایریا بار میں دوبارہ نہ آئے
+                    let filteredParts = parts.filter(p => !p.toUpperCase().includes(postcode.toUpperCase()));
+                    
+                    document.getElementById('busArea').value = filteredParts.join(', ');
 
                     alert('Area details loaded successfully!');
                 } else {
