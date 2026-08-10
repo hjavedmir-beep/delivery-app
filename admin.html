@@ -143,9 +143,13 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Street Address & Area</label>
-                        <input type="text" id="busAddress" required placeholder="e.g. 123 Stafford Street" class="w-full mt-1 p-2 border rounded-md bg-white">
-                        <p class="text-[11px] text-gray-500 mt-1">💡 Clicking Search will automatically fetch your area and full location details.</p>
+                        <label class="block text-sm font-medium text-gray-700">Address Line 1 (Street / Building Name)</label>
+                        <input type="text" id="busAddress1" placeholder="e.g. 123 Stafford Street" class="w-full mt-1 p-2 border rounded-md bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Area / City Bar</label>
+                        <input type="text" id="busArea" required placeholder="Area & City will load here automatically" class="w-full mt-1 p-2 border rounded-md bg-gray-50">
+                        <p class="text-[11px] text-gray-500 mt-1">💡 Clicking Search will automatically populate this area bar.</p>
                     </div>
                     <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 font-semibold transition">Save & Pin on Map</button>
                 </form>
@@ -315,19 +319,19 @@
                 if (data && data.length > 0) {
                     const firstResult = data[0];
                     
-                    document.getElementById('busAddress').dataset.lat = firstResult.lat;
-                    document.getElementById('busAddress').dataset.lng = firstResult.lon;
+                    document.getElementById('busArea').dataset.lat = firstResult.lat;
+                    document.getElementById('busArea').dataset.lng = firstResult.lon;
 
-                    const displayName = firstResult.display_name;
-                    document.getElementById('busAddress').value = displayName;
+                    // صرف علاقے اور شہر کا نام ایریا بار میں آئے گا
+                    document.getElementById('busArea').value = firstResult.display_name;
 
-                    alert('Location and area loaded successfully!');
+                    alert('Area details loaded successfully!');
                 } else {
-                    alert('Postcode not found. Please type your street address manually.');
+                    alert('Postcode not found. Please type your area manually.');
                 }
             } catch (e) {
                 console.error("Error looking up postcode", e);
-                alert('Error connecting to location server. You can type the address manually.');
+                alert('Error connecting to location server.');
             }
         }
 
@@ -335,15 +339,16 @@
             event.preventDefault();
             const name = document.getElementById('busName').value.trim();
             const phone = document.getElementById('busPhone').value.trim();
-            const address = document.getElementById('busAddress').value.trim();
+            const address1 = document.getElementById('busAddress1').value.trim();
+            const area = document.getElementById('busArea').value.trim();
             const postcode = document.getElementById('busPostcode').value.trim().toUpperCase();
 
-            let lat = document.getElementById('busAddress').dataset.lat;
-            let lng = document.getElementById('busAddress').dataset.lng;
+            let lat = document.getElementById('busArea').dataset.lat;
+            let lng = document.getElementById('busArea').dataset.lng;
 
             if (!lat || !lng) {
                 try {
-                    const fullQuery = `${address}, ${postcode}`;
+                    const fullQuery = `${area}, ${postcode}`;
                     const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullQuery)}`);
                     const geoData = await geoRes.json();
                     if (geoData && geoData.length > 0) {
@@ -362,11 +367,13 @@
                 lng = parseFloat(lng);
             }
 
+            const fullAddressCombined = address1 ? `${address1}, ${area} (${postcode})` : `${area} (${postcode})`;
+
             const newBusiness = {
                 id: 'BUS-' + Math.floor(1000 + Math.random() * 9000),
                 name,
                 phone,
-                address: `${address} (${postcode})`,
+                address: fullAddressCombined,
                 postcode,
                 lat,
                 lng
