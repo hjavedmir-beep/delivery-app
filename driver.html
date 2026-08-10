@@ -1,324 +1,325 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver App - Shifts & Live Radar</title>
+    <title>Driver Delivery App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet Maps CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Maps JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body class="bg-gray-200 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-100 font-sans">
 
-    <div class="bg-gray-50 w-full max-w-sm rounded-3xl shadow-2xl border-4 border-gray-800 overflow-hidden flex flex-col h-[750px] relative">
+    <!-- AUTHENTICATION CONTAINER (Sign In / Sign Up) -->
+    <div id="authContainer" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <h1 id="authTitle" class="text-2xl font-bold text-center mb-6 text-blue-600">Driver Sign In</h1>
+            
+            <!-- Sign In Form -->
+            <form id="signInForm" onsubmit="handleSignIn(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mobile Number / Driver ID</label>
+                    <input type="text" id="signInPhone" required placeholder="e.g. 1 or +447000..." class="w-full mt-1 p-3 border rounded-lg">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 font-semibold transition">Sign In</button>
+                <div class="text-center mt-4">
+                    <p class="text-sm text-gray-600">Don't have an account? <button type="button" onclick="toggleAuthMode('signup')" class="text-blue-600 font-semibold underline">Sign Up</button></p>
+                </div>
+            </form>
+
+            <!-- Sign Up Form (Hidden by default) -->
+            <form id="signUpForm" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">First Name</label>
+                    <input type="text" id="regFirstName" required class="w-full mt-1 p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Surname</label>
+                    <input type="text" id="regSurname" required class="w-full mt-1 p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
+                    <input type="text" id="regMobile" required class="w-full mt-1 p-2 border rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Address</label>
+                    <textarea id="regAddress" required class="w-full mt-1 p-2 border rounded-lg" rows="2"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 text-white p-3 rounded-lg hover:bg-emerald-700 font-semibold transition">Complete Sign Up</button>
+                <div class="text-center mt-4">
+                    <p class="text-sm text-gray-600">Already have an account? <button type="button" onclick="toggleAuthMode('signin')" class="text-blue-600 font-semibold underline">Sign In</button></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN DRIVER DASHBOARD (Hidden until signed in) -->
+    <div id="driverDashboard" class="hidden container mx-auto p-4 max-w-2xl space-y-6">
         
-        <!-- Login Screen Section -->
-        <div id="loginSection" class="p-6 flex-1 flex flex-col justify-center bg-white absolute inset-0 z-50">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Driver Login</h2>
-            <select id="driverSelect" class="w-full p-3 border rounded-xl mb-4 text-sm bg-white">
-                <option value="1">Ali Khan (ID: 1)</option>
-                <option value="2">Ahmed Raza (ID: 2)</option>
-                <option value="3">Usman Ali (ID: 3)</option>
-            </select>
-            <button onclick="loginDriver()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-emerald-700">Start Shift</button>
+        <!-- Header & Status Toggle -->
+        <div class="bg-white p-6 rounded-xl shadow-md flex justify-between items-center">
+            <div>
+                <h1 id="driverWelcomeName" class="text-xl font-bold text-gray-800">Driver Portal</h1>
+                <p id="driverPhoneDisplay" class="text-xs text-gray-500"></p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="logoutDriver()" class="text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-300 transition">Logout</button>
+                <button id="statusToggleBtn" onclick="toggleOnlineStatus()" class="px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-red-500 text-white">
+                    🔴 Offline
+                </button>
+            </div>
         </div>
 
-        <!-- Main Content Area -->
-        <div id="dashboardSection" class="flex-1 flex flex-col overflow-hidden hidden">
-            
-            <div class="flex-1 overflow-y-auto pb-20 relative flex flex-col" id="mainTabContainer">
-                <!-- Content will dynamically switch here -->
+        <!-- Assigned Orders Box -->
+        <div class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-lg font-semibold mb-4 text-blue-800 border-b pb-2">Assigned Orders For You</h2>
+            <div id="assignedOrdersList" class="space-y-4">
+                <p class="text-gray-400 text-sm">Loading assigned orders...</p>
             </div>
+        </div>
 
-            <!-- Bottom Navigation Bar -->
-            <div class="absolute bottom-0 left-0 right-0 bg-white border-t py-2 px-6 flex justify-around items-center shadow-lg z-40">
-                <button onclick="switchNav('home')" id="navHome" class="flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-3 py-1 rounded-full">
-                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                    Home
-                </button>
-                <button onclick="switchNav('shifts')" id="navShifts" class="flex flex-col items-center text-gray-400 text-xs">
-                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Shifts
-                </button>
-                <button onclick="switchNav('wallet')" id="navWallet" class="flex flex-col items-center text-gray-400 text-xs">
-                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                    Wallet
-                </button>
-                <button onclick="switchNav('profile')" id="navProfile" class="flex flex-col items-center text-gray-400 text-xs">
-                    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                    Profile
-                </button>
-            </div>
-
+        <!-- Live GPS Map View -->
+        <div class="bg-white p-6 rounded-xl shadow-md">
+            <h2 class="text-lg font-semibold mb-2 text-gray-800">Your Current Location</h2>
+            <p id="gpsStatus" class="text-xs text-gray-500 mb-3">Acquiring GPS location...</p>
+            <div id="driverMap" class="w-full h-64 rounded-lg border"></div>
         </div>
 
     </div>
 
     <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
-        let currentDriverId = localStorage.getItem('driverId') || null;
-        let currentDriverName = localStorage.getItem('driverName') || '';
-        let currentNav = 'home';
-        let globalOrders = [];
+        let currentDriver = null;
         let isOnline = false;
-        let map = null;
-        let marker = null;
+        let watchId = null;
+        let driverMap = null;
+        let driverMarker = null;
 
-        let shiftLogs = JSON.parse(localStorage.getItem('shiftLogs') || '[]');
-        let currentShiftStart = localStorage.getItem('currentShiftStart') || null;
-
-        let selectedDate = new Date().toISOString().split('T')[0];
-        const alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        let lastOrderCount = 0;
-
-        function checkLoginState() {
-            if (currentDriverId) {
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('dashboardSection').classList.remove('hidden');
-                isOnline = localStorage.getItem('isOnline') === 'true';
-                fetchOrders();
-            } else {
-                document.getElementById('loginSection').classList.remove('hidden');
-                document.getElementById('dashboardSection').classList.add('hidden');
+        // Check if driver was already logged in via localStorage
+        window.onload = function() {
+            const savedDriver = localStorage.getItem('logged_in_driver');
+            if (savedDriver) {
+                currentDriver = JSON.parse(savedDriver);
+                showDashboard();
             }
-            renderScreen();
+        };
+
+        function toggleAuthMode(mode) {
+            const signInForm = document.getElementById('signInForm');
+            const signUpForm = document.getElementById('signUpForm');
+            const authTitle = document.getElementById('authTitle');
+
+            if (mode === 'signup') {
+                signInForm.classList.add('hidden');
+                signUpForm.classList.remove('hidden');
+                authTitle.innerText = 'Driver Sign Up';
+            } else {
+                signUpForm.classList.add('hidden');
+                signInForm.classList.remove('hidden');
+                authTitle.innerText = 'Driver Sign In';
+            }
         }
 
-        function loginDriver() {
-            const select = document.getElementById('driverSelect');
-            currentDriverId = select.value;
-            currentDriverName = select.options[select.selectedIndex].text;
-            localStorage.setItem('driverId', currentDriverId);
-            localStorage.setItem('driverName', currentDriverName);
-            checkLoginState();
+        function handleSignIn(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('signInPhone').value.trim();
+            
+            // Default built-in drivers or locally registered drivers
+            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            let defaultDrivers = [
+                { id: '1', firstName: 'Ali', surname: 'Khan', mobile: '+44 7000 111222', address: 'Stoke-on-Trent' },
+                { id: '2', firstName: 'Ahmed', surname: 'Raza', mobile: '+44 7000 333444', address: 'Stoke-on-Trent' },
+                { id: '3', firstName: 'Usman', surname: 'Ali', mobile: '+44 7000 555666', address: 'Stoke-on-Trent' }
+            ];
+
+            let allDrivers = [...defaultDrivers, ...registeredDrivers];
+            let found = allDrivers.find(d => d.id === inputVal || d.mobile.includes(inputVal));
+
+            if (found) {
+                currentDriver = {
+                    id: found.id || String(Date.now()),
+                    name: `${found.firstName} ${found.surname}`,
+                    mobile: found.mobile || found.phone || inputVal
+                };
+                localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
+                showDashboard();
+            } else {
+                alert('Driver not found! Please check your ID/Mobile or Sign Up.');
+            }
+        }
+
+        function handleSignUp(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('regFirstName').value.trim();
+            const surname = document.getElementById('regSurname').value.trim();
+            const mobile = document.getElementById('regMobile').value.trim();
+            const address = document.getElementById('regAddress').value.trim();
+
+            const newDriverObj = {
+                id: String(Math.floor(100 + Math.random() * 900)),
+                firstName,
+                surname,
+                mobile,
+                address
+            };
+
+            let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+            registeredDrivers.push(newDriverObj);
+            localStorage.setItem('registered_drivers', JSON.stringify(registeredDrivers));
+
+            currentDriver = {
+                id: newDriverObj.id,
+                name: `${firstName} ${surname}`,
+                mobile: mobile
+            };
+            localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
+            alert(`Sign up successful! Your assigned Driver ID is #${newDriverObj.id}`);
+            showDashboard();
+        }
+
+        function showDashboard() {
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('driverDashboard').classList.remove('hidden');
+            document.getElementById('driverWelcomeName').innerText = `Welcome, ${currentDriver.name} (ID: #${currentDriver.id})`;
+            document.getElementById('driverPhoneDisplay').innerText = `Mobile: ${currentDriver.mobile}`;
+
+            initMap();
+            fetchAssignedOrders();
+            setInterval(fetchAssignedOrders, 4000);
         }
 
         function logoutDriver() {
-            localStorage.clear();
-            currentDriverId = null;
-            checkLoginState();
-        }
-
-        function switchNav(nav) {
-            currentNav = nav;
-            ['navHome', 'navShifts', 'navWallet', 'navProfile'].forEach(id => {
-                document.getElementById(id).className = 'flex flex-col items-center text-gray-400 text-xs';
-            });
-            const activeBtn = document.getElementById('nav' + nav.charAt(0).toUpperCase() + nav.slice(1));
-            activeBtn.className = 'flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-3 py-1 rounded-full';
-            renderScreen();
-        }
-
-        async function fetchOrders() {
-            try {
-                const res = await fetch(`${API_URL}/orders`);
-                const orders = await res.json();
-                globalOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriverId));
-
-                if (globalOrders.length > lastOrderCount && lastOrderCount !== 0) {
-                    alertSound.play().catch(e => console.log("Audio play blocked"));
-                }
-                lastOrderCount = globalOrders.length;
-                renderScreen();
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function toggleGoOnline() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const dateString = now.toISOString().split('T')[0];
-
-            isOnline = !isOnline;
-            localStorage.setItem('isOnline', isOnline);
-
-            if (isOnline) {
-                currentShiftStart = timeString;
-                localStorage.setItem('currentShiftStart', currentShiftStart);
-                startLocationTracking();
-            } else {
-                if (currentShiftStart) {
-                    shiftLogs.unshift({
-                        date: dateString,
-                        start: currentShiftStart,
-                        end: timeString
-                    });
-                    localStorage.setItem('shiftLogs', JSON.stringify(shiftLogs));
-                    currentShiftStart = null;
-                    localStorage.removeItem('currentShiftStart');
-                }
-            }
-            renderScreen();
-        }
-
-        function renderScreen() {
-            const container = document.getElementById('mainTabContainer');
-            if (!container) return;
-
-            if (currentNav === 'home') {
-                const activeOrders = globalOrders.filter(o => o.status !== 'Delivered');
-                
-                if (activeOrders.length > 0) {
-                    container.innerHTML = `
-                        <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Active Jobs</div>
-                        <div class="p-4">
-                            ${activeOrders.map(o => `
-                                <div class="bg-white p-4 rounded-xl shadow border mb-3 text-xs">
-                                    <div class="flex justify-between font-bold mb-2">
-                                        <span>Order #${o.id}</span>
-                                        <span class="text-amber-600">${o.status}</span>
-                                    </div>
-                                    <p class="mb-1"><strong>Customer:</strong> ${o.customerName}</p>
-                                    <p class="mb-3"><strong>Dropoff:</strong> ${o.dropoffAddress}</p>
-                                    <div class="flex gap-1">
-                                        <button onclick="updateStatus('${o.id}', 'Accepted')" class="bg-blue-500 text-white px-2 py-1.5 rounded flex-1">Accept</button>
-                                        <button onclick="updateStatus('${o.id}', 'Out for Delivery')" class="bg-yellow-500 text-white px-2 py-1.5 rounded flex-1">Dispatched</button>
-                                        <button onclick="updateStatus('${o.id}', 'Delivered')" class="bg-emerald-600 text-white px-2 py-1.5 rounded flex-1">Delivered</button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>`;
-                } else {
-                    container.innerHTML = `
-                        <div class="bg-emerald-600 text-white p-4 flex justify-between items-center shadow-md">
-                            <span class="font-bold text-lg">Live Radar</span>
-                            <span class="text-xs bg-emerald-700 px-2 py-1 rounded-full">${isOnline ? '🟢 Online (' + currentShiftStart + ')' : '🔴 Offline'}</span>
-                        </div>
-                        <div class="flex-1 relative flex flex-col h-full">
-                            <div id="driverMap" class="w-full flex-1" style="min-height: 380px;"></div>
-                            
-                            <div class="absolute bottom-4 left-4 right-4 bg-white p-4 rounded-2xl shadow-lg border text-center z-[999]">
-                                <p class="text-xs text-gray-500 mb-2">${isOnline ? 'Shift started at ' + currentShiftStart + '. Waiting for orders...' : 'Tap below to go online and record your shift timing.'}</p>
-                                <button onclick="toggleGoOnline()" class="w-full py-3 rounded-xl font-bold text-sm text-white shadow ${isOnline ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-600 hover:bg-emerald-700'}">
-                                    ${isOnline ? 'Go Offline (End Shift)' : 'Go Online'}
-                                </button>
-                            </div>
-                        </div>`;
-                    setTimeout(initMap, 200);
-                }
-            } else if (currentNav === 'shifts') {
-                container.innerHTML = `
-                    <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Shift Records</div>
-                    <div class="p-4">
-                        ${isOnline ? `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl mb-4 text-xs">
-                            <p class="font-bold text-emerald-800">Current Ongoing Shift</p>
-                            <p class="text-gray-600 mt-1">Started at: <span class="font-semibold text-emerald-600">${currentShiftStart}</span></p>
-                        </div>` : ''}
-
-                        <h3 class="text-gray-800 font-bold text-sm mb-3">Past Shifts History</h3>
-                        <div class="space-y-2">
-                            ${shiftLogs.length === 0 ? '<p class="text-gray-400 text-center text-xs py-6">No completed shifts recorded yet.</p>' : shiftLogs.map(s => `
-                                <div class="bg-white p-3 rounded-xl shadow-sm border text-xs flex justify-between items-center">
-                                    <div>
-                                        <p class="font-bold text-gray-800">${s.date}</p>
-                                        <p class="text-gray-500 text-[11px]">Start: ${s.start} | End: ${s.end}</p>
-                                    </div>
-                                    <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-semibold text-[10px]">Completed</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>`;
-            } else if (currentNav === 'wallet') {
-                const dateFilteredOrders = globalOrders.filter(o => {
-                    const orderDate = o.date ? o.date.split('T')[0] : new Date().toISOString().split('T')[0];
-                    return orderDate === selectedDate && o.status === 'Delivered';
-                });
-                const totalEarned = dateFilteredOrders.length * 5.00;
-
-                container.innerHTML = `
-                    <div class="bg-emerald-600 text-white pt-6 pb-8 px-4 rounded-b-[30px] shadow-md text-center">
-                        <h1 class="text-lg font-bold mb-4">Wallet</h1>
-                        <p class="text-3xl font-extrabold tracking-tight mb-1">£${totalEarned.toFixed(2)}</p>
-                        <p class="text-xs text-emerald-100">Today's earnings</p>
-                    </div>
-                    <div class="p-4">
-                        <h3 class="text-gray-800 font-bold text-sm mb-3">Select Date Record</h3>
-                        <div class="bg-white rounded-2xl shadow-sm border p-4 mb-4">
-                            <input type="date" value="${selectedDate}" onchange="selectedDate=this.value; renderScreen();" class="w-full text-xs border rounded-lg p-2 bg-gray-50 font-semibold text-emerald-700">
-                        </div>
-                        <h3 class="text-gray-800 font-bold text-sm mb-3">Completed Trips (${dateFilteredOrders.length})</h3>
-                        <div class="bg-white rounded-2xl shadow-sm border p-3 text-xs">
-                            ${dateFilteredOrders.length === 0 ? '<p class="text-gray-400 text-center py-3">No trips found for this date.</p>' : dateFilteredOrders.map(o => `
-                                <div class="flex justify-between py-2 border-b last:border-none">
-                                    <span>Order #${o.id} (${o.customerName})</span>
-                                    <span class="text-emerald-600 font-semibold">£5.00</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>`;
-            } else if (currentNav === 'profile') {
-                container.innerHTML = `
-                    <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Profile</div>
-                    <div class="p-4 text-center">
-                        <div class="bg-white p-6 rounded-2xl shadow border mb-4">
-                            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">${currentDriverName ? currentDriverName.charAt(0) : 'D'}</div>
-                            <h3 class="font-bold text-gray-800 text-base">${currentDriverName || 'Driver'}</h3>
-                            <p class="text-xs text-gray-500 mb-4">Rider ID: #${currentDriverId || 'N/A'}</p>
-                            <button onclick="logoutDriver()" class="w-full bg-red-500 text-white py-2.5 rounded-xl font-semibold text-xs">Logout</button>
-                        </div>
-                    </div>`;
-            }
+            if (isOnline) toggleOnlineStatus();
+            localStorage.removeItem('logged_in_driver');
+            location.reload();
         }
 
         function initMap() {
-            const mapContainer = document.getElementById('driverMap');
-            if (!mapContainer) return;
-
-            if (map) {
-                map.remove();
-                map = null;
+            if (!driverMap) {
+                driverMap = L.map('driverMap').setView([53.0027, -2.1794], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(driverMap);
             }
-            map = L.map('driverMap').setView([53.0027, -2.1794], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        }
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    if(map) {
-                        map.setView([lat, lng], 15);
-                        marker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
-                    }
-                });
+        function toggleOnlineStatus() {
+            isOnline = !isOnline;
+            const btn = document.getElementById('statusToggleBtn');
+            const gpsStatus = document.getElementById('gpsStatus');
+
+            if (isOnline) {
+                btn.className = 'px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-emerald-600 text-white animate-pulse';
+                btn.innerText = '🟢 Online';
+                startLocationTracking();
+            } else {
+                btn.className = 'px-4 py-2 rounded-lg font-bold text-sm shadow transition bg-red-500 text-white';
+                btn.innerText = '🔴 Offline';
+                stopLocationTracking();
+                gpsStatus.innerText = 'You are currently offline.';
             }
         }
 
         function startLocationTracking() {
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(async (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    if (map && marker) {
-                        marker.setLatLng([lat, lng]);
-                        map.panTo([lat, lng]);
-                    }
+                document.getElementById('gpsStatus').innerText = 'Locating via GPS...';
+                watchId = navigator.geolocation.watchPosition(
+                    position => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        document.getElementById('gpsStatus').innerText = `Live GPS Active (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
 
-                    if (isOnline) {
-                        try {
-                            await fetch(`${API_URL}/driver/location`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ driverId: currentDriverId, lat, lng })
-                            });
-                        } catch (e) {}
-                    }
-                }, () => {}, { enableHighAccuracy: true });
+                        if (driverMap) {
+                            driverMap.setView([lat, lng], 15);
+                            if (driverMarker) {
+                                driverMarker.setLatLng([lat, lng]);
+                            } else {
+                                driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('You are here').openPopup();
+                            }
+                        }
+
+                        // Send location to server
+                        fetch(`${API_URL}/drivers/location`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ driverId: currentDriver.id, lat, lng })
+                        }).catch(err => console.error("Error sending location", err));
+                    },
+                    error => {
+                        document.getElementById('gpsStatus').innerText = 'GPS Error: ' + error.message;
+                    },
+                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser');
             }
         }
 
-        async function updateStatus(orderId, status) {
-            await fetch(`${API_URL}/orders/status`, {
+        function stopLocationTracking() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            // Send offline signal (remove location)
+            fetch(`${API_URL}/drivers/location`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId, status })
-            });
-            fetchOrders();
+                body: JSON.stringify({ driverId: currentDriver.id, lat: null, lng: null })
+            }).catch(err => console.error(err));
         }
 
-        checkLoginState();
-        setInterval(fetchOrders, 3000);
+        async function fetchAssignedOrders() {
+            if (!currentDriver) return;
+            try {
+                const res = await fetch(`${API_URL}/orders`);
+                const orders = await res.json();
+                const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
+
+                const container = document.getElementById('assignedOrdersList');
+                if (myOrders.length === 0) {
+                    container.innerHTML = `<p class="text-xs text-gray-400">No active orders assigned to you right now.</p>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                myOrders.forEach(order => {
+                    const isDelivered = order.status === 'Delivered';
+                    container.innerHTML += `
+                        <div class="border p-4 rounded-lg bg-gray-50 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-gray-800">Order #${order.id} - ${order.customerName}</span>
+                                <span class="px-2 py-1 rounded text-xs font-semibold ${isDelivered ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}">${order.status}</span>
+                            </div>
+                            <p class="text-xs text-gray-600"><strong>Phone:</strong> ${order.customerPhone}</p>
+                            <p class="text-xs text-gray-600"><strong>Pickup:</strong> ${order.pickupAddress}</p>
+                            <p class="text-xs text-gray-600"><strong>Drop-off:</strong> ${order.dropoffAddress}</p>
+                            ${order.notes ? `<p class="text-xs text-blue-600"><strong>Notes:</strong> ${order.notes}</p>` : ''}
+                            
+                            ${!isDelivered ? `
+                                <button onclick="markDelivered('${order.id}')" class="w-full mt-2 bg-emerald-600 text-white py-2 rounded-md text-xs font-bold hover:bg-emerald-700 transition">Mark as Delivered (£5.00)</button>
+                            ` : `<p class="text-xs text-emerald-600 font-bold text-center mt-2">✓ Completed & Earned (£5.00)</p>`}
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error("Error fetching assigned orders", e);
+            }
+        }
+
+        async function markDelivered(orderId) {
+            try {
+                const res = await fetch(`${API_URL}/orders/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId, status: 'Delivered' })
+                });
+                if (res.ok) {
+                    fetchAssignedOrders();
+                }
+            } catch (e) {
+                console.error("Error updating status", e);
+            }
+        }
     </script>
 </body>
 </html>
