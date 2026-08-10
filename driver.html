@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver App - Wallet</title>
+    <title>Driver App - Home & Wallet</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-200 min-h-screen flex items-center justify-center p-4">
 
@@ -24,17 +27,17 @@
         <!-- Main Content Area -->
         <div id="dashboardSection" class="flex-1 flex flex-col overflow-hidden hidden">
             
-            <div class="flex-1 overflow-y-auto pb-20" id="mainTabContainer">
+            <div class="flex-1 overflow-y-auto pb-20 relative flex flex-col" id="mainTabContainer">
                 <!-- Content will dynamically switch here -->
             </div>
 
             <!-- Bottom Navigation Bar -->
-            <div class="absolute bottom-0 left-0 right-0 bg-white border-t py-2 px-6 flex justify-around items-center shadow-lg">
-                <button onclick="switchNav('home')" id="navHome" class="flex flex-col items-center text-gray-400 text-xs">
+            <div class="absolute bottom-0 left-0 right-0 bg-white border-t py-2 px-6 flex justify-around items-center shadow-lg z-40">
+                <button onclick="switchNav('home')" id="navHome" class="flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-4 py-1 rounded-full">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                     Home
                 </button>
-                <button onclick="switchNav('wallet')" id="navWallet" class="flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-4 py-1 rounded-full">
+                <button onclick="switchNav('wallet')" id="navWallet" class="flex flex-col items-center text-gray-400 text-xs">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                     Wallet
                 </button>
@@ -52,13 +55,14 @@
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
         let currentDriverId = localStorage.getItem('driverId') || null;
         let currentDriverName = localStorage.getItem('driverName') || '';
-        let currentNav = 'wallet';
+        let currentNav = 'home';
         let walletFilter = 'Daily';
         let globalOrders = [];
-        
-        // آج کی تاریخ ڈیفولت کے طور پر سلیکٹ کرنے کے لیے
-        let selectedDate = new Date().toISOString().split('T')[0];
+        let isOnline = false;
+        let map = null;
+        let marker = null;
 
+        let selectedDate = new Date().toISOString().split('T')[0];
         const alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         let lastOrderCount = 0;
 
@@ -67,7 +71,6 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('dashboardSection').classList.remove('hidden');
                 fetchOrders();
-                startLocationTracking();
             } else {
                 document.getElementById('loginSection').classList.remove('hidden');
                 document.getElementById('dashboardSection').classList.add('hidden');
@@ -113,14 +116,12 @@
             }
         }
 
-        function setWalletFilter(filter) {
-            walletFilter = filter;
+        function toggleGoOnline() {
+            isOnline = !isOnline;
             renderScreen();
-        }
-
-        function updateSelectedDate(dateValue) {
-            selectedDate = dateValue;
-            renderScreen();
+            if (isOnline) {
+                startLocationTracking();
+            }
         }
 
         function renderScreen() {
@@ -128,82 +129,68 @@
 
             if (currentNav === 'home') {
                 const activeOrders = globalOrders.filter(o => o.status !== 'Delivered');
-                container.innerHTML = `
-                    <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Active Jobs</div>
-                    <div class="p-4">
-                        ${activeOrders.length === 0 ? '<p class="text-center text-gray-400 text-sm mt-10">No active jobs assigned.</p>' : activeOrders.map(o => `
-                            <div class="bg-white p-4 rounded-xl shadow border mb-3 text-xs">
-                                <div class="flex justify-between font-bold mb-2">
-                                    <span>Order #${o.id}</span>
-                                    <span class="text-amber-600">${o.status}</span>
+                
+                if (activeOrders.length > 0) {
+                    // Show Active Jobs
+                    container.innerHTML = `
+                        <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Active Jobs</div>
+                        <div class="p-4">
+                            ${activeOrders.map(o => `
+                                <div class="bg-white p-4 rounded-xl shadow border mb-3 text-xs">
+                                    <div class="flex justify-between font-bold mb-2">
+                                        <span>Order #${o.id}</span>
+                                        <span class="text-amber-600">${o.status}</span>
+                                    </div>
+                                    <p class="mb-1"><strong>Customer:</strong> ${o.customerName}</p>
+                                    <p class="mb-3"><strong>Dropoff:</strong> ${o.dropoffAddress}</p>
+                                    <div class="flex gap-1">
+                                        <button onclick="updateStatus('${o.id}', 'Accepted')" class="bg-blue-500 text-white px-2 py-1.5 rounded flex-1">Accept</button>
+                                        <button onclick="updateStatus('${o.id}', 'Out for Delivery')" class="bg-yellow-500 text-white px-2 py-1.5 rounded flex-1">Dispatched</button>
+                                        <button onclick="updateStatus('${o.id}', 'Delivered')" class="bg-emerald-600 text-white px-2 py-1.5 rounded flex-1">Delivered</button>
+                                    </div>
                                 </div>
-                                <p class="mb-1"><strong>Customer:</strong> ${o.customerName}</p>
-                                <p class="mb-3"><strong>Dropoff:</strong> ${o.dropoffAddress}</p>
-                                <div class="flex gap-1">
-                                    <button onclick="updateStatus('${o.id}', 'Accepted')" class="bg-blue-500 text-white px-2 py-1.5 rounded flex-1">Accept</button>
-                                    <button onclick="updateStatus('${o.id}', 'Out for Delivery')" class="bg-yellow-500 text-white px-2 py-1.5 rounded flex-1">Dispatched</button>
-                                    <button onclick="updateStatus('${o.id}', 'Delivered')" class="bg-emerald-600 text-white px-2 py-1.5 rounded flex-1">Delivered</button>
-                                </div>
+                            `).join('')}
+                        </div>`;
+                } else {
+                    // Show Map & Go Online Button when no jobs
+                    container.innerHTML = `
+                        <div class="bg-emerald-600 text-white p-4 flex justify-between items-center shadow-md">
+                            <span class="font-bold text-lg">Live Radar</span>
+                            <span class="text-xs bg-emerald-700 px-2 py-1 rounded-full">${isOnline ? '🟢 Online' : '🔴 Offline'}</span>
+                        </div>
+                        <div class="flex-1 relative flex flex-col h-full">
+                            <div id="driverMap" class="w-full flex-1" style="min-height: 400px;"></div>
+                            
+                            <!-- Go Online Floating Panel -->
+                            <div class="absolute bottom-4 left-4 right-4 bg-white p-4 rounded-2xl shadow-lg border text-center z-[999]">
+                                <p class="text-xs text-gray-500 mb-2">${isOnline ? 'You are online, waiting for new orders...' : 'Tap below to turn on your location and start receiving jobs.'}</p>
+                                <button onclick="toggleGoOnline()" class="w-full py-3 rounded-xl font-bold text-sm text-white shadow ${isOnline ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-600 hover:bg-emerald-700'}">
+                                    ${isOnline ? 'Go Offline' : 'Go Online'}
+                                </button>
                             </div>
-                        `).join('')}
-                    </div>`;
+                        </div>`;
+                    
+                    // Initialize Map after DOM render
+                    setTimeout(initMap, 200);
+                }
             } else if (currentNav === 'wallet') {
-                // منتخب کردہ تاریخ کے حساب سے آرڈرز فلٹر کرنا
                 const dateFilteredOrders = globalOrders.filter(o => {
                     const orderDate = o.date ? o.date.split('T')[0] : new Date().toISOString().split('T')[0];
                     return orderDate === selectedDate && o.status === 'Delivered';
                 });
-
                 const totalEarned = dateFilteredOrders.length * 5.00;
 
                 container.innerHTML = `
-                    <!-- Top Light Green Header -->
                     <div class="bg-emerald-600 text-white pt-6 pb-8 px-4 rounded-b-[30px] shadow-md text-center">
                         <h1 class="text-lg font-bold mb-4">Wallet</h1>
-                        <div class="flex justify-center gap-2 bg-emerald-700/60 p-1 rounded-2xl max-w-xs mx-auto mb-6">
-                            <button onclick="setWalletFilter('Daily')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Daily' ? 'bg-white text-emerald-900 shadow' : 'text-white'}">Daily</button>
-                            <button onclick="setWalletFilter('Weekly')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Weekly' ? 'bg-white text-emerald-900 shadow' : 'text-white'}">Weekly</button>
-                            <button onclick="setWalletFilter('Monthly')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Monthly' ? 'bg-white text-emerald-900 shadow' : 'text-white'}">Monthly</button>
-                        </div>
                         <p class="text-3xl font-extrabold tracking-tight mb-1">£${totalEarned.toFixed(2)}</p>
-                        <p class="text-xs text-emerald-100 flex items-center justify-center gap-1">
-                            <span>🪙</span> ${walletFilter}'s earnings
-                        </p>
+                        <p class="text-xs text-emerald-100">Today's earnings</p>
                     </div>
-
-                    <!-- Details Section -->
                     <div class="p-4">
-                        <h3 class="text-gray-800 font-bold text-sm mb-3">Details</h3>
-                        <div class="bg-white rounded-2xl shadow-sm border divide-y text-xs text-gray-700 mb-6">
-                            <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold">£</span> Delivery fee</span>
-                                <span class="font-bold">£${totalEarned.toFixed(2)}</span>
-                            </div>
-                            <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">📄</span> Number of trips</span>
-                                <span class="font-bold">${dateFilteredOrders.length}</span>
-                            </div>
-                            <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">⏰</span> Time Connected</span>
-                                <span class="font-bold">04h:15m</span>
-                            </div>
-                            <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">📍</span> Distance</span>
-                                <span class="font-bold">12.40 Miles</span>
-                            </div>
-                        </div>
-
-                        <!-- Interactive Date Picker Section -->
                         <h3 class="text-gray-800 font-bold text-sm mb-3">Select Date Record</h3>
                         <div class="bg-white rounded-2xl shadow-sm border p-4 mb-4">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="text-xs font-bold text-gray-700">Choose Date:</span>
-                                <input type="date" id="tripDatepicker" value="${selectedDate}" onchange="updateSelectedDate(this.value)" class="text-xs border rounded-lg p-1.5 bg-gray-50 font-semibold text-emerald-700">
-                            </div>
-                            <p class="text-gray-400 text-[11px]">Showing records for: <span class="font-bold text-gray-700">${selectedDate}</span></p>
+                            <input type="date" value="${selectedDate}" onchange="selectedDate=this.value; renderScreen();" class="w-full text-xs border rounded-lg p-2 bg-gray-50 font-semibold text-emerald-700">
                         </div>
-
-                        <!-- Completed Trips List for Selected Date -->
                         <h3 class="text-gray-800 font-bold text-sm mb-3">Completed Trips (${dateFilteredOrders.length})</h3>
                         <div class="bg-white rounded-2xl shadow-sm border p-3 text-xs">
                             ${dateFilteredOrders.length === 0 ? '<p class="text-gray-400 text-center py-3">No trips found for this date.</p>' : dateFilteredOrders.map(o => `
@@ -228,13 +215,24 @@
             }
         }
 
-        async function updateStatus(orderId, status) {
-            await fetch(`${API_URL}/orders/status`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId, status })
-            });
-            fetchOrders();
+        function initMap() {
+            if (map) {
+                map.remove();
+                map = null;
+            }
+            map = L.map('driverMap').setView([53.0027, -2.1794], 13); // Default Stoke-on-Trent coordinates
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+            }).addTo(map);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    map.setView([lat, lng], 15);
+                    marker = L.marker([lat, lng]).addTo(map).bindPopup("You are here").openPopup();
+                });
+            }
         }
 
         function startLocationTracking() {
@@ -242,6 +240,12 @@
                 navigator.geolocation.watchPosition(async (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
+                    
+                    if (map && marker) {
+                        marker.setLatLng([lat, lng]);
+                        map.panTo([lat, lng]);
+                    }
+
                     try {
                         await fetch(`${API_URL}/driver/location`, {
                             method: 'POST',
@@ -251,6 +255,15 @@
                     } catch (e) {}
                 }, () => {}, { enableHighAccuracy: true });
             }
+        }
+
+        async function updateStatus(orderId, status) {
+            await fetch(`${API_URL}/orders/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, status })
+            });
+            fetchOrders();
         }
 
         checkLoginState();
