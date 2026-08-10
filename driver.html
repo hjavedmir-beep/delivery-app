@@ -51,7 +51,6 @@
         let activeTab = 'jobs';
         let lastOrderCount = 0;
 
-        // نوٹیفیکیشن ساؤنڈ کے لیے بیپ آڈیو
         const alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
         function checkLoginState() {
@@ -60,7 +59,7 @@
                 document.getElementById('dashboardSection').classList.remove('hidden');
                 document.getElementById('driverInfo').innerText = `Driver: ${currentDriverName}`;
                 loadTabData();
-                startLocationTracking(); // جی پی ایس ٹریکنگ شروع کریں
+                startLocationTracking();
             } else {
                 document.getElementById('loginSection').classList.remove('hidden');
                 document.getElementById('dashboardSection').classList.add('hidden');
@@ -95,7 +94,6 @@
                 const orders = await res.json();
                 const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriverId));
 
-                // نیا آرڈر آنے پر ساؤنڈ الرٹ بجانا
                 if (activeTab === 'jobs' && myOrders.length > lastOrderCount && lastOrderCount !== 0) {
                     alertSound.play().catch(e => console.log("Audio play blocked"));
                 }
@@ -111,29 +109,68 @@
             }
         }
 
+        // جابز کو تاریخ کے حساب سے گروپ اور رینڈر کرنے کا فنکشن
         function renderJobs(orders) {
             const container = document.getElementById('tabContent');
             if (orders.length === 0) {
                 container.innerHTML = `<div class="p-6 text-center text-gray-400 text-sm">No active orders assigned.</div>`;
                 return;
             }
-            container.innerHTML = '';
+
+            // آرڈرز کو تاریخ (Date) کے لحاظ سے الگ کرنا
+            const groupedByDate = {};
             orders.forEach(o => {
-                container.innerHTML += `
-                    <div class="bg-white p-3 rounded-xl shadow border mb-3 text-xs">
-                        <div class="flex justify-between font-bold mb-1">
-                            <span>Order #${o.id}</span>
-                            <span class="text-amber-600">${o.status}</span>
-                        </div>
-                        <p><strong>Customer:</strong> ${o.customerName}</p>
-                        <p><strong>Dropoff:</strong> ${o.dropoffAddress}</p>
-                        <div class="mt-2 pt-2 border-t flex gap-1">
-                            <button onclick="updateStatus('${o.id}', 'Accepted')" class="bg-blue-500 text-white px-2 py-1 rounded">Accept</button>
-                            <button onclick="updateStatus('${o.id}', 'Out for Delivery')" class="bg-yellow-500 text-white px-2 py-1 rounded">Dispatched</button>
-                            <button onclick="updateStatus('${o.id}', 'Delivered')" class="bg-green-500 text-white px-2 py-1 rounded">Delivered</button>
-                        </div>
-                    </div>`;
+                // اگر آرڈر میں تاریخ موجود نہ ہو تو آج کی تاریخ یا 'Recent' فرض کر لیں
+                const dateKey = o.date ? o.date.split('T')[0] : 'Today / Recent';
+                if (!groupedByDate[dateKey]) {
+                    groupedByDate[dateKey] = [];
+                }
+                groupedByDate[dateKey].push(o);
             });
+
+            container.innerHTML = '';
+
+            // ہر تاریخ کے تحت اس کے آرڈرز اور مکمل شدہ ٹرپس دکھانا
+            for (const [date, dateOrders] of Object.entries(groupedByDate)) {
+                const activeOrders = dateOrders.filter(o => o.status !== 'Delivered');
+                const completedOrders = dateOrders.filter(o => o.status === 'Delivered');
+
+                container.innerHTML += `
+                    <div class="mb-4">
+                        <div class="bg-gray-200 text-gray-700 font-bold px-2 py-1 rounded text-xs mb-2">${date}</div>
+                        
+                        <!-- Active/Pending Jobs for this date -->
+                        ${activeOrders.length === 0 ? '' : activeOrders.map(o => `
+                            <div class="bg-white p-3 rounded-xl shadow border mb-2 text-xs">
+                                <div class="flex justify-between font-bold mb-1">
+                                    <span>Order #${o.id}</span>
+                                    <span class="text-amber-600">${o.status}</span>
+                                </div>
+                                <p><strong>Customer:</strong> ${o.customerName}</p>
+                                <p><strong>Dropoff:</strong> ${o.dropoffAddress}</p>
+                                <div class="mt-2 pt-2 border-t flex gap-1">
+                                    <button onclick="updateStatus('${o.id}', 'Accepted')" class="bg-blue-500 text-white px-2 py-1 rounded">Accept</button>
+                                    <button onclick="updateStatus('${o.id}', 'Out for Delivery')" class="bg-yellow-500 text-white px-2 py-1 rounded">Dispatched</button>
+                                    <button onclick="updateStatus('${o.id}', 'Delivered')" class="bg-green-500 text-white px-2 py-1 rounded">Delivered</button>
+                                </div>
+                            </div>
+                        `).join('')}
+
+                        <!-- Completed Trips Record for this date -->
+                        ${completedOrders.length === 0 ? '' : `
+                            <div class="bg-green-50 p-2.5 rounded-xl border border-green-200 mb-2 text-xs">
+                                <p class="font-bold text-green-800 mb-1">Completed Trips (${completedOrders.length})</p>
+                                ${completedOrders.map(o => `
+                                    <div class="flex justify-between py-1 border-b border-green-100 text-gray-600">
+                                        <span>Order #${o.id} (${o.customerName})</span>
+                                        <span class="text-green-600 font-semibold">Delivered</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
+                    </div>
+                `;
+            }
         }
 
         function renderEarnings(orders) {
@@ -161,7 +198,6 @@
             loadTabData();
         }
 
-        // لائیو جی پی ایس لوکیشن سرور پر بھیجنے کا فنکشن
         function startLocationTracking() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(async (position) => {
