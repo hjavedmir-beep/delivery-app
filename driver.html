@@ -55,6 +55,9 @@
         let currentNav = 'wallet';
         let walletFilter = 'Daily';
         let globalOrders = [];
+        
+        // آج کی تاریخ ڈیفولت کے طور پر سلیکٹ کرنے کے لیے
+        let selectedDate = new Date().toISOString().split('T')[0];
 
         const alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         let lastOrderCount = 0;
@@ -115,6 +118,11 @@
             renderScreen();
         }
 
+        function updateSelectedDate(dateValue) {
+            selectedDate = dateValue;
+            renderScreen();
+        }
+
         function renderScreen() {
             const container = document.getElementById('mainTabContainer');
 
@@ -140,8 +148,13 @@
                         `).join('')}
                     </div>`;
             } else if (currentNav === 'wallet') {
-                const completed = globalOrders.filter(o => o.status === 'Delivered');
-                const totalEarned = completed.length * 5.00;
+                // منتخب کردہ تاریخ کے حساب سے آرڈرز فلٹر کرنا
+                const dateFilteredOrders = globalOrders.filter(o => {
+                    const orderDate = o.date ? o.date.split('T')[0] : new Date().toISOString().split('T')[0];
+                    return orderDate === selectedDate && o.status === 'Delivered';
+                });
+
+                const totalEarned = dateFilteredOrders.length * 5.00;
 
                 container.innerHTML = `
                     <!-- Top Light Green Header -->
@@ -168,7 +181,7 @@
                             </div>
                             <div class="p-3.5 flex justify-between items-center">
                                 <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">📄</span> Number of trips</span>
-                                <span class="font-bold">${completed.length}</span>
+                                <span class="font-bold">${dateFilteredOrders.length}</span>
                             </div>
                             <div class="p-3.5 flex justify-between items-center">
                                 <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">⏰</span> Time Connected</span>
@@ -180,14 +193,25 @@
                             </div>
                         </div>
 
-                        <!-- Earnings / History Section -->
-                        <h3 class="text-gray-800 font-bold text-sm mb-3">Earnings</h3>
-                        <div class="bg-white rounded-2xl shadow-sm border p-4 flex justify-between items-center">
-                            <div>
-                                <p class="font-bold text-gray-800 text-xs">Monday, August 10th, 2026</p>
-                                <p class="text-gray-400 text-[11px] mt-0.5">${completed.length} trips</p>
+                        <!-- Interactive Date Picker Section -->
+                        <h3 class="text-gray-800 font-bold text-sm mb-3">Select Date Record</h3>
+                        <div class="bg-white rounded-2xl shadow-sm border p-4 mb-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-xs font-bold text-gray-700">Choose Date:</span>
+                                <input type="date" id="tripDatepicker" value="${selectedDate}" onchange="updateSelectedDate(this.value)" class="text-xs border rounded-lg p-1.5 bg-gray-50 font-semibold text-emerald-700">
                             </div>
-                            <span class="text-gray-400 text-base font-bold">›</span>
+                            <p class="text-gray-400 text-[11px]">Showing records for: <span class="font-bold text-gray-700">${selectedDate}</span></p>
+                        </div>
+
+                        <!-- Completed Trips List for Selected Date -->
+                        <h3 class="text-gray-800 font-bold text-sm mb-3">Completed Trips (${dateFilteredOrders.length})</h3>
+                        <div class="bg-white rounded-2xl shadow-sm border p-3 text-xs">
+                            ${dateFilteredOrders.length === 0 ? '<p class="text-gray-400 text-center py-3">No trips found for this date.</p>' : dateFilteredOrders.map(o => `
+                                <div class="flex justify-between py-2 border-b last:border-none">
+                                    <span>Order #${o.id} (${o.customerName})</span>
+                                    <span class="text-emerald-600 font-semibold">£5.00</span>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>`;
             } else if (currentNav === 'profile') {
