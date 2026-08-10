@@ -128,15 +128,29 @@
 
         <!-- TAB 2: Manage Drivers Page -->
         <div id="tabContentDrivers" class="space-y-5 hidden">
-            <div class="bg-white p-5 rounded-xl shadow-md space-y-5">
+            
+            <!-- SECTION A: Driver Directory & Approvals -->
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h2 class="font-bold text-base text-gray-800">Driver Directory, Real-Time Shifts & Earnings</h2>
+                    <h2 class="font-bold text-base text-gray-800">👤 Driver Directory & Approvals</h2>
                     <button onclick="loadDriversManagement()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Drivers</button>
                 </div>
-                <div id="driversDirectoryContainer" class="space-y-6">
+                <div id="driversDirectoryContainer" class="space-y-3">
                     <p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>
                 </div>
             </div>
+
+            <!-- SECTION B: Real-Time Shift History & Earnings Log -->
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-4">
+                <div class="border-b pb-2">
+                    <h2 class="font-bold text-base text-gray-800">💰 Real-Time Shift History & Earnings Log</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Calculated automatically at £5.00 per completed delivery.</p>
+                </div>
+                <div id="driversEarningsContainer" class="space-y-3">
+                    <p class="text-gray-400 text-center py-6 font-semibold">No shift history available.</p>
+                </div>
+            </div>
+
         </div>
 
         <!-- TAB 3: Manage Businesses Page -->
@@ -282,7 +296,6 @@
 
             if (!name || !phone || !address1 || !postcode) return;
 
-            // Fetch latitude and longitude from postcodes.io so we can pin it on the map
             let lat = null;
             let lng = null;
             try {
@@ -521,22 +534,18 @@
             }
         }
 
-        // Combines plotting both registered businesses and live drivers on the map
         function refreshMapPins() {
             if (!markersLayer) return;
             markersLayer.clearLayers();
 
-            // 1. Pin Registered Businesses
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
             businesses.forEach(b => {
                 if (b.lat && b.lng) {
-                    // Custom style or standard marker for business
                     const marker = L.marker([b.lat, b.lng]).bindPopup(`<b>🏢 ${b.name} (Business)</b><br>${b.address1}, ${b.postcode}`);
                     markersLayer.addLayer(marker);
                 }
             });
 
-            // 2. Pin Live Drivers
             let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
             for (const [driverId, data] of Object.entries(onlineDriversCache)) {
                 if (data.lat && data.lng) {
@@ -551,15 +560,20 @@
 
         function loadDriversManagement() {
             let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            const container = document.getElementById('driversDirectoryContainer');
-            if (!container) return;
+            const dirContainer = document.getElementById('driversDirectoryContainer');
+            const earnContainer = document.getElementById('driversEarningsContainer');
+            
+            if (!dirContainer || !earnContainer) return;
 
             if (registered.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>`;
+                dirContainer.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>`;
+                earnContainer.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No shift history available.</p>`;
                 return;
             }
 
-            container.innerHTML = '';
+            dirContainer.innerHTML = '';
+            earnContainer.innerHTML = '';
+
             registered.forEach((drv, index) => {
                 const isOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
                 const driverCompletedOrders = allOrdersCache.filter(o => String(o.assignedDriverId) === String(drv.id) && o.status === 'Delivered');
@@ -570,26 +584,36 @@
                 const shiftStart = drv.lastShiftStart || (isOnline ? 'Active Session' : 'Not Started');
                 const shiftEnd = isOnline ? 'Ongoing...' : (drv.lastShiftEnd || 'Offline');
 
-                container.innerHTML += `
-                    <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
-                        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3">
-                            <div>
-                                <div class="flex items-center gap-3">
-                                    <h3 class="font-bold text-gray-900 text-base">${drv.firstName} ${drv.surname}</h3>
-                                    ${isOnline 
-                                        ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Online</span>`
-                                        : `<span class="bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold">Offline</span>`
-                                    }
-                                </div>
-                                <p class="text-gray-600 text-xs mt-1">📞 Phone: <a href="tel:${drv.mobile}" class="text-blue-600 font-bold hover:underline">${drv.mobile}</a></p>
-                            </div>
+                // 1. Render Section A: Driver Directory & Approvals Item
+                dirContainer.innerHTML += `
+                    <div class="bg-gray-50 p-4 rounded-xl border flex flex-wrap justify-between items-center gap-3">
+                        <div>
                             <div class="flex items-center gap-3">
-                                <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">Approval: ${drv.status}</span>
-                                ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold text-xs transition">Approve</button>` : ''}
+                                <h3 class="font-bold text-gray-900 text-base">${drv.firstName} ${drv.surname}</h3>
+                                ${isOnline 
+                                    ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Online</span>`
+                                    : `<span class="bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold">Offline</span>`
+                                }
                             </div>
+                            <p class="text-gray-600 text-xs mt-1">📞 Phone: <a href="tel:${drv.mobile}" class="text-blue-600 font-bold hover:underline">${drv.mobile}</a></p>
                         </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">Approval: ${drv.status}</span>
+                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold text-xs transition">Approve</button>` : ''}
+                        </div>
+                    </div>
+                `;
 
-                        <!-- Real-Time Shift & Performance Grid -->
+                // 2. Render Section B: Real-Time Shift History & Earnings Item
+                earnContainer.innerHTML += `
+                    <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h3 class="font-bold text-gray-900 text-sm">${drv.firstName} ${drv.surname}</h3>
+                            ${isOnline 
+                                ? `<span class="text-emerald-700 font-bold text-xs">● Active Shift</span>`
+                                : `<span class="text-gray-500 font-bold text-xs">● Shift Closed</span>`
+                            }
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                             <div class="bg-white p-3 rounded-lg border">
                                 <span class="text-gray-500 block font-semibold">Shift Started</span>
