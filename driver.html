@@ -18,7 +18,7 @@
                 <option value="2">Ahmed Raza (ID: 2)</option>
                 <option value="3">Usman Ali (ID: 3)</option>
             </select>
-            <button onclick="loginDriver()" class="w-full bg-violet-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-violet-700">Start Shift</button>
+            <button onclick="loginDriver()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-emerald-700">Start Shift</button>
         </div>
 
         <!-- Main Content Area -->
@@ -34,7 +34,7 @@
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                     Home
                 </button>
-                <button onclick="switchNav('wallet')" id="navWallet" class="flex flex-col items-center text-violet-600 font-bold text-xs bg-violet-100 px-4 py-1 rounded-full">
+                <button onclick="switchNav('wallet')" id="navWallet" class="flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-4 py-1 rounded-full">
                     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                     Wallet
                 </button>
@@ -88,9 +88,9 @@
 
         function switchNav(nav) {
             currentNav = nav;
-            document.getElementById('navHome').className = nav === 'home' ? 'flex flex-col items-center text-violet-600 font-bold text-xs bg-violet-100 px-4 py-1 rounded-full' : 'flex flex-col items-center text-gray-400 text-xs';
-            document.getElementById('navWallet').className = nav === 'wallet' ? 'flex flex-col items-center text-violet-600 font-bold text-xs bg-violet-100 px-4 py-1 rounded-full' : 'flex flex-col items-center text-gray-400 text-xs';
-            document.getElementById('navProfile').className = nav === 'profile' ? 'flex flex-col items-center text-violet-600 font-bold text-xs bg-violet-100 px-4 py-1 rounded-full' : 'flex flex-col items-center text-gray-400 text-xs';
+            document.getElementById('navHome').className = nav === 'home' ? 'flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-4 py-1 rounded-full' : 'flex flex-col items-center text-gray-400 text-xs';
+            document.getElementById('navWallet').className = nav === 'wallet' ? 'flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-4 py-1 rounded-full' : 'flex flex-col items-center text-gray-400 text-xs';
+            document.getElementById('navProfile').className = nav === 'profile' ? 'flex flex-col items-center text-emerald-700 font-bold text-xs bg-emerald-100 px-4 py-1 rounded-full' : 'flex flex-col items-center text-gray-400 text-xs';
             renderScreen();
         }
 
@@ -121,7 +121,7 @@
             if (currentNav === 'home') {
                 const activeOrders = globalOrders.filter(o => o.status !== 'Delivered');
                 container.innerHTML = `
-                    <div class="bg-violet-600 text-white p-4 font-bold text-lg">Active Jobs</div>
+                    <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Active Jobs</div>
                     <div class="p-4">
                         ${activeOrders.length === 0 ? '<p class="text-center text-gray-400 text-sm mt-10">No active jobs assigned.</p>' : activeOrders.map(o => `
                             <div class="bg-white p-4 rounded-xl shadow border mb-3 text-xs">
@@ -134,7 +134,7 @@
                                 <div class="flex gap-1">
                                     <button onclick="updateStatus('${o.id}', 'Accepted')" class="bg-blue-500 text-white px-2 py-1.5 rounded flex-1">Accept</button>
                                     <button onclick="updateStatus('${o.id}', 'Out for Delivery')" class="bg-yellow-500 text-white px-2 py-1.5 rounded flex-1">Dispatched</button>
-                                    <button onclick="updateStatus('${o.id}', 'Delivered')" class="bg-green-500 text-white px-2 py-1.5 rounded flex-1">Delivered</button>
+                                    <button onclick="updateStatus('${o.id}', 'Delivered')" class="bg-emerald-600 text-white px-2 py-1.5 rounded flex-1">Delivered</button>
                                 </div>
                             </div>
                         `).join('')}
@@ -144,16 +144,16 @@
                 const totalEarned = completed.length * 5.00;
 
                 container.innerHTML = `
-                    <!-- Top Purple Header -->
-                    <div class="bg-violet-700 text-white pt-6 pb-8 px-4 rounded-b-[30px] shadow-md text-center">
+                    <!-- Top Light Green Header -->
+                    <div class="bg-emerald-600 text-white pt-6 pb-8 px-4 rounded-b-[30px] shadow-md text-center">
                         <h1 class="text-lg font-bold mb-4">Wallet</h1>
-                        <div class="flex justify-center gap-2 bg-violet-800/60 p-1 rounded-2xl max-w-xs mx-auto mb-6">
-                            <button onclick="setWalletFilter('Daily')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Daily' ? 'bg-white text-violet-900 shadow' : 'text-white'}">Daily</button>
-                            <button onclick="setWalletFilter('Weekly')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Weekly' ? 'bg-white text-violet-900 shadow' : 'text-white'}">Weekly</button>
-                            <button onclick="setWalletFilter('Monthly')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Monthly' ? 'bg-white text-violet-900 shadow' : 'text-white'}">Monthly</button>
+                        <div class="flex justify-center gap-2 bg-emerald-700/60 p-1 rounded-2xl max-w-xs mx-auto mb-6">
+                            <button onclick="setWalletFilter('Daily')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Daily' ? 'bg-white text-emerald-900 shadow' : 'text-white'}">Daily</button>
+                            <button onclick="setWalletFilter('Weekly')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Weekly' ? 'bg-white text-emerald-900 shadow' : 'text-white'}">Weekly</button>
+                            <button onclick="setWalletFilter('Monthly')" class="flex-1 py-1.5 rounded-xl text-xs font-semibold ${walletFilter === 'Monthly' ? 'bg-white text-emerald-900 shadow' : 'text-white'}">Monthly</button>
                         </div>
                         <p class="text-3xl font-extrabold tracking-tight mb-1">£${totalEarned.toFixed(2)}</p>
-                        <p class="text-xs text-violet-200 flex items-center justify-center gap-1">
+                        <p class="text-xs text-emerald-100 flex items-center justify-center gap-1">
                             <span>🪙</span> ${walletFilter}'s earnings
                         </p>
                     </div>
@@ -163,19 +163,19 @@
                         <h3 class="text-gray-800 font-bold text-sm mb-3">Details</h3>
                         <div class="bg-white rounded-2xl shadow-sm border divide-y text-xs text-gray-700 mb-6">
                             <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-green-50 text-green-600 rounded-lg font-bold">£</span> Delivery fee</span>
+                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg font-bold">£</span> Delivery fee</span>
                                 <span class="font-bold">£${totalEarned.toFixed(2)}</span>
                             </div>
                             <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-green-50 text-green-600 rounded-lg">📄</span> Number of trips</span>
+                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">📄</span> Number of trips</span>
                                 <span class="font-bold">${completed.length}</span>
                             </div>
                             <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-green-50 text-green-600 rounded-lg">⏰</span> Time Connected</span>
+                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">⏰</span> Time Connected</span>
                                 <span class="font-bold">04h:15m</span>
                             </div>
                             <div class="p-3.5 flex justify-between items-center">
-                                <span class="flex items-center gap-2"><span class="p-1.5 bg-green-50 text-green-600 rounded-lg">📍</span> Distance</span>
+                                <span class="flex items-center gap-2"><span class="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">📍</span> Distance</span>
                                 <span class="font-bold">12.40 Miles</span>
                             </div>
                         </div>
@@ -192,10 +192,10 @@
                     </div>`;
             } else if (currentNav === 'profile') {
                 container.innerHTML = `
-                    <div class="bg-violet-600 text-white p-4 font-bold text-lg">Profile</div>
+                    <div class="bg-emerald-600 text-white p-4 font-bold text-lg">Profile</div>
                     <div class="p-4 text-center">
                         <div class="bg-white p-6 rounded-2xl shadow border mb-4">
-                            <div class="w-16 h-16 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">${currentDriverName.charAt(0)}</div>
+                            <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">${currentDriverName.charAt(0)}</div>
                             <h3 class="font-bold text-gray-800 text-base">${currentDriverName}</h3>
                             <p class="text-xs text-gray-500 mb-4">Rider ID: #${currentDriverId}</p>
                             <button onclick="logoutDriver()" class="w-full bg-red-500 text-white py-2.5 rounded-xl font-semibold text-xs">Logout</button>
