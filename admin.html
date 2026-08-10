@@ -14,20 +14,21 @@
     <nav class="bg-blue-600 text-white p-3 shadow-md flex justify-between items-center">
         <h1 class="text-base font-bold">Admin Dispatch Panel</h1>
         <div class="space-x-1 text-xs flex flex-wrap gap-1">
-            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-3 py-1.5 rounded font-semibold transition">Active Orders</button>
-            <button onclick="switchTab('map')" id="navTabMap" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Live Map View</button>
+            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-3 py-1.5 rounded font-semibold transition">Dashboard / Front Screen</button>
             <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Drivers</button>
             <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition">Manage Businesses</button>
         </div>
     </nav>
 
-    <div class="container mx-auto p-4 max-w-6xl space-y-4">
+    <div class="container mx-auto p-4 max-w-7xl space-y-4">
         
-        <!-- TAB 1: Active Orders (Left Form, Right Completed Orders) -->
-        <div id="tabContentActive" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- MAIN DASHBOARD / FRONT SCREEN (Matching Screenshot Layout) -->
+        <div id="tabContentActive" class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            
+            <!-- LEFT COLUMN: Create Order Form, Live Drivers List, Live Map -->
+            <div class="lg:col-span-4 space-y-4">
                 
-                <!-- Left: Create New Order Form -->
+                <!-- Create New Order Form -->
                 <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
                     <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Create New Order</h2>
                     <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-2.5 text-xs">
@@ -59,13 +60,52 @@
                     </form>
                 </div>
 
-                <!-- Right: Completed Orders Archive -->
+                <!-- Live Drivers Location Widget -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Drivers Location</h2>
+                    <div id="liveDriversListWidget" class="text-xs text-gray-500 py-1">
+                        No active drivers online.
+                    </div>
+                </div>
+
+                <!-- Live Map View Widget -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-2">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Map View (Drivers & Businesses)</h2>
+                    <div id="adminMap" class="w-full h-[220px] rounded-lg"></div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Active Orders Table & Completed Orders Table -->
+            <div class="lg:col-span-8 space-y-4">
+                
+                <!-- Active Orders Table Section -->
+                <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Active Orders & Assignment</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-600 border-b">
+                                    <th class="p-2">ID & Customer</th>
+                                    <th class="p-2">Route</th>
+                                    <th class="p-2">Assigned Driver</th>
+                                    <th class="p-2">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeOrdersTableBody">
+                                <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading active orders...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Completed / Delivered Orders Table Section -->
                 <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
                     <div class="flex justify-between items-center border-b pb-1.5">
-                        <h2 class="font-bold text-sm text-gray-800">Completed Orders Archive</h2>
+                        <h2 class="font-bold text-sm text-gray-800">✅ Completed / Delivered Orders</h2>
                         <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-bold">0 Orders</span>
                     </div>
-                    <div class="overflow-x-auto max-h-[280px] overflow-y-auto">
+                    <div class="overflow-x-auto max-h-[320px] overflow-y-auto">
                         <table class="w-full text-left text-xs">
                             <thead>
                                 <tr class="bg-gray-50 text-gray-600 border-b sticky top-0">
@@ -84,36 +124,9 @@
 
             </div>
 
-            <!-- Active Orders List Section -->
-            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Active Orders & Assignment</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 border-b">
-                                <th class="p-2.5">ID & Customer</th>
-                                <th class="p-2.5">Route</th>
-                                <th class="p-2.5">Status</th>
-                                <th class="p-2.5">Assign Driver</th>
-                            </tr>
-                        </thead>
-                        <tbody id="activeOrdersTableBody">
-                            <tr><td colspan="4" class="text-center py-6 text-gray-400">Loading active orders...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
-        <!-- TAB 2: Live Map View -->
-        <div id="tabContentMap" class="space-y-4 hidden">
-            <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
-                <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Live Map View (Drivers & Businesses)</h2>
-                <div id="adminMap" class="w-full h-[500px] rounded-lg"></div>
-            </div>
-        </div>
-
-        <!-- TAB 3: Manage Drivers Page -->
+        <!-- TAB 2: Manage Drivers Page -->
         <div id="tabContentDrivers" class="space-y-4 hidden">
             <div class="bg-white p-4 rounded-xl shadow-md space-y-3">
                 <h2 class="font-bold text-sm text-gray-800 border-b pb-1.5">Driver Approval & Management</h2>
@@ -123,7 +136,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: Manage Businesses Page -->
+        <!-- TAB 3: Manage Businesses Page -->
         <div id="tabContentBusinesses" class="space-y-4 hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Add Business Form -->
@@ -179,12 +192,10 @@
 
         function switchTab(tab) {
             document.getElementById('tabContentActive').classList.add('hidden');
-            document.getElementById('tabContentMap').classList.add('hidden');
             document.getElementById('tabContentDrivers').classList.add('hidden');
             document.getElementById('tabContentBusinesses').classList.add('hidden');
 
             document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
-            document.getElementById('navTabMap').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
             document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
             document.getElementById('navTabBusinesses').className = 'bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded font-semibold transition';
 
@@ -192,9 +203,6 @@
                 document.getElementById('tabContentActive').classList.remove('hidden');
                 document.getElementById('navTabActive').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
                 fetchOrders();
-            } else if (tab === 'map') {
-                document.getElementById('tabContentMap').classList.remove('hidden');
-                document.getElementById('navTabMap').className = 'bg-blue-700 px-3 py-1.5 rounded font-semibold transition';
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else if (tab === 'drivers') {
                 document.getElementById('tabContentDrivers').classList.remove('hidden');
@@ -372,12 +380,12 @@
 
                         activeTable.innerHTML += `
                             <tr class="border-b hover:bg-gray-50">
-                                <td class="p-2.5 font-bold">#${order.id} - ${order.customerName}<br><span class="text-[10px] text-gray-500">${order.customerPhone}</span></td>
-                                <td class="p-2.5 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
-                                <td class="p-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${order.status || 'Pending'}</span></td>
-                                <td class="p-2.5">
+                                <td class="p-2 font-bold">#${order.id} - ${order.customerName}<br><span class="text-[10px] text-gray-500">${order.customerPhone}</span></td>
+                                <td class="p-2 text-gray-600">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-2">
                                     <select onchange="assignDriver('${order.id}', this.value)" class="border p-1 rounded text-xs w-full">${optionsHtml}</select>
                                 </td>
+                                <td class="p-2"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${order.status || 'Pending'}</span></td>
                             </tr>
                         `;
                     });
@@ -429,11 +437,29 @@
                 const drivers = await res.json();
                 if (markersLayer) markersLayer.clearLayers();
 
+                const driversWidget = document.getElementById('liveDriversListWidget');
+                let activeDriversCount = 0;
+                let driverHtml = '';
+
+                let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+
                 for (const [driverId, data] of Object.entries(drivers)) {
                     if (data.lat && data.lng) {
-                        const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>Driver #${driverId}</b><br>Status: Online`);
+                        activeDriversCount++;
+                        const drvObj = registeredDriversAll.find(d => String(d.id) === String(driverId));
+                        const drvName = drvObj ? `${drvObj.firstName} ${drvObj.surname}` : `Driver #${driverId}`;
+                        
+                        driverHtml += `<div class="text-emerald-700 font-semibold">• ${drvName} (Online)</div>`;
+
+                        const marker = L.marker([data.lat, data.lng]).bindPopup(`<b>${drvName}</b><br>Status: Online`);
                         markersLayer.addLayer(marker);
                     }
+                }
+
+                if (activeDriversCount === 0) {
+                    driversWidget.innerHTML = `<span class="text-gray-400">No active drivers online.</span>`;
+                } else {
+                    driversWidget.innerHTML = driverHtml;
                 }
             } catch (e) {
                 console.error('Error fetching driver locations:', e);
