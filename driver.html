@@ -10,16 +10,16 @@
 </head>
 <body class="bg-gray-100 font-sans text-sm pb-24">
 
-    <!-- Top Wallet Header -->
-    <div class="bg-[#5835bc] text-white pt-5 pb-8 px-4 rounded-b-[30px] shadow-md sticky top-0 z-50">
+    <!-- Top Header -->
+    <div class="bg-emerald-600 text-white pt-5 pb-8 px-4 rounded-b-[30px] shadow-md sticky top-0 z-50">
         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-xl font-bold tracking-wide">Wallet</h1>
-            <button onclick="logoutDriver()" id="logoutBtn" class="bg-[#4828a0] hover:bg-[#3b2085] px-3 py-1 rounded-lg font-bold text-xs transition hidden">Logout</button>
+            <h1 class="text-xl font-bold tracking-wide">Driver Portal</h1>
+            <button onclick="logoutDriver()" id="logoutBtn" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1 rounded-lg font-bold text-xs transition hidden">Logout</button>
         </div>
 
-        <!-- Daily / Weekly / Monthly Switcher Tabs -->
-        <div class="flex bg-[#4828a0]/80 p-1 rounded-2xl text-xs font-semibold gap-1 border border-[#6b42db]">
-            <button onclick="switchWalletTab('daily')" id="walletTabDaily" class="flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center">Daily</button>
+        <!-- Daily / Weekly / Monthly Switcher Tabs (Hidden when logged out) -->
+        <div id="walletTabsContainer" class="flex bg-emerald-700/80 p-1 rounded-2xl text-xs font-semibold gap-1 border border-emerald-500 hidden">
+            <button onclick="switchWalletTab('daily')" id="walletTabDaily" class="flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center">Daily</button>
             <button onclick="switchWalletTab('weekly')" id="walletTabWeekly" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Weekly</button>
             <button onclick="switchWalletTab('monthly')" id="walletTabMonthly" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Monthly</button>
         </div>
@@ -28,10 +28,10 @@
     <div class="container mx-auto p-4 max-w-xl space-y-4">
         
         <!-- SECTION 1: Authentication Card (Sign In / Sign Up Tabs) -->
-        <div id="authCard" class="bg-white p-5 rounded-2xl shadow-sm space-y-4 border border-gray-100">
+        <div id="authCard" class="bg-white p-5 rounded-2xl shadow-sm space-y-4 border border-gray-100 mt-4">
             <!-- Auth Sub-tabs Switcher -->
             <div class="flex bg-gray-100 p-1 rounded-xl text-xs font-bold">
-                <button onclick="switchAuthMode('signin')" id="authTabSigninBtn" class="flex-1 py-2 rounded-lg bg-[#5835bc] text-white shadow-sm transition text-center">Sign In</button>
+                <button onclick="switchAuthMode('signin')" id="authTabSigninBtn" class="flex-1 py-2 rounded-lg bg-emerald-600 text-white shadow-sm transition text-center">Sign In</button>
                 <button onclick="switchAuthMode('signup')" id="authTabSignupBtn" class="flex-1 py-2 rounded-lg text-gray-600 transition text-center">Sign Up</button>
             </div>
 
@@ -45,7 +45,7 @@
                     <label class="block font-semibold text-gray-700 text-xs">Password</label>
                     <input type="password" id="signinPassword" required class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="Enter your password">
                 </div>
-                <button type="submit" class="w-full bg-[#5835bc] hover:bg-[#4828a0] text-white p-3 rounded-xl font-bold transition shadow-sm">Sign In</button>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-bold transition shadow-sm">Sign In</button>
             </form>
 
             <!-- SIGN UP FORM -->
@@ -76,7 +76,7 @@
                     <label class="block font-semibold text-gray-700 text-xs">Retype Password</label>
                     <input type="password" id="signupRetypePassword" required minlength="8" class="w-full mt-1 p-2 border rounded-xl text-sm" placeholder="Retype password">
                 </div>
-                <button type="submit" class="w-full bg-[#5835bc] hover:bg-[#4828a0] text-white p-3 rounded-xl font-bold transition shadow-sm">Create Account</button>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-bold transition shadow-sm">Create Account</button>
             </form>
         </div>
 
@@ -88,7 +88,7 @@
                 
                 <!-- Main Earnings Display Card -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm text-center space-y-1.5 border border-gray-100">
-                    <h2 id="walletMainAmount" class="text-3xl font-extrabold text-[#5835bc]">£0.00</h2>
+                    <h2 id="walletMainAmount" class="text-3xl font-extrabold text-emerald-600">£0.00</h2>
                     <div class="flex justify-center items-center gap-1.5 text-gray-400 text-xs font-semibold pt-0.5">
                         <span class="text-base">👝</span>
                         <span id="walletEarningsLabel">Today's earnings</span>
@@ -118,7 +118,7 @@
                     <!-- Delivery fee -->
                     <div class="p-4 flex justify-between items-center">
                         <div class="flex items-center gap-3 text-gray-800">
-                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">£</div>
+                            <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm border border-emerald-100">£</div>
                             <span class="font-medium">Delivery fee</span>
                         </div>
                         <span id="statDeliveryFee" class="font-extrabold text-gray-900 text-base">£0.00</span>
@@ -127,7 +127,7 @@
                     <!-- Number of trips -->
                     <div class="p-4 flex justify-between items-center">
                         <div class="flex items-center gap-3 text-gray-800">
-                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">📄</div>
+                            <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm border border-emerald-100">📄</div>
                             <span class="font-medium">Number of trips</span>
                         </div>
                         <span id="statTripsCount" class="font-extrabold text-gray-900 text-base">0</span>
@@ -136,7 +136,7 @@
                     <!-- Time Connected -->
                     <div class="p-4 flex justify-between items-center">
                         <div class="flex items-center gap-3 text-gray-800">
-                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">🕒</div>
+                            <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm border border-emerald-100">🕒</div>
                             <span class="font-medium">Time Connected</span>
                         </div>
                         <span id="statTimeConnected" class="font-extrabold text-gray-900 text-base">00h:00m</span>
@@ -145,7 +145,7 @@
                     <!-- Distance -->
                     <div class="p-4 flex justify-between items-center">
                         <div class="flex items-center gap-3 text-gray-800">
-                            <div class="w-9 h-9 rounded-full bg-[#f0fdf4] text-emerald-600 flex items-center justify-center font-bold text-sm border border-[#dcfce7]">📍</div>
+                            <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm border border-emerald-100">📍</div>
                             <span class="font-medium">Distance</span>
                         </div>
                         <span id="statDistance" class="font-extrabold text-gray-900 text-base">0.00Miles</span>
@@ -171,7 +171,7 @@
                 <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100">
                     <div class="flex justify-between items-center border-b pb-2">
                         <h3 class="font-bold text-base text-gray-800">📦 Assigned Delivery Orders</h3>
-                        <button onclick="fetchDriverAssignedOrders()" class="text-xs text-[#5835bc] font-bold hover:underline">Refresh</button>
+                        <button onclick="fetchDriverAssignedOrders()" class="text-xs text-emerald-600 font-bold hover:underline">Refresh</button>
                     </div>
                     <div id="assignedOrdersContainer" class="space-y-3">
                         <p class="text-gray-400 text-center py-6 font-semibold text-xs">No active orders assigned to you right now.</p>
@@ -188,7 +188,7 @@
             <!-- TAB CONTENT: PROFILE / ACCOUNT -->
             <div id="tabContentProfile" class="space-y-4 hidden">
                 <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100 text-center py-10">
-                    <div class="w-16 h-16 bg-[#5835bc]/10 text-[#5835bc] rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-2" id="profileInitial">D</div>
+                    <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-2" id="profileInitial">D</div>
                     <h3 id="profileName" class="font-bold text-lg text-gray-900">Driver Name</h3>
                     <p id="profilePhone" class="text-xs text-gray-500">Phone number</p>
                     <div class="pt-4">
@@ -201,16 +201,16 @@
 
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2.5 px-8 flex justify-around items-center z-50 shadow-lg">
-        <button onclick="switchDriverTab('orders')" id="navBtnOrders" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1">
+    <!-- Bottom Navigation Bar (Hidden when logged out) -->
+    <div id="bottomNav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2.5 px-8 flex justify-around items-center z-50 shadow-lg hidden">
+        <button onclick="switchDriverTab('orders')" id="navBtnOrders" class="flex flex-col items-center text-gray-400 hover:text-emerald-600 transition p-1">
             <span class="text-xl">🏠</span>
         </button>
-        <button onclick="switchDriverTab('wallet')" id="navBtnWallet" class="flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs">
+        <button onclick="switchDriverTab('wallet')" id="navBtnWallet" class="flex items-center gap-1.5 text-emerald-600 transition bg-emerald-50 px-4 py-1.5 rounded-full font-bold text-xs">
             <span class="text-base">👝</span>
             <span>Wallet</span>
         </button>
-        <button onclick="switchDriverTab('profile')" id="navBtnProfile" class="flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1">
+        <button onclick="switchDriverTab('profile')" id="navBtnProfile" class="flex flex-col items-center text-gray-400 hover:text-emerald-600 transition p-1">
             <span class="text-xl">👤</span>
         </button>
     </div>
@@ -230,12 +230,12 @@
             if (mode === 'signin') {
                 document.getElementById('signinForm').classList.remove('hidden');
                 document.getElementById('signupForm').classList.add('hidden');
-                document.getElementById('authTabSigninBtn').className = 'flex-1 py-2 rounded-lg bg-[#5835bc] text-white shadow-sm transition text-center';
+                document.getElementById('authTabSigninBtn').className = 'flex-1 py-2 rounded-lg bg-emerald-600 text-white shadow-sm transition text-center';
                 document.getElementById('authTabSignupBtn').className = 'flex-1 py-2 rounded-lg text-gray-600 transition text-center';
             } else {
                 document.getElementById('signinForm').classList.add('hidden');
                 document.getElementById('signupForm').classList.remove('hidden');
-                document.getElementById('authTabSignupBtn').className = 'flex-1 py-2 rounded-lg bg-[#5835bc] text-white shadow-sm transition text-center';
+                document.getElementById('authTabSignupBtn').className = 'flex-1 py-2 rounded-lg bg-emerald-600 text-white shadow-sm transition text-center';
                 document.getElementById('authTabSigninBtn').className = 'flex-1 py-2 rounded-lg text-gray-600 transition text-center';
             }
         }
@@ -304,21 +304,21 @@
             document.getElementById('tabContentOrders').classList.add('hidden');
             document.getElementById('tabContentProfile').classList.add('hidden');
 
-            document.getElementById('navBtnWallet').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1';
-            document.getElementById('navBtnOrders').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1';
-            document.getElementById('navBtnProfile').className = 'flex flex-col items-center text-gray-400 hover:text-[#5835bc] transition p-1';
+            document.getElementById('navBtnWallet').className = 'flex flex-col items-center text-gray-400 hover:text-emerald-600 transition p-1';
+            document.getElementById('navBtnOrders').className = 'flex flex-col items-center text-gray-400 hover:text-emerald-600 transition p-1';
+            document.getElementById('navBtnProfile').className = 'flex flex-col items-center text-gray-400 hover:text-emerald-600 transition p-1';
 
             if (tab === 'wallet') {
                 document.getElementById('tabContentWallet').classList.remove('hidden');
-                document.getElementById('navBtnWallet').className = 'flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs';
+                document.getElementById('navBtnWallet').className = 'flex items-center gap-1.5 text-emerald-600 transition bg-emerald-50 px-4 py-1.5 rounded-full font-bold text-xs';
             } else if (tab === 'orders') {
                 document.getElementById('tabContentOrders').classList.remove('hidden');
-                document.getElementById('navBtnOrders').className = 'flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs';
+                document.getElementById('navBtnOrders').className = 'flex items-center gap-1.5 text-emerald-600 transition bg-emerald-50 px-4 py-1.5 rounded-full font-bold text-xs';
                 document.getElementById('navBtnOrders').innerHTML = '<span class="text-base">📦</span><span>Orders</span>';
                 setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 200);
             } else if (tab === 'profile') {
                 document.getElementById('tabContentProfile').classList.remove('hidden');
-                document.getElementById('navBtnProfile').className = 'flex items-center gap-1.5 text-[#5835bc] transition bg-[#5835bc]/15 px-4 py-1.5 rounded-full font-bold text-xs';
+                document.getElementById('navBtnProfile').className = 'flex items-center gap-1.5 text-emerald-600 transition bg-emerald-50 px-4 py-1.5 rounded-full font-bold text-xs';
                 document.getElementById('navBtnProfile').innerHTML = '<span class="text-base">👤</span><span>Profile</span>';
             }
         }
@@ -330,13 +330,13 @@
             document.getElementById('walletTabMonthly').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
 
             if (filter === 'daily') {
-                document.getElementById('walletTabDaily').className = 'flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletTabDaily').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
                 document.getElementById('walletEarningsLabel').innerText = "Today's earnings";
             } else if (filter === 'weekly') {
-                document.getElementById('walletTabWeekly').className = 'flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletTabWeekly').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
                 document.getElementById('walletEarningsLabel').innerText = "This week's earnings";
             } else if (filter === 'monthly') {
-                document.getElementById('walletTabMonthly').className = 'flex-1 py-2.5 rounded-xl bg-white text-[#5835bc] font-bold shadow-sm transition text-center';
+                document.getElementById('walletTabMonthly').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
                 document.getElementById('walletEarningsLabel').innerText = "This month's earnings";
             }
             fetchDriverAssignedOrders();
@@ -365,6 +365,8 @@
             localStorage.setItem('logged_in_driver', JSON.stringify(drv));
 
             document.getElementById('authCard').classList.add('hidden');
+            document.getElementById('walletTabsContainer').classList.remove('hidden');
+            document.getElementById('bottomNav').classList.remove('hidden');
             document.getElementById('driverDashboard').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             document.getElementById('displayDriverFullName').innerText = `${drv.firstName} ${drv.surname}`;
@@ -391,6 +393,8 @@
             if (isOnline) toggleShift();
             currentDriver = null;
             document.getElementById('driverDashboard').classList.add('hidden');
+            document.getElementById('walletTabsContainer').classList.add('hidden');
+            document.getElementById('bottomNav').classList.add('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
             document.getElementById('authCard').classList.remove('hidden');
         }
@@ -493,13 +497,13 @@
                                 <span class="font-bold text-gray-900 text-sm">Order #${order.id} — ${order.customerName}</span>
                                 <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isDelivered ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}">${order.status || 'Assigned'}</span>
                             </div>
-                            <p class="text-xs text-gray-700">📞 Phone: <a href="tel:${order.customerPhone}" class="text-[#5835bc] font-bold hover:underline">${order.customerPhone}</a></p>
+                            <p class="text-xs text-gray-700">📞 Phone: <a href="tel:${order.customerPhone}" class="text-emerald-600 font-bold hover:underline">${order.customerPhone}</a></p>
                             <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
                             <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
                             ${order.specialNotes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.specialNotes}</p>` : ''}
                             
                             ${!isDelivered ? `
-                                <button onclick="markOrderDelivered('${order.id}')" class="w-full mt-2 bg-[#5835bc] hover:bg-[#4828a0] text-white py-2 rounded-xl font-bold text-xs transition">
+                                <button onclick="markOrderDelivered('${order.id}')" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-xl font-bold text-xs transition">
                                     Mark as Delivered (£5.00 Earned)
                                 </button>
                             ` : `<p class="text-emerald-700 font-bold text-xs text-center pt-1">✅ Delivery Completed</p>`}
