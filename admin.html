@@ -382,7 +382,6 @@
 
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
             
-            // Safely match the business by name and normalized postcode
             const matchedBus = businesses.find(b => {
                 const cleanBusPostcode = b.postcode.replace(/\s+/g, '').toUpperCase();
                 return pickupSelectVal.includes(b.name) && pickupSelectVal.toUpperCase().includes(cleanBusPostcode);
@@ -391,7 +390,6 @@
             if (matchedBus && matchedBus.lat && matchedBus.lng) {
                 const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
                 
-                // Delivery Pricing Rule: £3.80 for up to 3 miles, then 15 pence for every 0.10 miles.
                 let deliveryPrice = 3.80;
                 if (distanceMiles > 3.0) {
                     const extraMiles = distanceMiles - 3.0;
@@ -407,7 +405,7 @@
         }
 
         function getDistanceFromLatLonInMiles(lat1, lon1, lat2, lon2) {
-            const R = 3958.8; // Radius of the earth in miles
+            const R = 3958.8; 
             const dLat = deg2rad(lat2 - lat1);
             const dLon = deg2rad(lon2 - lon1);
             const a = 
@@ -516,8 +514,6 @@
             const postcode = document.getElementById('dropoffPostcode').value.trim().toUpperCase();
             
             const formattedDropoff = `${addr1}${addr2 ? ', ' + addr2 : ''}, ${region} - ${postcode}`;
-            
-            // Evaluates and securely captures the accurate calculated price
             const calculatedPrice = calculateOrderDistance();
 
             const orderData = {
@@ -569,19 +565,16 @@
 
                 let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
                 
-                let onlineDrivers = registeredDrivers.filter(d => {
-                    const isApproved = d.status === 'Approved';
-                    const hasLiveLocation = onlineDriversCache[d.id] && onlineDriversCache[d.id].lat && onlineDriversCache[d.id].lng;
-                    return isApproved && hasLiveLocation;
-                });
+                // FIXED: Now displays ALL registered drivers so assignment works whether they are currently broadcasting live GPS coordinates or not!
+                let availableDrivers = registeredDrivers.filter(d => d.status === 'Approved');
 
                 if (activeOrders.length === 0) {
                     activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
                 } else {
                     activeTable.innerHTML = '';
                     activeOrders.forEach(order => {
-                        let optionsHtml = `<option value="">Select Online Driver</option>`;
-                        onlineDrivers.forEach(d => {
+                        let optionsHtml = `<option value="">Select Driver</option>`;
+                        availableDrivers.forEach(d => {
                             optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
                         });
 
@@ -693,8 +686,6 @@
                     driversWidget.innerHTML = driverHtml;
                 }
 
-                fetchOrders();
-
                 if (!document.getElementById('tabContentDrivers').classList.contains('hidden')) {
                     loadDriversManagement();
                 }
@@ -761,9 +752,6 @@
                 
                 const RATE_PER_DELIVERY = 5.00;
                 const totalEarnings = driverCompletedOrders.length * RATE_PER_DELIVERY;
-
-                const shiftStart = drv.lastShiftStart || (isOnline ? 'Active Session' : 'Not Started');
-                const shiftEnd = isOnline ? 'Ongoing...' : (drv.lastShiftEnd || 'Offline');
 
                 dirContainer.innerHTML += `
                     <div class="bg-gray-50 p-4 rounded-xl border flex flex-wrap justify-between items-center gap-3">
