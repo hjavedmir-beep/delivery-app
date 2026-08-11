@@ -376,7 +376,7 @@
 
         function calculateOrderDistance() {
             const pickupSelectVal = document.getElementById('orderPickup').value;
-            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return 0;
+            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return 3.80;
 
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
             const matchedBus = businesses.find(b => {
@@ -513,6 +513,8 @@
             const postcode = document.getElementById('dropoffPostcode').value.trim().toUpperCase();
             
             const formattedDropoff = `${addr1}${addr2 ? ', ' + addr2 : ''}, ${region} - ${postcode}`;
+            
+            // Evaluates and securely captures the accurate calculated price
             const calculatedPrice = calculateOrderDistance();
 
             const orderData = {
@@ -521,7 +523,7 @@
                 pickupAddress: document.getElementById('orderPickup').value.trim(),
                 dropoffAddress: formattedDropoff,
                 specialNotes: document.getElementById('orderNotes').value.trim(),
-                deliveryPrice: calculatedPrice
+                deliveryPrice: calculatedPrice > 0 ? calculatedPrice : 3.80
             };
 
             if (!orderData.pickupAddress) {
@@ -751,7 +753,6 @@
             registered.forEach((drv, index) => {
                 const isOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
                 
-                // Calculate driver earnings based strictly on accepted/assigned & completed deliveries
                 const driverAcceptedOrders = allOrdersCache.filter(o => String(o.assignedDriverId) === String(drv.id));
                 const driverCompletedOrders = driverAcceptedOrders.filter(o => o.status === 'Delivered');
                 
