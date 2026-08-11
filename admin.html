@@ -255,6 +255,7 @@
         let onlineDriversCache = {};
         let allOrdersCache = [];
         let dropoffCoords = { lat: null, lng: null };
+        let currentCalculatedPrice = 3.80; // Tracks live calculated price accurately
 
         // Custom Leaflet Icons
         const carIcon = L.divIcon({
@@ -376,9 +377,11 @@
 
         function calculateOrderDistance() {
             const pickupSelectVal = document.getElementById('orderPickup').value;
-            const dropoffPostcodeVal = document.getElementById('dropoffPostcode').value.trim();
             
-            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return 3.80;
+            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) {
+                currentCalculatedPrice = 3.80;
+                return 3.80;
+            }
 
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
             
@@ -397,10 +400,13 @@
                     deliveryPrice += blocksOfPointOne * 0.15;
                 }
 
+                currentCalculatedPrice = deliveryPrice;
                 document.getElementById('calculatedDistanceText').innerText = `${distanceMiles.toFixed(2)} miles (£${deliveryPrice.toFixed(2)})`;
                 document.getElementById('distanceBadge').innerHTML = `Price: £${deliveryPrice.toFixed(2)}`;
                 return deliveryPrice;
             }
+            
+            currentCalculatedPrice = 3.80;
             return 3.80;
         }
 
@@ -514,7 +520,9 @@
             const postcode = document.getElementById('dropoffPostcode').value.trim().toUpperCase();
             
             const formattedDropoff = `${addr1}${addr2 ? ', ' + addr2 : ''}, ${region} - ${postcode}`;
-            const calculatedPrice = calculateOrderDistance();
+            
+            // Ensure calculation is updated right before dispatch
+            const finalPrice = calculateOrderDistance();
 
             const orderData = {
                 customerName: document.getElementById('orderCustName').value.trim(),
@@ -522,7 +530,7 @@
                 pickupAddress: document.getElementById('orderPickup').value.trim(),
                 dropoffAddress: formattedDropoff,
                 specialNotes: document.getElementById('orderNotes').value.trim(),
-                deliveryPrice: calculatedPrice > 0 ? calculatedPrice : 3.80
+                deliveryPrice: finalPrice > 0 ? finalPrice : currentCalculatedPrice
             };
 
             if (!orderData.pickupAddress) {
@@ -543,6 +551,7 @@
                     document.getElementById('calculatedDistanceText').innerText = 'Select pickup & enter drop-off postcode';
                     document.getElementById('distanceBadge').innerText = '£3.80 base';
                     dropoffCoords = { lat: null, lng: null };
+                    currentCalculatedPrice = 3.80;
                     loadRegisteredBusinesses();
                     fetchOrders();
                 }
@@ -564,8 +573,6 @@
                 const completedOrders = orders.filter(o => o.status === 'Delivered');
 
                 let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                
-                // FIXED: Now displays ALL registered drivers so assignment works whether they are currently broadcasting live GPS coordinates or not!
                 let availableDrivers = registeredDrivers.filter(d => d.status === 'Approved');
 
                 if (activeOrders.length === 0) {
