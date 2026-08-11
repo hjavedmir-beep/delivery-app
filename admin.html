@@ -1,4 +1,252 @@
-<script>
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dispatch Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 font-sans text-sm">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-blue-600 text-white p-3.5 shadow-md flex justify-between items-center">
+        <h1 class="text-lg font-bold">Admin Dispatch Panel</h1>
+        <div class="space-x-2 flex flex-wrap gap-2">
+            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition">Dashboard / Front Screen</button>
+            <button onclick="switchTab('map')" id="navTabMap" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Live Map View</button>
+            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Drivers</button>
+            <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Businesses</button>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 max-w-7xl space-y-5">
+        
+        <!-- MAIN DASHBOARD / FRONT SCREEN -->
+        <div id="tabContentActive" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- LEFT COLUMN: Create Order Form, Live Drivers List -->
+            <div class="lg:col-span-4 space-y-5">
+                
+                <!-- Create New Order Form -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Create New Order</h2>
+                    <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-3 text-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold text-gray-700">Customer Name</label>
+                                <input type="text" id="orderCustName" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-gray-700">Customer Phone</label>
+                                <input type="text" id="orderCustPhone" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Pickup Business (Registered)</label>
+                            <select id="orderPickup" onchange="calculateOrderDistance()" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm">
+                                <option value="">Select Registered Business</option>
+                            </select>
+                        </div>
+
+                        <!-- Structured Drop-off Address Section -->
+                        <div class="space-y-2 border-t pt-2">
+                            <label class="block font-bold text-gray-800">Drop-off Address</label>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Post Code</label>
+                                <input type="text" id="dropoffPostcode" placeholder="e.g. ST1 4QE" oninput="lookupDropoffPostcode(this.value)" required class="w-full mt-1 p-2 border rounded-lg uppercase text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Address Line 1</label>
+                                <input type="text" id="dropoffAddress1" placeholder="House number and street name" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Address Line 2 (Optional)</label>
+                                <input type="text" id="dropoffAddress2" placeholder="Apartment, suite, unit, etc." class="w-full mt-1 p-2 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Region / Area</label>
+                                <input type="text" id="dropoffRegion" placeholder="Auto-populated region" readonly class="w-full mt-1 p-2 border rounded-lg bg-gray-50 text-gray-800 font-bold text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Distance Calculation Tab / Widget -->
+                        <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center justify-between">
+                            <div>
+                               <span class="block text-xs font-bold text-blue-800 uppercase tracking-wide">Route Distance Analysis</span>
+                               <span id="calculatedDistanceText" class="text-sm font-extrabold text-blue-900">Select pickup & enter drop-off postcode</span>
+                            </div>
+                            <div class="bg-white p-2 rounded-md shadow-sm border border-blue-100 text-blue-700 font-bold text-xs" id="distanceBadge">
+                                0.0 miles
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-gray-700">Special Notes</label>
+                            <textarea id="orderNotes" rows="2" class="w-full mt-1 p-2 border rounded-lg text-sm"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-lg font-bold text-base transition">Add Order to Server</button>
+                    </form>
+                </div>
+
+                <!-- Live Drivers Location Widget -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-2">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Live Drivers Location</h2>
+                    <div id="liveDriversListWidget" class="text-sm text-gray-600 py-1 font-medium">
+                        No active drivers online.
+                    </div>
+                </div>
+
+                <!-- Small Map Widget on Dashboard -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-2">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Quick Map Preview</h2>
+                    <div id="adminMap" class="w-full h-[200px] rounded-lg"></div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Active Orders Table & Completed Orders Table -->
+            <div class="lg:col-span-8 space-y-5">
+                
+                <!-- Active Orders Table Section -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Active Orders & Assignment</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-800 border-b font-bold">
+                                    <th class="p-3">ID & Customer</th>
+                                    <th class="p-3">Route</th>
+                                    <th class="p-3">Assigned Driver (Online Only)</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeOrdersTableBody">
+                                <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">Loading active orders...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Completed / Delivered Orders Table Section -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h2 class="font-bold text-base text-gray-800">✅ Completed / Delivered Orders</h2>
+                        <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">0 Orders</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-[350px] overflow-y-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-800 border-b font-bold sticky top-0">
+                                    <th class="p-3">ID & Customer</th>
+                                    <th class="p-3">Route</th>
+                                    <th class="p-3">Delivered By</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="completedOrdersTableBody">
+                                <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- TAB 2: Dedicated Live Map View -->
+        <div id="tabContentMap" class="space-y-4 hidden">
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <div>
+                        <h2 class="font-bold text-base text-gray-800">🗺️ Live Map — Online Drivers & Businesses</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Real-time GPS tracking for active delivery vehicles and registered outlets.</p>
+                    </div>
+                    <button onclick="refreshMapPins()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Map</button>
+                </div>
+                <div id="dedicatedAdminMap" class="w-full h-[600px] rounded-lg"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Manage Drivers Page -->
+        <div id="tabContentDrivers" class="space-y-5 hidden">
+            
+            <!-- SECTION A: Driver Directory & Approvals -->
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h2 class="font-bold text-base text-gray-800">👤 Driver Directory & Approvals</h2>
+                    <button onclick="loadDriversManagement()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Drivers</button>
+                </div>
+                <div id="driversDirectoryContainer" class="space-y-3">
+                    <p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>
+                </div>
+            </div>
+
+            <!-- SECTION B: Real-Time Shift History & Earnings Log -->
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-4">
+                <div class="border-b pb-2">
+                    <h2 class="font-bold text-base text-gray-800">💰 Real-Time Shift History & Earnings Log</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Calculated automatically at £5.00 per completed delivery.</p>
+                </div>
+                <div id="driversEarningsContainer" class="space-y-3">
+                    <p class="text-gray-400 text-center py-6 font-semibold">No shift history available.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 4: Manage Businesses Page -->
+        <div id="tabContentBusinesses" class="space-y-5 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Add Business Form -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
+                    <form id="addBusinessForm" onsubmit="handleAddBusiness(event)" class="space-y-3 text-sm">
+                        <div>
+                            <label class="block font-semibold text-gray-700">Business Name</label>
+                            <input type="text" id="busName" placeholder="e.g. Mother Hubbard's Stoke" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Phone Number</label>
+                            <input type="text" id="busPhone" placeholder="e.g. +44 1782..." required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Address Line 1</label>
+                            <input type="text" id="busAddress1" placeholder="e.g. Stafford Street" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Address Line 2 (Optional)</label>
+                            <input type="text" id="busAddress2" placeholder="e.g. Suite 3 / Unit B" class="w-full mt-1 p-2 border rounded-lg text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold text-gray-700">Post Code</label>
+                                <input type="text" id="busPostcode" placeholder="e.g. ST1 5PT" oninput="lookupPostcode(this.value)" required class="w-full mt-1 p-2 border rounded-lg uppercase text-sm">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-gray-700">Area</label>
+                                <input type="text" id="busArea" placeholder="Auto-populated" readonly class="w-full mt-1 p-2 border rounded-lg bg-gray-50 text-gray-800 font-bold text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg font-bold text-base transition">Save & Pin on Map</button>
+                    </form>
+                </div>
+
+                <!-- List Registered Businesses Directory -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory</h2>
+                    <div id="businessesListContainer" class="space-y-3 text-sm max-h-[380px] overflow-y-auto">
+                        <p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
         const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
         let adminMap = null;
         let dedicatedMap = null;
@@ -89,7 +337,8 @@
                 const data = await res.json();
                 if (data.status === 200 && data.result) {
                     const r = data.result;
-                    areaInput.value = r.admin_district || r.region || r.parish || 'United Kingdom';
+                    const areaName = r.admin_district || r.region || r.parish || 'United Kingdom';
+                    areaInput.value = areaName;
                 } else {
                     areaInput.value = 'Searching area...';
                 }
@@ -139,27 +388,8 @@
 
             if (matchedBus && matchedBus.lat && matchedBus.lng) {
                 const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
-                
-                // Calculate prices based on your exact rules:
-                // Rule 1: Starts from £3.80 for up to 3 miles. Then 15p for every 0.10 miles.
-                let singlePrice = 3.80;
-                if (distanceMiles > 3.0) {
-                    const extraMiles = distanceMiles - 3.0;
-                    const blocksOfPointOne = Math.ceil(extraMiles / 0.10);
-                    singlePrice += blocksOfPointOne * 0.15;
-                }
-
-                // Rule 2: If two deliveries to one person, second delivery charged by 11.5p for every 0.01 miles.
-                // Let's compute second delivery rate structure based on 11.5p per 0.01 miles
-                const blocksOfPointZeroOne = Math.ceil(distanceMiles / 0.01);
-                const doubleDeliverySecondPrice = blocksOfPointZeroOne * 0.115;
-                const totalDoublePrice = singlePrice + doubleDeliverySecondPrice;
-
-                document.getElementById('calculatedDistanceText').innerText = `${distanceMiles.toFixed(2)} miles analysed`;
-                document.getElementById('distanceBadge').innerHTML = `
-                    1st: £${singlePrice.toFixed(2)}<br>
-                    <span class="text-xs text-indigo-700 font-semibold">Dual (2nd): £${totalDoublePrice.toFixed(2)}</span>
-                `;
+                document.getElementById('calculatedDistanceText').innerText = `Distance to Drop-off Location`;
+                document.getElementById('distanceBadge').innerText = `${distanceMiles.toFixed(1)} miles`;
             }
         }
 
@@ -585,3 +815,5 @@
             setInterval(fetchLiveDrivers, 4000);
         };
     </script>
+</body>
+</html>
