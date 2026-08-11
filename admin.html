@@ -77,7 +77,7 @@
                                <span class="block text-xs font-bold text-blue-800 uppercase tracking-wide">Route Distance Analysis</span>
                                <span id="calculatedDistanceText" class="text-sm font-extrabold text-blue-900">Select pickup & enter drop-off postcode</span>
                             </div>
-                            <div class="bg-white p-2 rounded-md shadow-sm border border-blue-100 text-blue-700 font-bold text-xs" id="distanceBadge">
+                            <div class="bg-white p-2 rounded-md shadow-sm border border-blue-100 text-blue-700 font-bold text-xs text-right" id="distanceBadge">
                                 0.0 miles
                             </div>
                         </div>
@@ -388,8 +388,25 @@
 
             if (matchedBus && matchedBus.lat && matchedBus.lng) {
                 const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
-                document.getElementById('calculatedDistanceText').innerText = `Distance to Drop-off Location`;
-                document.getElementById('distanceBadge').innerText = `${distanceMiles.toFixed(1)} miles`;
+                
+                // Pricing Rule 1: £3.80 for up to 3 miles, then 15p for every 0.10 miles.
+                let singlePrice = 3.80;
+                if (distanceMiles > 3.0) {
+                    const extraMiles = distanceMiles - 3.0;
+                    const blocksOfPointOne = Math.ceil(extraMiles / 0.10);
+                    singlePrice += blocksOfPointOne * 0.15;
+                }
+
+                // Pricing Rule 2: Two deliveries to one person -> second delivery charged by 11.5p for every 0.01 miles.
+                const blocksOfPointZeroOne = Math.ceil(distanceMiles / 0.01);
+                const doubleDeliverySecondPrice = blocksOfPointZeroOne * 0.115;
+                const totalDoublePrice = singlePrice + doubleDeliverySecondPrice;
+
+                document.getElementById('calculatedDistanceText').innerText = `${distanceMiles.toFixed(2)} miles analysed`;
+                document.getElementById('distanceBadge').innerHTML = `
+                    1st: £${singlePrice.toFixed(2)}<br>
+                    <span class="text-xs text-indigo-700 font-semibold">Dual (2nd): £${totalDoublePrice.toFixed(2)}</span>
+                `;
             }
         }
 
