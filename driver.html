@@ -47,7 +47,7 @@
             <div class="bg-gray-50 p-4 rounded-2xl text-left space-y-2 border border-gray-100 text-xs">
                 <p class="text-gray-800 truncate"><b>Pickup:</b> <span id="modalPickup">Shop Address</span></p>
                 <p class="text-gray-800 truncate"><b>Drop-off:</b> <span id="modalDropoff">Customer Address</span></p>
-                <p class="text-emerald-700 font-bold">Payout: £5.00</p>
+                <p class="text-emerald-700 font-bold" id="modalPayout">Payout: £3.80</p>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2">
                 <button onclick="rejectIncomingOrder()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold text-xs transition">
@@ -69,7 +69,7 @@
                 <button onclick="switchAuthMode('signup')" id="authTabSignupBtn" class="flex-1 py-2 rounded-lg text-gray-600 transition text-center">Sign Up</button>
             </div>
 
-            <!-- Sign In Form (With Larger Button) -->
+            <!-- Sign In Form -->
             <form id="signinForm" onsubmit="handleSignIn(event)" class="space-y-3 text-sm pt-2">
                 <div>
                     <label class="block font-semibold text-gray-700 text-xs">Mobile Number / Username</label>
@@ -79,7 +79,6 @@
                     <label class="block font-semibold text-gray-700 text-xs">Password</label>
                     <input type="password" id="signinPassword" required class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="Enter your password">
                 </div>
-                <!-- 2) Modified Login Button to be bigger -->
                 <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 text-base rounded-xl font-extrabold transition shadow-md">Sign In</button>
             </form>
 
@@ -163,13 +162,6 @@
                             <span class="font-medium">Time Connected</span>
                         </div>
                         <span id="statTimeConnected" class="font-extrabold text-gray-900 text-base">00h:00m</span>
-                    </div>
-                    <div class="p-4 flex justify-between items-center">
-                        <div class="flex items-center gap-3 text-gray-800">
-                            <div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm border border-emerald-100">📍</div>
-                            <span class="font-medium">Distance</span>
-                        </div>
-                        <span id="statDistance" class="font-extrabold text-gray-900 text-base">0.00Miles</span>
                     </div>
                 </div>
 
@@ -258,14 +250,13 @@
         let pendingAlertOrderId = null;
         let lastNotifiedOrderId = null;
 
-        // Web Audio API beep sound generator
         function playBeepSound() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch A5
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
@@ -317,7 +308,6 @@
                 return;
             }
 
-            // 1) Set initial status to 'Pending' so Admin Panel approval is required
             const newDriver = {
                 id: 'drv_' + Date.now(),
                 firstName,
@@ -347,7 +337,6 @@
                 return;
             }
 
-            // 1) Enforce Admin Approval Check before allowing login
             if (driver.status !== 'Approved') {
                 alert('Your account is currently pending admin approval. Please wait for an admin to approve your account.');
                 return;
@@ -566,23 +555,27 @@
                 const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
                 const completedOrders = myOrders.filter(o => o.status === 'Delivered');
                 
-                const RATE_PER_ORDER = 5.00;
-                const totalEarned = completedOrders.length * RATE_PER_ORDER;
+                // Calculate dynamic earnings based strictly on deliveryPrice calculated via mileage rules (£3.80 up to 3mi + 15p per 0.10mi)
+                let totalEarned = 0;
+                completedOrders.forEach(o => {
+                    totalEarned += Number(o.deliveryPrice || 3.80);
+                });
 
                 document.getElementById('walletMainAmount').innerText = `£${totalEarned.toFixed(2)}`;
                 document.getElementById('statDeliveryFee').innerText = `£${totalEarned.toFixed(2)}`;
                 document.getElementById('statTripsCount').innerText = completedOrders.length;
                 document.getElementById('earningsSubTripText').innerText = `${completedOrders.length} trips`;
 
-                // Check for new unacknowledged assigned orders to trigger beep & modal pop up
                 const newlyAssigned = myOrders.find(o => (!o.driverAccepted || o.driverAccepted === 'pending') && o.status !== 'Delivered');
                 if (newlyAssigned && newlyAssigned.id !== lastNotifiedOrderId) {
                     pendingAlertOrderId = newlyAssigned.id;
                     lastNotifiedOrderId = newlyAssigned.id;
                     
+                    const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
                     document.getElementById('modalCustomerName').innerText = newlyAssigned.customerName;
                     document.getElementById('modalPickup').innerText = newlyAssigned.pickupAddress;
                     document.getElementById('modalDropoff').innerText = newlyAssigned.dropoffAddress;
+                    document.getElementById('modalPayout').innerText = `Payout: £${orderPayout}`;
                     document.getElementById('incomingOrderModal').classList.remove('hidden');
                     
                     playBeepSound();
@@ -599,6 +592,7 @@
                     const status = order.status || 'Assigned';
                     const isDelivered = status === 'Delivered';
                     const isCollected = status === 'Collected' || isDelivered;
+                    const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
 
                     container.innerHTML += `
                         <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
@@ -609,9 +603,9 @@
                             <p class="text-xs text-gray-700">📞 Phone: <a href="tel:${order.customerPhone}" class="text-emerald-600 font-bold hover:underline">${order.customerPhone}</a></p>
                             <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
                             <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
+                            <p class="text-xs font-extrabold text-blue-700">Delivery Payout Fee: £${orderFee}</p>
                             ${order.specialNotes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.specialNotes}</p>` : ''}
                             
-                            <!-- Progressive Action Buttons -->
                             <div class="pt-2 space-y-2">
                                 ${!isCollected ? `
                                     <button onclick="updateOrderStatus('${order.id}', 'Collected')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
@@ -619,10 +613,10 @@
                                     </button>
                                 ` : !isDelivered ? `
                                     <button onclick="updateOrderStatus('${order.id}', 'Delivered')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
-                                        Delivered to Customer (£5.00 Earned) ✅
+                                        Delivered to Customer (£${orderFee} Earned) ✅
                                     </button>
                                 ` : `
-                                    <p class="text-emerald-700 font-bold text-xs text-center pt-1">✅ Delivery Completed</p>
+                                    <p class="text-emerald-700 font-bold text-xs text-center pt-1">✅ Delivery Completed (£${orderFee} Added)</p>
                                 `}
                             </div>
                         </div>
@@ -652,7 +646,6 @@
         async function rejectIncomingOrder() {
             if (!pendingAlertOrderId) return;
             try {
-                // Unassign driver on reject
                 await fetch(`${API_URL}/orders/status`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -675,7 +668,7 @@
                 });
                 if (res.ok) {
                     if (newStatus === 'Delivered') {
-                        alert('Order marked as delivered! £5.00 added to your wallet.');
+                        alert('Order marked as delivered! Delivery fee added to your wallet.');
                     } else {
                         alert('Order status updated: Collected from shop.');
                     }
@@ -691,7 +684,6 @@
             if (savedDriver) {
                 try {
                     const parsedDriver = JSON.parse(savedDriver);
-                    // Double check status in case it was modified in admin panel
                     let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
                     const latestRecord = registered.find(d => d.id === parsedDriver.id);
                     if (latestRecord && latestRecord.status === 'Approved') {
