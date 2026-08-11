@@ -69,6 +69,7 @@
                 <button onclick="switchAuthMode('signup')" id="authTabSignupBtn" class="flex-1 py-2 rounded-lg text-gray-600 transition text-center">Sign Up</button>
             </div>
 
+            <!-- Sign In Form (With Larger Button) -->
             <form id="signinForm" onsubmit="handleSignIn(event)" class="space-y-3 text-sm pt-2">
                 <div>
                     <label class="block font-semibold text-gray-700 text-xs">Mobile Number / Username</label>
@@ -78,7 +79,8 @@
                     <label class="block font-semibold text-gray-700 text-xs">Password</label>
                     <input type="password" id="signinPassword" required class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="Enter your password">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-bold transition shadow-sm">Sign In</button>
+                <!-- 2) Modified Login Button to be bigger -->
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 text-base rounded-xl font-extrabold transition shadow-md">Sign In</button>
             </form>
 
             <form id="signupForm" onsubmit="handleSignUp(event)" class="space-y-3 text-sm pt-2 hidden">
@@ -315,6 +317,7 @@
                 return;
             }
 
+            // 1) Set initial status to 'Pending' so Admin Panel approval is required
             const newDriver = {
                 id: 'drv_' + Date.now(),
                 firstName,
@@ -322,13 +325,13 @@
                 mobile: phone,
                 address,
                 password,
-                status: 'Approved'
+                status: 'Pending' 
             };
 
             registered.push(newDriver);
             localStorage.setItem('registered_drivers', JSON.stringify(registered));
-            alert('Account created successfully! You are now signed in.');
-            setLoggedInDriver(newDriver);
+            alert('Account created successfully! Your account is pending approval from the admin panel.');
+            switchAuthMode('signin');
         }
 
         function handleSignIn(e) {
@@ -341,6 +344,12 @@
 
             if (!driver) {
                 alert('Invalid mobile number/username or password.');
+                return;
+            }
+
+            // 1) Enforce Admin Approval Check before allowing login
+            if (driver.status !== 'Approved') {
+                alert('Your account is currently pending admin approval. Please wait for an admin to approve your account.');
                 return;
             }
 
@@ -681,7 +690,15 @@
             const savedDriver = localStorage.getItem('logged_in_driver');
             if (savedDriver) {
                 try {
-                    setLoggedInDriver(JSON.parse(savedDriver));
+                    const parsedDriver = JSON.parse(savedDriver);
+                    // Double check status in case it was modified in admin panel
+                    let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
+                    const latestRecord = registered.find(d => d.id === parsedDriver.id);
+                    if (latestRecord && latestRecord.status === 'Approved') {
+                        setLoggedInDriver(latestRecord);
+                    } else {
+                        localStorage.removeItem('logged_in_driver');
+                    }
                 } catch (e) {
                     console.error(e);
                 }
