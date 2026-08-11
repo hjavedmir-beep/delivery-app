@@ -11,13 +11,13 @@
 <body class="bg-gray-100 font-sans text-sm">
 
     <!-- Top Navigation Bar -->
-    <nav class="bg-emerald-600 text-white p-3.5 shadow-md flex justify-between items-center">
+    <nav class="bg-blue-600 text-white p-3.5 shadow-md flex justify-between items-center">
         <h1 class="text-lg font-bold">Admin Dispatch Panel</h1>
         <div class="space-x-2 flex flex-wrap gap-2">
-            <button onclick="switchTab('active')" id="navTabActive" class="bg-emerald-700 px-4 py-2 rounded-lg font-bold text-sm transition">Dashboard / Front Screen</button>
-            <button onclick="switchTab('map')" id="navTabMap" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-bold text-sm transition">Live Map View</button>
-            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Drivers</button>
-            <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Businesses</button>
+            <button onclick="switchTab('active')" id="navTabActive" class="bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition">Dashboard / Front Screen</button>
+            <button onclick="switchTab('map')" id="navTabMap" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Live Map View</button>
+            <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Drivers</button>
+            <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Businesses</button>
         </div>
     </nav>
 
@@ -45,19 +45,48 @@
                         </div>
                         <div>
                             <label class="block font-semibold text-gray-700">Pickup Business (Registered)</label>
-                            <select id="orderPickup" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm">
+                            <select id="orderPickup" onchange="calculateOrderDistance()" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm">
                                 <option value="">Select Registered Business</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block font-semibold text-gray-700">Drop-off Address</label>
-                            <input type="text" id="orderDropoff" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+
+                        <!-- Structured Drop-off Address Section -->
+                        <div class="space-y-2 border-t pt-2">
+                            <label class="block font-bold text-gray-800">Drop-off Address</label>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Post Code</label>
+                                <input type="text" id="dropoffPostcode" placeholder="e.g. ST1 4QE" oninput="lookupDropoffPostcode(this.value)" required class="w-full mt-1 p-2 border rounded-lg uppercase text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Address Line 1</label>
+                                <input type="text" id="dropoffAddress1" placeholder="House number and street name" required class="w-full mt-1 p-2 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Address Line 2 (Optional)</label>
+                                <input type="text" id="dropoffAddress2" placeholder="Apartment, suite, unit, etc." class="w-full mt-1 p-2 border rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600">Region / Area</label>
+                                <input type="text" id="dropoffRegion" placeholder="Auto-populated region" readonly class="w-full mt-1 p-2 border rounded-lg bg-gray-50 text-gray-800 font-bold text-sm">
+                            </div>
                         </div>
+
+                        <!-- Distance Calculation Tab / Widget -->
+                        <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center justify-between">
+                            <div>
+                               <span class="block text-xs font-bold text-blue-800 uppercase tracking-wide">Route Distance Analysis</span>
+                               <span id="calculatedDistanceText" class="text-sm font-extrabold text-blue-900">Select pickup & enter drop-off postcode</span>
+                            </div>
+                            <div class="bg-white p-2 rounded-md shadow-sm border border-blue-100 text-blue-700 font-bold text-xs" id="distanceBadge">
+                                0.0 miles
+                            </div>
+                        </div>
+
                         <div>
                             <label class="block font-semibold text-gray-700">Special Notes</label>
                             <textarea id="orderNotes" rows="2" class="w-full mt-1 p-2 border rounded-lg text-sm"></textarea>
                         </div>
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg font-bold text-base transition">Add Order to Server</button>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-lg font-bold text-base transition">Add Order to Server</button>
                     </form>
                 </div>
 
@@ -80,15 +109,6 @@
             <!-- RIGHT COLUMN: Active Orders Table & Completed Orders Table -->
             <div class="lg:col-span-8 space-y-5">
                 
-                <!-- Date Filter Bar for Dashboard -->
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-2">
-                        <label for="dashboardDateFilter" class="font-bold text-gray-700 text-sm">Viewing Date Orders:</label>
-                        <input type="date" id="dashboardDateFilter" onchange="fetchOrders()" class="border p-2 rounded-lg text-sm font-semibold bg-white text-gray-800">
-                    </div>
-                    <button onclick="setDashboardToday()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg text-xs font-bold transition">Reset to Today</button>
-                </div>
-
                 <!-- Active Orders Table Section -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Active Orders & Assignment</h2>
@@ -144,7 +164,7 @@
                         <h2 class="font-bold text-base text-gray-800">🗺️ Live Map — Online Drivers & Businesses</h2>
                         <p class="text-xs text-gray-500 mt-0.5">Real-time GPS tracking for active delivery vehicles and registered outlets.</p>
                     </div>
-                    <button onclick="refreshMapPins()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Map</button>
+                    <button onclick="refreshMapPins()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Map</button>
                 </div>
                 <div id="dedicatedAdminMap" class="w-full h-[600px] rounded-lg"></div>
             </div>
@@ -157,7 +177,7 @@
             <div class="bg-white p-5 rounded-xl shadow-md space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h2 class="font-bold text-base text-gray-800">👤 Driver Directory & Approvals</h2>
-                    <button onclick="loadDriversManagement()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Drivers</button>
+                    <button onclick="loadDriversManagement()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Refresh Drivers</button>
                 </div>
                 <div id="driversDirectoryContainer" class="space-y-3">
                     <p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>
@@ -210,40 +230,13 @@
                                 <input type="text" id="busArea" placeholder="Auto-populated" readonly class="w-full mt-1 p-2 border rounded-lg bg-gray-50 text-gray-800 font-bold text-sm">
                             </div>
                         </div>
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg font-bold text-base transition">Save & Pin on Map</button>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg font-bold text-base transition">Save & Pin on Map</button>
                     </form>
                 </div>
 
-                <!-- List Registered Businesses Directory & Analytics -->
-                <div class="bg-white p-5 rounded-xl shadow-md space-y-3 md:col-span-2">
-                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory & Order Analytics</h2>
-                    
-                    <!-- Business Selector for Analytics -->
-                    <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block font-semibold text-gray-700 mb-1">Select Business to View Performance</label>
-                                <select id="analyticsBusinessSelect" onchange="updateBusinessAnalytics()" class="w-full p-2 border rounded-lg bg-white text-sm font-semibold">
-                                    <option value="">Choose a Business...</option>
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2 text-center">
-                                <div class="bg-white p-2 rounded-lg border shadow-sm">
-                                    <span class="text-gray-500 block text-xs font-semibold">Daily</span>
-                                    <span id="statDailyCount" class="text-emerald-700 font-extrabold text-base">0</span>
-                                </div>
-                                <div class="bg-white p-2 rounded-lg border shadow-sm">
-                                    <span class="text-gray-500 block text-xs font-semibold">Weekly</span>
-                                    <span id="statWeeklyCount" class="text-emerald-700 font-extrabold text-base">0</span>
-                                </div>
-                                <div class="bg-white p-2 rounded-lg border shadow-sm">
-                                    <span class="text-gray-500 block text-xs font-semibold">Monthly</span>
-                                    <span id="statMonthlyCount" class="text-emerald-700 font-extrabold text-base">0</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+                <!-- List Registered Businesses Directory -->
+                <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory</h2>
                     <div id="businessesListContainer" class="space-y-3 text-sm max-h-[380px] overflow-y-auto">
                         <p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>
                     </div>
@@ -261,35 +254,19 @@
         let dedicatedMarkersLayer = null;
         let onlineDriversCache = {};
         let allOrdersCache = [];
+        let dropoffCoords = { lat: null, lng: null };
 
-        // Initialize default date filter to today (YYYY-MM-DD format)
-        function initDashboardDate() {
-            const dateInput = document.getElementById('dashboardDateFilter');
-            if (dateInput && !dateInput.value) {
-                const todayStr = new Date().toISOString().split('T')[0];
-                dateInput.value = todayStr;
-            }
-        }
-
-        function setDashboardToday() {
-            const dateInput = document.getElementById('dashboardDateFilter');
-            if (dateInput) {
-                dateInput.value = new Date().toISOString().split('T')[0];
-                fetchOrders();
-            }
-        }
-
-        // Custom Leaflet Icons (Green Theme)
+        // Custom Leaflet Icons
         const carIcon = L.divIcon({
             className: 'custom-car-marker',
-            html: '<div style="background-color: #059669; color: white; padding: 6px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; border: 2px solid white;">🚗 Car</div>',
+            html: '<div style="background-color: #2563eb; color: white; padding: 6px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; border: 2px solid white;">🚗 Car</div>',
             iconSize: [60, 30],
             iconAnchor: [30, 15]
         });
 
         const businessIcon = L.divIcon({
             className: 'custom-business-marker',
-            html: '<div style="background-color: #047857; color: white; padding: 6px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; border: 2px solid white;">🏢 Business</div>',
+            html: '<div style="background-color: #059669; color: white; padding: 6px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; border: 2px solid white;">🏢 Business</div>',
             iconSize: [80, 30],
             iconAnchor: [40, 15]
         });
@@ -300,31 +277,30 @@
             document.getElementById('tabContentDrivers').classList.add('hidden');
             document.getElementById('tabContentBusinesses').classList.add('hidden');
 
-            document.getElementById('navTabActive').className = 'bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-bold text-sm transition';
-            document.getElementById('navTabMap').className = 'bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-bold text-sm transition';
-            document.getElementById('navTabDrivers').className = 'bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-bold text-sm transition';
-            document.getElementById('navTabBusinesses').className = 'bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-bold text-sm transition';
+            document.getElementById('navTabActive').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
+            document.getElementById('navTabMap').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
+            document.getElementById('navTabDrivers').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
+            document.getElementById('navTabBusinesses').className = 'bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm transition';
 
             if (tab === 'active') {
                 document.getElementById('tabContentActive').classList.remove('hidden');
-                document.getElementById('navTabActive').className = 'bg-emerald-700 px-4 py-2 rounded-lg font-bold text-sm transition';
+                document.getElementById('navTabActive').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
                 fetchOrders();
                 refreshMapPins();
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else if (tab === 'map') {
                 document.getElementById('tabContentMap').classList.remove('hidden');
-                document.getElementById('navTabMap').className = 'bg-emerald-700 px-4 py-2 rounded-lg font-bold text-sm transition';
+                document.getElementById('navTabMap').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
                 refreshMapPins();
                 setTimeout(() => { if (dedicatedMap) dedicatedMap.invalidateSize(); }, 200);
             } else if (tab === 'drivers') {
                 document.getElementById('tabContentDrivers').classList.remove('hidden');
-                document.getElementById('navTabDrivers').className = 'bg-emerald-700 px-4 py-2 rounded-lg font-bold text-sm transition';
+                document.getElementById('navTabDrivers').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
                 loadDriversManagement();
             } else if (tab === 'businesses') {
                 document.getElementById('tabContentBusinesses').classList.remove('hidden');
-                document.getElementById('navTabBusinesses').className = 'bg-emerald-700 px-4 py-2 rounded-lg font-bold text-sm transition';
+                document.getElementById('navTabBusinesses').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
                 loadBusinessesManagement();
-                loadAnalyticsBusinessDropdown();
             }
         }
 
@@ -372,6 +348,67 @@
             }
         }
 
+        async function lookupDropoffPostcode(postcode) {
+            const cleanPostcode = postcode.trim();
+            const regionInput = document.getElementById('dropoffRegion');
+            if (cleanPostcode.length < 3) {
+                regionInput.value = '';
+                dropoffCoords = { lat: null, lng: null };
+                return;
+            }
+
+            try {
+                const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(cleanPostcode)}`);
+                const data = await res.json();
+                if (data.status === 200 && data.result) {
+                    const r = data.result;
+                    regionInput.value = r.admin_district || r.region || r.parish || 'United Kingdom';
+                    dropoffCoords.lat = r.latitude;
+                    dropoffCoords.lng = r.longitude;
+                    calculateOrderDistance();
+                } else {
+                    regionInput.value = 'Searching...';
+                }
+            } catch (err) {
+                console.error('Dropoff postcode lookup error:', err);
+                regionInput.value = 'Unavailable';
+            }
+        }
+
+        function calculateOrderDistance() {
+            const pickupSelectVal = document.getElementById('orderPickup').value;
+            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return;
+
+            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
+            const matchedBus = businesses.find(b => {
+                const addr2 = b.address2 ? `, ${b.address2}` : '';
+                const fullStr = `${b.name} (${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode})`;
+                return fullStr === pickupSelectVal;
+            });
+
+            if (matchedBus && matchedBus.lat && matchedBus.lng) {
+                const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
+                document.getElementById('calculatedDistanceText').innerText = `Distance to Drop-off Location`;
+                document.getElementById('distanceBadge').innerText = `${distanceMiles.toFixed(1)} miles`;
+            }
+        }
+
+        function getDistanceFromLatLonInMiles(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // Radius of the earth in miles
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c;
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
         function loadRegisteredBusinesses() {
             const pickupSelect = document.getElementById('orderPickup');
             if (!pickupSelect) return;
@@ -385,85 +422,6 @@
                 optionsHtml += `<option value="${b.name} (${fullAddress})">${b.name} - ${fullAddress}</option>`;
             });
             pickupSelect.innerHTML = optionsHtml;
-        }
-
-        function loadAnalyticsBusinessDropdown() {
-            const selectElem = document.getElementById('analyticsBusinessSelect');
-            if (!selectElem) return;
-
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            let currentSelection = selectElem.value;
-
-            let optionsHtml = '<option value="">Choose a Business...</option>';
-            businesses.forEach(b => {
-                const addr2 = b.address2 ? `, ${b.address2}` : '';
-                const fullAddress = `${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode}`;
-                const val = `${b.name} (${fullAddress})`;
-                optionsHtml += `<option value="${val}" ${currentSelection === val ? 'selected' : ''}>${b.name} — ${fullAddress}</option>`;
-            });
-            selectElem.innerHTML = optionsHtml;
-            updateBusinessAnalytics();
-        }
-
-        function updateBusinessAnalytics() {
-            const selectElem = document.getElementById('analyticsBusinessSelect');
-            const dailyElem = document.getElementById('statDailyCount');
-            const weeklyElem = document.getElementById('statWeeklyCount');
-            const monthlyElem = document.getElementById('statMonthlyCount');
-
-            if (!selectElem || !dailyElem || !weeklyElem || !monthlyElem) return;
-
-            const selectedBus = selectElem.value;
-            if (!selectedBus) {
-                dailyElem.innerText = '0';
-                weeklyElem.innerText = '0';
-                monthlyElem.innerText = '0';
-                return;
-            }
-
-            // Filter delivered orders matching this business
-            const busDeliveredOrders = allOrdersCache.filter(o => {
-                const isDelivered = o.status === 'Delivered';
-                const matchesPickup = o.pickupAddress && o.pickupAddress.toLowerCase() === selectedBus.toLowerCase();
-                return isDelivered && matchesPickup;
-            });
-
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0];
-            
-            // Calculate start of current week (Monday)
-            const currentDayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - currentDayOfWeek);
-            weekStart.setHours(0, 0, 0, 0);
-
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-
-            let dailyCount = 0;
-            let weeklyCount = 0;
-            let monthlyCount = 0;
-
-            busDeliveredOrders.forEach(order => {
-                const orderDateObj = order.createdAt ? new Date(order.createdAt) : new Date();
-                const orderDateStr = orderDateObj.toISOString().split('T')[0];
-
-                if (orderDateStr === todayStr) {
-                    dailyCount++;
-                }
-
-                if (orderDateObj >= weekStart) {
-                    weeklyCount++;
-                }
-
-                if (orderDateObj.getMonth() === currentMonth && orderDateObj.getFullYear() === currentYear) {
-                    monthlyCount++;
-                }
-            });
-
-            dailyElem.innerText = dailyCount;
-            weeklyElem.innerText = weeklyCount;
-            monthlyElem.innerText = monthlyCount;
         }
 
         async function handleAddBusiness(e) {
@@ -498,7 +456,6 @@
             document.getElementById('busArea').value = '';
             loadBusinessesManagement();
             loadRegisteredBusinesses();
-            loadAnalyticsBusinessDropdown();
             refreshMapPins();
             alert('Business saved and pinned on map successfully!');
         }
@@ -521,7 +478,7 @@
                     <div class="bg-gray-50 p-3.5 rounded-xl border flex justify-between items-center">
                         <div>
                             <p class="font-bold text-gray-900 text-base">${b.name} <span class="text-gray-500 font-normal text-sm">(${b.phone})</span></p>
-                            <p class="text-gray-700 text-xs mt-0.5">${b.address1}${addr2Str}, ${b.postcode} <span class="text-emerald-700 font-bold">${areaStr}</span></p>
+                            <p class="text-gray-700 text-xs mt-0.5">${b.address1}${addr2Str}, ${b.postcode} <span class="text-blue-700 font-bold">${areaStr}</span></p>
                         </div>
                         <button onclick="deleteBusiness(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Delete</button>
                     </div>
@@ -535,19 +492,24 @@
             localStorage.setItem('registered_businesses', JSON.stringify(businesses));
             loadBusinessesManagement();
             loadRegisteredBusinesses();
-            loadAnalyticsBusinessDropdown();
             refreshMapPins();
         }
 
         async function handleCreateOrder(e) {
             e.preventDefault();
+            const addr1 = document.getElementById('dropoffAddress1').value.trim();
+            const addr2 = document.getElementById('dropoffAddress2').value.trim();
+            const region = document.getElementById('dropoffRegion').value.trim();
+            const postcode = document.getElementById('dropoffPostcode').value.trim().toUpperCase();
+            
+            const formattedDropoff = `${addr1}${addr2 ? ', ' + addr2 : ''}, ${region} - ${postcode}`;
+
             const orderData = {
                 customerName: document.getElementById('orderCustName').value.trim(),
                 customerPhone: document.getElementById('orderCustPhone').value.trim(),
                 pickupAddress: document.getElementById('orderPickup').value.trim(),
-                dropoffAddress: document.getElementById('orderDropoff').value.trim(),
-                specialNotes: document.getElementById('orderNotes').value.trim(),
-                createdAt: new Date().toISOString()
+                dropoffAddress: formattedDropoff,
+                specialNotes: document.getElementById('orderNotes').value.trim()
             };
 
             if (!orderData.pickupAddress) {
@@ -564,6 +526,10 @@
                 if (res.ok) {
                     alert('Order created successfully!');
                     document.getElementById('createOrderForm').reset();
+                    document.getElementById('dropoffRegion').value = '';
+                    document.getElementById('calculatedDistanceText').innerText = 'Select pickup & enter drop-off postcode';
+                    document.getElementById('distanceBadge').innerText = '0.0 miles';
+                    dropoffCoords = { lat: null, lng: null };
                     loadRegisteredBusinesses();
                     fetchOrders();
                 }
@@ -578,23 +544,11 @@
                 const orders = await res.json();
                 allOrdersCache = orders;
 
-                updateBusinessAnalytics();
-
                 const activeTable = document.getElementById('activeOrdersTableBody');
                 const completedTable = document.getElementById('completedOrdersTableBody');
-                const dateFilterInput = document.getElementById('dashboardDateFilter');
                 
-                const selectedDateStr = dateFilterInput ? dateFilterInput.value : new Date().toISOString().split('T')[0];
-
-                // Filter orders by selected date
-                const filteredByDateOrders = orders.filter(o => {
-                    const orderDateObj = o.createdAt ? new Date(o.createdAt) : new Date();
-                    const orderDateStr = orderDateObj.toISOString().split('T')[0];
-                    return orderDateStr === selectedDateStr;
-                });
-
-                const activeOrders = filteredByDateOrders.filter(o => o.status !== 'Delivered');
-                const completedOrders = filteredByDateOrders.filter(o => o.status === 'Delivered');
+                const activeOrders = orders.filter(o => o.status !== 'Delivered');
+                const completedOrders = orders.filter(o => o.status === 'Delivered');
 
                 let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
                 
@@ -605,7 +559,7 @@
                 });
 
                 if (activeOrders.length === 0) {
-                    activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found for ${selectedDateStr}.</td></tr>`;
+                    activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
                 } else {
                     activeTable.innerHTML = '';
                     activeOrders.forEach(order => {
@@ -629,7 +583,7 @@
 
                 document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
                 if (completedOrders.length === 0) {
-                    completedTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found for ${selectedDateStr}.</td></tr>`;
+                    completedTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>`;
                 } else {
                     completedTable.innerHTML = '';
                     completedOrders.forEach(order => {
@@ -800,10 +754,10 @@
                                     : `<span class="bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold">Offline</span>`
                                 }
                             </div>
-                            <p class="text-gray-600 text-xs mt-1">📞 Phone: <a href="tel:${drv.mobile}" class="text-emerald-600 font-bold hover:underline">${drv.mobile}</a></p>
+                            <p class="text-gray-600 text-xs mt-1">📞 Phone: <a href="tel:${drv.mobile}" class="text-blue-600 font-bold hover:underline">${drv.mobile}</a></p>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">Approval: ${drv.status || 'Pending'}</span>
+                            <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">Approval: ${drv.status}</span>
                             ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold text-xs transition">Approve</button>` : ''}
                         </div>
                     </div>
@@ -829,7 +783,7 @@
                             </div>
                             <div class="bg-white p-3 rounded-lg border">
                                 <span class="text-gray-500 block font-semibold">Total Deliveries</span>
-                                <span class="text-emerald-700 font-extrabold text-sm">${driverCompletedOrders.length} Orders</span>
+                                <span class="text-blue-700 font-extrabold text-sm">${driverCompletedOrders.length} Orders</span>
                             </div>
                             <div class="bg-white p-3 rounded-lg border">
                                 <span class="text-gray-500 block font-semibold">Total Earned (£5/order)</span>
@@ -852,11 +806,9 @@
         }
 
         window.onload = () => {
-            initDashboardDate();
             initAdminMap();
             loadRegisteredBusinesses();
             loadBusinessesManagement();
-            loadAnalyticsBusinessDropdown();
             fetchOrders();
             fetchLiveDrivers();
             setInterval(fetchOrders, 5000);
