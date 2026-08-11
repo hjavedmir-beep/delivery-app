@@ -255,7 +255,7 @@
         let onlineDriversCache = {};
         let allOrdersCache = [];
         let dropoffCoords = { lat: null, lng: null };
-        let currentCalculatedPrice = 3.80; // Tracks live calculated price accurately
+        let currentCalculatedPrice = 3.80;
 
         // Custom Leaflet Icons
         const carIcon = L.divIcon({
@@ -376,19 +376,15 @@
         }
 
         function calculateOrderDistance() {
-            const pickupSelectVal = document.getElementById('orderPickup').value;
+            const selectedBusIndex = document.getElementById('orderPickup').value;
             
-            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) {
+            if (selectedBusIndex === "" || !dropoffCoords.lat || !dropoffCoords.lng) {
                 currentCalculatedPrice = 3.80;
                 return 3.80;
             }
 
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            
-            const matchedBus = businesses.find(b => {
-                const cleanBusPostcode = b.postcode.replace(/\s+/g, '').toUpperCase();
-                return pickupSelectVal.includes(b.name) && pickupSelectVal.toUpperCase().includes(cleanBusPostcode);
-            });
+            const matchedBus = businesses[selectedBusIndex];
 
             if (matchedBus && matchedBus.lat && matchedBus.lng) {
                 const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
@@ -433,10 +429,10 @@
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
 
             let optionsHtml = '<option value="">Select Registered Business</option>';
-            businesses.forEach(b => {
+            businesses.forEach((b, index) => {
                 const addr2 = b.address2 ? `, ${b.address2}` : '';
                 const fullAddress = `${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode}`;
-                optionsHtml += `<option value="${b.name} (${fullAddress})">${b.name} - ${fullAddress}</option>`;
+                optionsHtml += `<option value="${index}">${b.name} - ${fullAddress}</option>`;
             });
             pickupSelect.innerHTML = optionsHtml;
         }
@@ -519,24 +515,27 @@
             const region = document.getElementById('dropoffRegion').value.trim();
             const postcode = document.getElementById('dropoffPostcode').value.trim().toUpperCase();
             
+            const selectedBusIndex = document.getElementById('orderPickup').value;
+            if (selectedBusIndex === "") {
+                alert('Please select a registered business for pickup.');
+                return;
+            }
+
+            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
+            const matchedBus = businesses[selectedBusIndex];
+            const fullPickupText = matchedBus ? `${matchedBus.name} (${matchedBus.address1}, ${matchedBus.postcode})` : 'Registered Business';
+
             const formattedDropoff = `${addr1}${addr2 ? ', ' + addr2 : ''}, ${region} - ${postcode}`;
-            
-            // Ensure calculation is updated right before dispatch
             const finalPrice = calculateOrderDistance();
 
             const orderData = {
                 customerName: document.getElementById('orderCustName').value.trim(),
                 customerPhone: document.getElementById('orderCustPhone').value.trim(),
-                pickupAddress: document.getElementById('orderPickup').value.trim(),
+                pickupAddress: fullPickupText,
                 dropoffAddress: formattedDropoff,
                 specialNotes: document.getElementById('orderNotes').value.trim(),
                 deliveryPrice: finalPrice > 0 ? finalPrice : currentCalculatedPrice
             };
-
-            if (!orderData.pickupAddress) {
-                alert('Please select a registered business for pickup.');
-                return;
-            }
 
             try {
                 const res = await fetch(`${API_URL}/orders`, {
