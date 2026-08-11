@@ -133,7 +133,10 @@
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3">
                     <div class="flex justify-between items-center border-b pb-2">
                         <h2 class="font-bold text-base text-gray-800">✅ Completed / Delivered Orders</h2>
-                        <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">0 Orders</span>
+                        <div class="flex items-center gap-2">
+                            <span id="completedCountBadge" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">0 Orders</span>
+                            <button onclick="clearCompletedOrders()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-bold transition">Clear Completed</button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto max-h-[350px] overflow-y-auto">
                         <table class="w-full text-left text-sm">
@@ -255,7 +258,6 @@
         let onlineDriversCache = {};
         let allOrdersCache = [];
         let dropoffCoords = { lat: null, lng: null };
-        let currentCalculatedPrice = 3.80;
 
         // Custom Leaflet Icons
         const carIcon = L.divIcon({
@@ -376,15 +378,14 @@
         }
 
         function calculateOrderDistance() {
-            const selectedBusIndex = document.getElementById('orderPickup').value;
-            
-            if (selectedBusIndex === "" || !dropoffCoords.lat || !dropoffCoords.lng) {
-                currentCalculatedPrice = 3.80;
-                return 3.80;
-            }
+            const pickupSelectVal = document.getElementById('orderPickup').value;
+            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return 3.80;
 
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            const matchedBus = businesses[selectedBusIndex];
+            
+            const matchedBus = businesses.find(b => {
+                return pickupSelectVal.includes(b.name) && pickupSelectVal.includes(b.postcode);
+            });
 
             if (matchedBus && matchedBus.lat && matchedBus.lng) {
                 const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
@@ -396,18 +397,15 @@
                     deliveryPrice += blocksOfPointOne * 0.15;
                 }
 
-                currentCalculatedPrice = deliveryPrice;
                 document.getElementById('calculatedDistanceText').innerText = `${distanceMiles.toFixed(2)} miles (£${deliveryPrice.toFixed(2)})`;
                 document.getElementById('distanceBadge').innerHTML = `Price: £${deliveryPrice.toFixed(2)}`;
                 return deliveryPrice;
             }
-            
-            currentCalculatedPrice = 3.80;
             return 3.80;
         }
 
         function getDistanceFromLatLonInMiles(lat1, lon1, lat2, lon2) {
-            const R = 3958.8; 
+            const R = 3958.8;
             const dLat = deg2rad(lat2 - lat1);
             const dLon = deg2rad(lon2 - lon1);
             const a = 
@@ -429,10 +427,10 @@
             let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
 
             let optionsHtml = '<option value="">Select Registered Business</option>';
-            businesses.forEach((b, index) => {
+            businesses.forEach(b => {
                 const addr2 = b.address2 ? `, ${b.address2}` : '';
                 const fullAddress = `${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode}`;
-                optionsHtml += `<option value="${index}">${b.name} - ${fullAddress}</option>`;
+                optionsHtml += `<option value="${b.name} (${fullAddress})">${b.name} - ${fullAddress}</option>`;
             });
             pickupSelect.innerHTML = optionsHtml;
         }
@@ -515,27 +513,23 @@
             const region = document.getElementById('dropoffRegion').value.trim();
             const postcode = document.getElementById('dropoffPostcode').value.trim().toUpperCase();
             
-            const selectedBusIndex = document.getElementById('orderPickup').value;
-            if (selectedBusIndex === "") {
-                alert('Please select a registered business for pickup.');
-                return;
-            }
-
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            const matchedBus = businesses[selectedBusIndex];
-            const fullPickupText = matchedBus ? `${matchedBus.name} (${matchedBus.address1}, ${matchedBus.postcode})` : 'Registered Business';
-
             const formattedDropoff = `${addr1}${addr2 ? ', ' + addr2 : ''}, ${region} - ${postcode}`;
-            const finalPrice = calculateOrderDistance();
+            
+            const calculatedPrice = calculateOrderDistance();
 
             const orderData = {
                 customerName: document.getElementById('orderCustName').value.trim(),
                 customerPhone: document.getElementById('orderCustPhone').value.trim(),
-                pickupAddress: fullPickupText,
+                pickupAddress: document.getElementById('orderPickup').value.trim(),
                 dropoffAddress: formattedDropoff,
                 specialNotes: document.getElementById('orderNotes').value.trim(),
-                deliveryPrice: finalPrice > 0 ? finalPrice : currentCalculatedPrice
+                deliveryPrice: calculatedPrice > 0 ? calculatedPrice : 3.80
             };
+
+            if (!orderData.pickupAddress) {
+                alert('Please select a registered business for pickup.');
+                return;
+            }
 
             try {
                 const res = await fetch(`${API_URL}/orders`, {
@@ -550,7 +544,6 @@
                     document.getElementById('calculatedDistanceText').innerText = 'Select pickup & enter drop-off postcode';
                     document.getElementById('distanceBadge').innerText = '£3.80 base';
                     dropoffCoords = { lat: null, lng: null };
-                    currentCalculatedPrice = 3.80;
                     loadRegisteredBusinesses();
                     fetchOrders();
                 }
@@ -572,15 +565,20 @@
                 const completedOrders = orders.filter(o => o.status === 'Delivered');
 
                 let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                let availableDrivers = registeredDrivers.filter(d => d.status === 'Approved');
+                
+                let onlineDrivers = registeredDrivers.filter(d => {
+                    const isApproved = d.status === 'Approved';
+                    const hasLiveLocation = onlineDriversCache[d.id] && onlineDriversCache[d.id].lat && onlineDriversCache[d.id].lng;
+                    return isApproved && hasLiveLocation;
+                });
 
                 if (activeOrders.length === 0) {
                     activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
                 } else {
                     activeTable.innerHTML = '';
                     activeOrders.forEach(order => {
-                        let optionsHtml = `<option value="">Select Driver</option>`;
-                        availableDrivers.forEach(d => {
+                        let optionsHtml = `<option value="">Select Online Driver</option>`;
+                        onlineDrivers.forEach(d => {
                             optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
                         });
 
@@ -642,6 +640,22 @@
             }
         }
 
+        // New utility function to clear completed orders from backend database
+        async function clearCompletedOrders() {
+            if (!confirm('Are you sure you want to clear all completed orders from the server?')) return;
+            try {
+                const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
+                for (const order of completedOrders) {
+                    await fetch(`${API_URL}/orders/${order.id}`, { method: 'DELETE' });
+                }
+                fetchOrders();
+                alert('Completed orders cleared successfully!');
+            } catch (e) {
+                console.error('Error clearing completed orders:', e);
+                alert('Failed to clear some orders from the server.');
+            }
+        }
+
         async function fetchLiveDrivers() {
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
@@ -691,6 +705,8 @@
                 } else {
                     driversWidget.innerHTML = driverHtml;
                 }
+
+                fetchOrders();
 
                 if (!document.getElementById('tabContentDrivers').classList.contains('hidden')) {
                     loadDriversManagement();
