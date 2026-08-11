@@ -445,7 +445,6 @@
             let monthlyCount = 0;
 
             busDeliveredOrders.forEach(order => {
-                // Determine order date from createdAt or fallback
                 const orderDateObj = order.createdAt ? new Date(order.createdAt) : new Date();
                 const orderDateStr = orderDateObj.toISOString().split('T')[0];
 
@@ -579,7 +578,6 @@
                 const orders = await res.json();
                 allOrdersCache = orders;
 
-                // Update business analytics if analytics dropdown is active
                 updateBusinessAnalytics();
 
                 const activeTable = document.getElementById('activeOrdersTableBody');
