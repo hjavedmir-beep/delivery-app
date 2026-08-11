@@ -375,33 +375,36 @@
         }
 
         function calculateOrderDistance() {
-    const pickupSelectVal = document.getElementById('orderPickup').value;
-    if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return 3.80;
+            const pickupSelectVal = document.getElementById('orderPickup').value;
+            const dropoffPostcodeVal = document.getElementById('dropoffPostcode').value.trim();
+            
+            if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return 3.80;
 
-    let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-    
-    // Safely match the business even if string formatting has minor differences
-    const matchedBus = businesses.find(b => {
-        return pickupSelectVal.includes(b.name) && pickupSelectVal.includes(b.postcode);
-    });
+            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
+            
+            // Safely match the business by name and normalized postcode
+            const matchedBus = businesses.find(b => {
+                const cleanBusPostcode = b.postcode.replace(/\s+/g, '').toUpperCase();
+                return pickupSelectVal.includes(b.name) && pickupSelectVal.toUpperCase().includes(cleanBusPostcode);
+            });
 
-    if (matchedBus && matchedBus.lat && matchedBus.lng) {
-        const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
-        
-        // Delivery Pricing Rule: £3.80 for up to 3 miles, then 15 pence for every 0.10 miles.
-        let deliveryPrice = 3.80;
-        if (distanceMiles > 3.0) {
-            const extraMiles = distanceMiles - 3.0;
-            const blocksOfPointOne = Math.ceil(extraMiles / 0.10);
-            deliveryPrice += blocksOfPointOne * 0.15;
+            if (matchedBus && matchedBus.lat && matchedBus.lng) {
+                const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
+                
+                // Delivery Pricing Rule: £3.80 for up to 3 miles, then 15 pence for every 0.10 miles.
+                let deliveryPrice = 3.80;
+                if (distanceMiles > 3.0) {
+                    const extraMiles = distanceMiles - 3.0;
+                    const blocksOfPointOne = Math.ceil(extraMiles / 0.10);
+                    deliveryPrice += blocksOfPointOne * 0.15;
+                }
+
+                document.getElementById('calculatedDistanceText').innerText = `${distanceMiles.toFixed(2)} miles (£${deliveryPrice.toFixed(2)})`;
+                document.getElementById('distanceBadge').innerHTML = `Price: £${deliveryPrice.toFixed(2)}`;
+                return deliveryPrice;
+            }
+            return 3.80;
         }
-
-        document.getElementById('calculatedDistanceText').innerText = `${distanceMiles.toFixed(2)} miles (£${deliveryPrice.toFixed(2)})`;
-        document.getElementById('distanceBadge').innerHTML = `Price: £${deliveryPrice.toFixed(2)}`;
-        return deliveryPrice;
-    }
-    return 3.80;
-}
 
         function getDistanceFromLatLonInMiles(lat1, lon1, lat2, lon2) {
             const R = 3958.8; // Radius of the earth in miles
