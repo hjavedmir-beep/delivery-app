@@ -24,7 +24,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'officedeskmh@gmail.com',
-        pass: process.env.EMAIL_PASS // یہاں Render میں گوگل کا ایپ پاسورڈ دینا ہوگا
+        pass: process.env.EMAIL_PASS
     }
 });
 
@@ -49,7 +49,7 @@ const driverSchema = new mongoose.Schema({
     mobile: String,
     email: { type: String, unique: true, sparse: true },
     address: String,
-    password: String,
+    password: { type: String, default: '' }, // پاسورڈ اب آپشنل ہے
     status: String,
     resetCode: String
 });
@@ -191,7 +191,7 @@ app.post('/api/drivers/signup', async (req, res) => {
             mobile: req.body.mobile,
             email: req.body.email,
             address: req.body.address,
-            password: req.body.password,
+            password: '', // سائن اپ کے وقت پاسورڈ خالی رکھا جائے گا
             status: 'Pending'
         });
         await newDriver.save();
@@ -223,14 +223,19 @@ app.post('/api/drivers/status', async (req, res) => {
     }
 });
 
+// اپروول کے دوران پاسورڈ سیٹ کرنے کا رو트
 app.post('/api/drivers/approve', async (req, res) => {
     try {
-        const driver = await Driver.findOne({ id: String(req.body.driverId) });
+        const { driverId, password } = req.body;
+        const driver = await Driver.findOne({ id: String(driverId) });
         if (!driver) return res.status(404).json({ error: 'Driver not found' });
 
+        if (password) {
+            driver.password = password;
+        }
         driver.status = 'Approved';
         await driver.save();
-        res.json({ success: true, message: 'Driver approved', driver });
+        res.json({ success: true, message: 'Driver approved and password set', driver });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -245,12 +250,10 @@ app.post('/api/driver/forgot-password', async (req, res) => {
             return res.status(404).json({ error: 'No driver account found with this email address.' });
         }
 
-        // 4 ہندسوں کا کوڈ جنریٹ کریں
         const resetCode = Math.floor(1000 + Math.random() * 9000).toString();
         driver.resetCode = resetCode;
         await driver.save();
 
-        // Nodemailer میل آپشنز
         const mailOptions = {
             from: 'officedeskmh@gmail.com',
             to: driver.email,
@@ -306,8 +309,3 @@ app.get('/api/drivers/locations', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
-```[cite: 5]
-
----
-
-### 2. Driver Portal (`driver.html`)
