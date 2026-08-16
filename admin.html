@@ -253,6 +253,26 @@
 
     </div>
 
+    <!-- DRIVER PASSWORD APPROVAL MODAL -->
+    <div id="driverApprovalModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden backdrop-blur-sm">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-100">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-base text-gray-900">Approve Driver & Set Password</h3>
+                <button onclick="closeDriverApprovalModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">×</button>
+            </div>
+            <p id="approvalDriverNameText" class="text-xs text-gray-600 font-semibold">Set a login password for this driver account.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block font-semibold text-gray-700 text-xs">Assign Password (Min 8 chars)</label>
+                    <input type="password" id="adminSetDriverPassword" class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="Enter secure password">
+                </div>
+                <button onclick="confirmApproveDriver()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs transition shadow-sm">
+                    Approve & Save Password
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = '/api';
         let adminMap = null;
@@ -264,6 +284,7 @@
         let registeredBusinessesCache = [];
         let registeredDriversCache = [];
         let dropoffCoords = { lat: null, lng: null };
+        let pendingApprovalDriverId = null;
 
         // Custom Leaflet Icons (Green/Emerald Theme)
         const carIcon = L.divIcon({
@@ -639,7 +660,9 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${drv.status}</span>
-                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${drv.id})" class="bg-emerald-600 text-white px-3 py-1 rounded-lg font-bold text-xs">Approve</button>` : ''}
+                            <button onclick="openDriverApprovalModal(${drv.id}, '${drv.firstName} ${drv.surname}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition">
+                                ${drv.status === 'Approved' ? 'Update Password' : 'Approve & Set Password'}
+                            </button>
                         </div>
                     </div>`;
 
@@ -654,14 +677,43 @@
             });
         }
 
-        async function approveDriver(driverId) {
-            await fetch(`${API_URL}/drivers/approve`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ driverId })
-            });
-            fetchDrivers();
-            alert('Driver approved successfully!');
+        function openDriverApprovalModal(driverId, driverName) {
+            pendingApprovalDriverId = driverId;
+            document.getElementById('approvalDriverNameText').innerText = `Set login password for ${driverName}`;
+            document.getElementById('adminSetDriverPassword').value = '';
+            document.getElementById('driverApprovalModal').classList.remove('hidden');
+        }
+
+        function closeDriverApprovalModal() {
+            document.getElementById('driverApprovalModal').classList.add('hidden');
+            pendingApprovalDriverId = null;
+        }
+
+        async function confirmApproveDriver() {
+            const password = document.getElementById('adminSetDriverPassword').value;
+            if (!password || password.length < 8) {
+                alert('Please enter a secure password of at least 8 characters.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/drivers/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ driverId: pendingApprovalDriverId, password })
+                });
+                if (res.ok) {
+                    alert('Driver approved and password assigned successfully!');
+                    closeDriverApprovalModal();
+                    fetchDrivers();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to approve driver.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error.');
+            }
         }
 
         window.onload = () => {
