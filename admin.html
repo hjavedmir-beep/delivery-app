@@ -250,7 +250,8 @@
     </div>
 
     <script>
-        const API_URL = 'https://delivery-app-vzp3.onrender.com/api';
+        // Updated to use relative path so it seamlessly links across all devices
+        const API_URL = '/api';
         let adminMap = null;
         let dedicatedMap = null;
         let markersLayer = null;
@@ -640,7 +641,6 @@
             }
         }
 
-        // New utility function to clear completed orders from backend database
         async function clearCompletedOrders() {
             if (!confirm('Are you sure you want to clear all completed orders from the server?')) return;
             try {
