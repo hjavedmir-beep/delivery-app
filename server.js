@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const sgMail = require('@sendgrid/mail');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,8 +19,14 @@ mongoose.connect(MONGO_URI)
     .then(() => console.log('Connected to MongoDB Atlas successfully!'))
     .catch(err => console.error('MongoDB connection error:', err));
 
-// --- SendGrid API Setup ---
-sgMail.setApiKey('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');
+// --- Nodemailer Transporter Setup ---
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'officedeskmh@gmail.com',
+        pass: process.env.EMAIL_PASS // یہاں Render میں گوگل کا ایپ پاسورڈ دینا ہوگا
+    }
+});
 
 // --- Schemas & Models ---
 const orderSchema = new mongoose.Schema({
@@ -41,7 +47,7 @@ const driverSchema = new mongoose.Schema({
     firstName: String,
     surname: String,
     mobile: String,
-    email: { type: String, unique: true, sparse: true }, // ڈرائیور کی ای میل فیلڈ
+    email: { type: String, unique: true, sparse: true },
     address: String,
     password: String,
     status: String,
@@ -230,7 +236,7 @@ app.post('/api/drivers/approve', async (req, res) => {
     }
 });
 
-// --- Password Reset via SendGrid APIs ---
+// --- Password Reset via Nodemailer APIs ---
 app.post('/api/driver/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -244,19 +250,19 @@ app.post('/api/driver/forgot-password', async (req, res) => {
         driver.resetCode = resetCode;
         await driver.save();
 
-        // SendGrid کے ذریعے ای میل بھیجیں
-        const msg = {
+        // Nodemailer میل آپشنز
+        const mailOptions = {
+            from: 'officedeskmh@gmail.com',
             to: driver.email,
-            from: 'officedeskmh@gmail.com', // وریفائیڈ سینڈر ای میل
             subject: 'Swifty Delivery - Password Reset Code',
             text: `Hello ${driver.firstName},\n\nYour password reset verification code is: ${resetCode}\n\nPlease enter this code in the app to reset your password.`,
             html: `<strong>Hello ${driver.firstName},</strong><br><br>Your password reset verification code is: <b>${resetCode}</b><br><br>Please enter this code in the app to reset your password.`
         };
 
-        await sgMail.send(msg);
+        await transporter.sendMail(mailOptions);
         res.json({ success: true, message: 'Verification code sent to your email successfully!' });
     } catch (err) {
-        console.error('SendGrid error:', err);
+        console.error('Nodemailer error:', err);
         res.status(500).json({ error: 'Failed to send email. Please check server email configuration.' });
     }
 });
@@ -271,7 +277,7 @@ app.post('/api/driver/verify-reset-code', async (req, res) => {
         }
 
         driver.password = newPassword;
-        driver.resetCode = undefined; // کوڈ استعمال ہونے کے بعد ہٹا دیں
+        driver.resetCode = undefined;
         await driver.save();
 
         res.json({ success: true, message: 'Password updated successfully!' });
