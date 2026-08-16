@@ -60,18 +60,18 @@
         </div>
     </div>
 
-    <!-- FORGOT PASSWORD MODAL (Step 1: Enter Phone) -->
+    <!-- FORGOT PASSWORD MODAL (Step 1: Enter Email) -->
     <div id="forgotPasswordModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden backdrop-blur-sm">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-100">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 class="font-bold text-base text-gray-900">Reset Password</h3>
                 <button onclick="closeForgotPasswordModal()" class="text-gray-400 hover:text-gray-600 font-bold text-lg">×</button>
             </div>
-            <p class="text-xs text-gray-600">Enter your registered mobile number below to get a verification code.</p>
+            <p class="text-xs text-gray-600">Enter your registered email address below to receive a password reset verification code.</p>
             <div class="space-y-3">
                 <div>
-                    <label class="block font-semibold text-gray-700 text-xs">Mobile Number</label>
-                    <input type="tel" id="forgotPhoneInput" class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="e.g. 07123456789">
+                    <label class="block font-semibold text-gray-700 text-xs">Email Address</label>
+                    <input type="email" id="forgotEmailInput" class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="e.g. driver@example.com">
                 </div>
                 <button onclick="sendResetCode()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs transition shadow-sm">
                     Send Code
@@ -87,7 +87,7 @@
                 <h3 class="font-bold text-base text-gray-900">Set New Password</h3>
                 <button onclick="document.getElementById('resetPasswordModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 font-bold text-lg">×</button>
             </div>
-            <p id="resetCodeHintText" class="text-xs text-emerald-700 font-bold bg-emerald-50 p-2.5 rounded-xl border border-emerald-100"></p>
+            <p id="resetCodeHintText" class="text-xs text-emerald-700 font-bold bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">Enter the 4-digit code sent to your email.</p>
             <div class="space-y-3">
                 <div>
                     <label class="block font-semibold text-gray-700 text-xs">Enter Verification Code</label>
@@ -146,6 +146,10 @@
                 <div>
                     <label class="block font-semibold text-gray-700 text-xs">Phone Number</label>
                     <input type="tel" id="signupPhone" required class="w-full mt-1 p-2 border rounded-xl text-sm" placeholder="e.g. 07123456789">
+                </div>
+                <div>
+                    <label class="block font-semibold text-gray-700 text-xs">Email Address</label>
+                    <input type="email" id="signupEmail" required class="w-full mt-1 p-2 border rounded-xl text-sm" placeholder="e.g. driver@example.com">
                 </div>
                 <div>
                     <label class="block font-semibold text-gray-700 text-xs">Address</label>
@@ -299,8 +303,7 @@
         let timerInterval = null;
         let pendingAlertOrderId = null;
         let lastNotifiedOrderId = null;
-        let generatedResetCode = null;
-        let resetDriverTarget = null;
+        let resetEmailTarget = null;
 
         function playBeepSound() {
             try {
@@ -342,29 +345,28 @@
         }
 
         async function sendResetCode() {
-            const phone = document.getElementById('forgotPhoneInput').value.trim();
-            if (!phone) {
-                alert('Please enter your mobile number.');
+            const email = document.getElementById('forgotEmailInput').value.trim();
+            if (!email) {
+                alert('Please enter your email address.');
                 return;
             }
 
             try {
-                const res = await fetch(`${API_URL}/drivers`);
-                const drivers = await res.json();
-                const driver = drivers.find(d => String(d.mobile) === String(phone));
+                const res = await fetch(`${API_URL}/driver/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
 
-                if (!driver) {
-                    alert('No driver account found with this mobile number.');
-                    return;
+                if (res.ok) {
+                    resetEmailTarget = email;
+                    closeForgotPasswordModal();
+                    document.getElementById('resetCodeHintText').innerText = `Verification code sent to ${email}. Check your inbox!`;
+                    document.getElementById('resetPasswordModal').classList.remove('hidden');
+                } else {
+                    alert(data.error || 'Failed to send reset code.');
                 }
-
-                resetDriverTarget = driver;
-                generatedResetCode = String(Math.floor(1000 + Math.random() * 9000));
-                
-                closeForgotPasswordModal();
-                
-                document.getElementById('resetCodeHintText').innerText = `Verification Code for ${phone} is: ${generatedResetCode} (Demo mode: code displayed here)`;
-                document.getElementById('resetPasswordModal').classList.remove('hidden');
             } catch (err) {
                 console.error(err);
                 alert('Server connection error. Please try again.');
@@ -372,11 +374,11 @@
         }
 
         async function confirmPasswordReset() {
-            const enteredCode = document.getElementById('verificationCodeInput').value.trim();
+            const code = document.getElementById('verificationCodeInput').value.trim();
             const newPassword = document.getElementById('newPasswordInput').value;
 
-            if (enteredCode !== generatedResetCode) {
-                alert('Invalid verification code. Please check the code shown above.');
+            if (!code || !newPassword) {
+                alert('Please enter both the verification code and the new password.');
                 return;
             }
 
@@ -386,11 +388,12 @@
             }
 
             try {
-                const res = await fetch(`${API_URL}/driver/update-password`, {
+                const res = await fetch(`${API_URL}/driver/verify-reset-code`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ driverId: resetDriverTarget.id, newPassword })
+                    body: JSON.stringify({ email: resetEmailTarget, code, newPassword })
                 });
+                const data = await res.json();
 
                 if (res.ok) {
                     alert('Password updated successfully! You can now sign in with your new password.');
@@ -398,7 +401,7 @@
                     document.getElementById('verificationCodeInput').value = '';
                     document.getElementById('newPasswordInput').value = '';
                 } else {
-                    alert('Failed to update password. Please try again.');
+                    alert(data.error || 'Failed to update password.');
                 }
             } catch (err) {
                 console.error(err);
@@ -411,6 +414,7 @@
             const firstName = document.getElementById('signupFirstName').value.trim();
             const surname = document.getElementById('signupSurname').value.trim();
             const mobile = document.getElementById('signupPhone').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
             const address = document.getElementById('signupAddress').value.trim();
             const password = document.getElementById('signupPassword').value;
             const retypePassword = document.getElementById('signupRetypePassword').value;
@@ -429,7 +433,7 @@
                 const res = await fetch(`${API_URL}/drivers/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, surname, mobile, address, password })
+                    body: JSON.stringify({ firstName, surname, mobile, email, address, password })
                 });
                 const data = await res.json();
                 if (res.ok) {
