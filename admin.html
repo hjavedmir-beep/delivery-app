@@ -663,6 +663,9 @@
                             <button onclick="openDriverApprovalModal(${drv.id}, '${drv.firstName} ${drv.surname}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition">
                                 ${drv.status === 'Approved' ? 'Update Password' : 'Approve & Set Password'}
                             </button>
+                            <button onclick="deleteDriver(${drv.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition">
+                                Delete
+                            </button>
                         </div>
                     </div>`;
 
@@ -675,6 +678,22 @@
                         </div>
                     </div>`;
             });
+        }
+
+        async function deleteDriver(driverId) {
+            if (!confirm('Are you sure you want to delete this driver?')) return;
+            try {
+                const res = await fetch(`${API_URL}/drivers/${driverId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    alert('Driver deleted successfully!');
+                    fetchDrivers();
+                } else {
+                    alert('Failed to delete driver.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error.');
+            }
         }
 
         function openDriverApprovalModal(driverId, driverName) {
