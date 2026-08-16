@@ -281,11 +281,11 @@
             }
         }
 
-        function handleSignUp(e) {
+        async function handleSignUp(e) {
             e.preventDefault();
             const firstName = document.getElementById('signupFirstName').value.trim();
             const surname = document.getElementById('signupSurname').value.trim();
-            const phone = document.getElementById('signupPhone').value.trim();
+            const mobile = document.getElementById('signupPhone').value.trim();
             const address = document.getElementById('signupAddress').value.trim();
             const password = document.getElementById('signupPassword').value;
             const retypePassword = document.getElementById('signupRetypePassword').value;
@@ -300,49 +300,50 @@
                 return;
             }
 
-            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            const existing = registered.find(d => d.mobile === phone);
-            if (existing) {
-                alert('An account with this phone number already exists. Please sign in.');
-                switchAuthMode('signin');
-                return;
+            try {
+                const res = await fetch(`${API_URL}/drivers/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, surname, mobile, address, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Account created successfully! Your account is pending approval from the admin panel.');
+                    switchAuthMode('signin');
+                } else {
+                    alert(data.error || 'Signup failed.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error during signup.');
             }
-
-            const newDriver = {
-                id: 'drv_' + Date.now(),
-                firstName,
-                surname,
-                mobile: phone,
-                address,
-                password,
-                status: 'Pending' 
-            };
-
-            registered.push(newDriver);
-            localStorage.setItem('registered_drivers', JSON.stringify(registered));
-            alert('Account created successfully! Your account is pending approval from the admin panel.');
-            switchAuthMode('signin');
         }
 
-        function handleSignIn(e) {
+        async function handleSignIn(e) {
             e.preventDefault();
             const username = document.getElementById('signinUsername').value.trim();
             const password = document.getElementById('signinPassword').value;
 
-            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            const driver = registered.find(d => d.mobile === username && d.password === password);
+            try {
+                const res = await fetch(`${API_URL}/drivers`);
+                const drivers = await res.json();
+                const driver = drivers.find(d => String(d.mobile) === String(username) && d.password === password);
 
-            if (!driver) {
-                alert('Invalid mobile number/username or password.');
-                return;
+                if (!driver) {
+                    alert('Invalid mobile number/username or password.');
+                    return;
+                }
+
+                if (driver.status !== 'Approved') {
+                    alert('Your account is currently pending admin approval. Please wait for an admin to approve your account.');
+                    return;
+                }
+
+                setLoggedInDriver(driver);
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error during sign in.');
             }
-
-            if (driver.status !== 'Approved') {
-                alert('Your account is currently pending admin approval. Please wait for an admin to approve your account.');
-                return;
-            }
-
-            setLoggedInDriver(driver);
         }
 
         function switchDriverTab(tab) {
@@ -555,7 +556,6 @@
                 const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
                 const completedOrders = myOrders.filter(o => o.status === 'Delivered');
                 
-                // Calculate dynamic earnings based strictly on deliveryPrice calculated via mileage rules (£3.80 up to 3mi + 15p per 0.10mi)
                 let totalEarned = 0;
                 completedOrders.forEach(o => {
                     totalEarned += Number(o.deliveryPrice || 3.80);
@@ -679,13 +679,14 @@
             }
         }
 
-        window.onload = () => {
+        window.onload = async () => {
             const savedDriver = localStorage.getItem('logged_in_driver');
             if (savedDriver) {
                 try {
                     const parsedDriver = JSON.parse(savedDriver);
-                    let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                    const latestRecord = registered.find(d => d.id === parsedDriver.id);
+                    const res = await fetch(`${API_URL}/drivers`);
+                    const drivers = await res.json();
+                    const latestRecord = drivers.find(d => String(d.id) === String(parsedDriver.id));
                     if (latestRecord && latestRecord.status === 'Approved') {
                         setLoggedInDriver(latestRecord);
                     } else {
