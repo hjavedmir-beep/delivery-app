@@ -250,7 +250,6 @@
     </div>
 
     <script>
-        // Updated to use relative path so it seamlessly links across all devices
         const API_URL = '/api';
         let adminMap = null;
         let dedicatedMap = null;
@@ -258,6 +257,8 @@
         let dedicatedMarkersLayer = null;
         let onlineDriversCache = {};
         let allOrdersCache = [];
+        let registeredBusinessesCache = [];
+        let registeredDriversCache = [];
         let dropoffCoords = { lat: null, lng: null };
 
         // Custom Leaflet Icons
@@ -289,8 +290,7 @@
             if (tab === 'active') {
                 document.getElementById('tabContentActive').classList.remove('hidden');
                 document.getElementById('navTabActive').className = 'bg-blue-700 px-4 py-2 rounded-lg font-bold text-sm transition';
-                fetchOrders();
-                refreshMapPins();
+                fetchAllData();
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else if (tab === 'map') {
                 document.getElementById('tabContentMap').classList.remove('hidden');
@@ -311,93 +311,86 @@
         function initAdminMap() {
             if (!adminMap) {
                 adminMap = L.map('adminMap').setView([53.0027, -2.1794], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap'
-                }).addTo(adminMap);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(adminMap);
                 markersLayer = L.layerGroup().addTo(adminMap);
             }
-
             if (!dedicatedMap) {
                 dedicatedMap = L.map('dedicatedAdminMap').setView([53.0027, -2.1794], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap'
-                }).addTo(dedicatedMap);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(dedicatedMap);
                 dedicatedMarkersLayer = L.layerGroup().addTo(dedicatedMap);
+            }
+        }
+
+        async function fetchAllData() {
+            await Promise.all([fetchBusinesses(), fetchDrivers(), fetchOrders(), fetchLiveDrivers()]);
+        }
+
+        async function fetchBusinesses() {
+            try {
+                const res = await fetch(`${API_URL}/businesses`);
+                registeredBusinessesCache = await res.json();
+                loadRegisteredBusinesses();
+                loadBusinessesManagement();
+                refreshMapPins();
+            } catch (e) {
+                console.error('Error fetching businesses:', e);
+            }
+        }
+
+        async function fetchDrivers() {
+            try {
+                const res = await fetch(`${API_URL}/drivers`);
+                registeredDriversCache = await res.json();
+                loadDriversManagement();
+            } catch (e) {
+                console.error('Error fetching drivers:', e);
             }
         }
 
         async function lookupPostcode(postcode) {
             const areaInput = document.getElementById('busArea');
             const cleanPostcode = postcode.trim();
-            if (cleanPostcode.length < 3) {
-                areaInput.value = '';
-                return;
-            }
-
+            if (cleanPostcode.length < 3) { areaInput.value = ''; return; }
             try {
                 const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(cleanPostcode)}`);
                 const data = await res.json();
                 if (data.status === 200 && data.result) {
-                    const r = data.result;
-                    areaInput.value = r.admin_district || r.region || r.parish || 'United Kingdom';
+                    areaInput.value = data.result.admin_district || data.result.region || data.result.parish || 'United Kingdom';
                 } else {
                     areaInput.value = 'Searching area...';
                 }
-            } catch (err) {
-                console.error('Postcode lookup error:', err);
-                areaInput.value = 'Unavailable';
-            }
+            } catch (err) { areaInput.value = 'Unavailable'; }
         }
 
         async function lookupDropoffPostcode(postcode) {
             const cleanPostcode = postcode.trim();
             const regionInput = document.getElementById('dropoffRegion');
-            if (cleanPostcode.length < 3) {
-                regionInput.value = '';
-                dropoffCoords = { lat: null, lng: null };
-                return;
-            }
-
+            if (cleanPostcode.length < 3) { regionInput.value = ''; dropoffCoords = { lat: null, lng: null }; return; }
             try {
                 const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(cleanPostcode)}`);
                 const data = await res.json();
                 if (data.status === 200 && data.result) {
-                    const r = data.result;
-                    regionInput.value = r.admin_district || r.region || r.parish || 'United Kingdom';
-                    dropoffCoords.lat = r.latitude;
-                    dropoffCoords.lng = r.longitude;
+                    regionInput.value = data.result.admin_district || data.result.region || data.result.parish || 'United Kingdom';
+                    dropoffCoords.lat = data.result.latitude;
+                    dropoffCoords.lng = data.result.longitude;
                     calculateOrderDistance();
                 } else {
                     regionInput.value = 'Searching...';
                 }
-            } catch (err) {
-                console.error('Dropoff postcode lookup error:', err);
-                regionInput.value = 'Unavailable';
-            }
+            } catch (err) { regionInput.value = 'Unavailable'; }
         }
 
         function calculateOrderDistance() {
             const pickupSelectVal = document.getElementById('orderPickup').value;
             if (!pickupSelectVal || !dropoffCoords.lat || !dropoffCoords.lng) return 3.80;
 
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            
-            const matchedBus = businesses.find(b => {
-                return pickupSelectVal.includes(b.name) && pickupSelectVal.includes(b.postcode);
-            });
-
+            const matchedBus = registeredBusinessesCache.find(b => pickupSelectVal.includes(b.name) && pickupSelectVal.includes(b.postcode));
             if (matchedBus && matchedBus.lat && matchedBus.lng) {
                 const distanceMiles = getDistanceFromLatLonInMiles(matchedBus.lat, matchedBus.lng, dropoffCoords.lat, dropoffCoords.lng);
-                
                 let deliveryPrice = 3.80;
                 if (distanceMiles > 3.0) {
-                    const extraMiles = distanceMiles - 3.0;
-                    const blocksOfPointOne = Math.ceil(extraMiles / 0.10);
-                    deliveryPrice += blocksOfPointOne * 0.15;
+                    deliveryPrice += Math.ceil((distanceMiles - 3.0) / 0.10) * 0.15;
                 }
-
                 document.getElementById('calculatedDistanceText').innerText = `${distanceMiles.toFixed(2)} miles (£${deliveryPrice.toFixed(2)})`;
                 document.getElementById('distanceBadge').innerHTML = `Price: £${deliveryPrice.toFixed(2)}`;
                 return deliveryPrice;
@@ -407,28 +400,17 @@
 
         function getDistanceFromLatLonInMiles(lat1, lon1, lat2, lon2) {
             const R = 3958.8;
-            const dLat = deg2rad(lat2 - lat1);
-            const dLon = deg2rad(lon2 - lon1);
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2); 
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-            return R * c;
-        }
-
-        function deg2rad(deg) {
-            return deg * (Math.PI/180);
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
         }
 
         function loadRegisteredBusinesses() {
             const pickupSelect = document.getElementById('orderPickup');
             if (!pickupSelect) return;
-
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-
             let optionsHtml = '<option value="">Select Registered Business</option>';
-            businesses.forEach(b => {
+            registeredBusinessesCache.forEach(b => {
                 const addr2 = b.address2 ? `, ${b.address2}` : '';
                 const fullAddress = `${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode}`;
                 optionsHtml += `<option value="${b.name} (${fullAddress})">${b.name} - ${fullAddress}</option>`;
@@ -445,10 +427,7 @@
             const postcode = document.getElementById('busPostcode').value.trim().toUpperCase();
             const area = document.getElementById('busArea').value.trim();
 
-            if (!name || !phone || !address1 || !postcode) return;
-
-            let lat = null;
-            let lng = null;
+            let lat = null, lng = null;
             try {
                 const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
                 const data = await res.json();
@@ -456,81 +435,63 @@
                     lat = data.result.latitude;
                     lng = data.result.longitude;
                 }
-            } catch (err) {
-                console.error('Error fetching business coordinates:', err);
-            }
+            } catch (err) {}
 
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            businesses.push({ id: Date.now(), name, phone, address1, address2, postcode, area, lat, lng });
-            localStorage.setItem('registered_businesses', JSON.stringify(businesses));
-
-            document.getElementById('addBusinessForm').reset();
-            document.getElementById('busArea').value = '';
-            loadBusinessesManagement();
-            loadRegisteredBusinesses();
-            refreshMapPins();
-            alert('Business saved and pinned on map successfully!');
+            try {
+                const res = await fetch(`${API_URL}/businesses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, address1, address2, postcode, area, lat, lng })
+                });
+                if (res.ok) {
+                    document.getElementById('addBusinessForm').reset();
+                    document.getElementById('busArea').value = '';
+                    fetchBusinesses();
+                    alert('Business saved to server and pinned on map successfully!');
+                }
+            } catch (err) { console.error('Error adding business:', err); }
         }
 
         function loadBusinessesManagement() {
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
             const container = document.getElementById('businessesListContainer');
             if (!container) return;
-
-            if (businesses.length === 0) {
+            if (registeredBusinessesCache.length === 0) {
                 container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>`;
                 return;
             }
-
             container.innerHTML = '';
-            businesses.forEach((b, index) => {
+            registeredBusinessesCache.forEach((b) => {
                 const addr2Str = b.address2 ? `, ${b.address2}` : '';
-                const areaStr = b.area ? `(${b.area})` : '';
                 container.innerHTML += `
                     <div class="bg-gray-50 p-3.5 rounded-xl border flex justify-between items-center">
                         <div>
                             <p class="font-bold text-gray-900 text-base">${b.name} <span class="text-gray-500 font-normal text-sm">(${b.phone})</span></p>
-                            <p class="text-gray-700 text-xs mt-0.5">${b.address1}${addr2Str}, ${b.postcode} <span class="text-blue-700 font-bold">${areaStr}</span></p>
+                            <p class="text-gray-700 text-xs mt-0.5">${b.address1}${addr2Str}, ${b.postcode} <span class="text-blue-700 font-bold">(${b.area})</span></p>
                         </div>
-                        <button onclick="deleteBusiness(${index})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Delete</button>
+                        <button onclick="deleteBusiness(${b.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Delete</button>
                     </div>
                 `;
             });
         }
 
-        function deleteBusiness(index) {
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            businesses.splice(index, 1);
-            localStorage.setItem('registered_businesses', JSON.stringify(businesses));
-            loadBusinessesManagement();
-            loadRegisteredBusinesses();
-            refreshMapPins();
+        async function deleteBusiness(id) {
+            if (!confirm('Are you sure you want to delete this business?')) return;
+            try {
+                await fetch(`${API_URL}/businesses/${id}`, { method: 'DELETE' });
+                fetchBusinesses();
+            } catch (e) { console.error('Error deleting business:', e); }
         }
 
         async function handleCreateOrder(e) {
             e.preventDefault();
-            const addr1 = document.getElementById('dropoffAddress1').value.trim();
-            const addr2 = document.getElementById('dropoffAddress2').value.trim();
-            const region = document.getElementById('dropoffRegion').value.trim();
-            const postcode = document.getElementById('dropoffPostcode').value.trim().toUpperCase();
-            
-            const formattedDropoff = `${addr1}${addr2 ? ', ' + addr2 : ''}, ${region} - ${postcode}`;
-            
-            const calculatedPrice = calculateOrderDistance();
-
             const orderData = {
                 customerName: document.getElementById('orderCustName').value.trim(),
                 customerPhone: document.getElementById('orderCustPhone').value.trim(),
                 pickupAddress: document.getElementById('orderPickup').value.trim(),
-                dropoffAddress: formattedDropoff,
+                dropoffAddress: `${document.getElementById('dropoffAddress1').value.trim()}, ${document.getElementById('dropoffRegion').value.trim()} - ${document.getElementById('dropoffPostcode').value.trim().toUpperCase()}`,
                 specialNotes: document.getElementById('orderNotes').value.trim(),
-                deliveryPrice: calculatedPrice > 0 ? calculatedPrice : 3.80
+                deliveryPrice: calculateOrderDistance()
             };
-
-            if (!orderData.pickupAddress) {
-                alert('Please select a registered business for pickup.');
-                return;
-            }
 
             try {
                 const res = await fetch(`${API_URL}/orders`, {
@@ -542,307 +503,167 @@
                     alert('Order created successfully!');
                     document.getElementById('createOrderForm').reset();
                     document.getElementById('dropoffRegion').value = '';
-                    document.getElementById('calculatedDistanceText').innerText = 'Select pickup & enter drop-off postcode';
-                    document.getElementById('distanceBadge').innerText = '£3.80 base';
-                    dropoffCoords = { lat: null, lng: null };
-                    loadRegisteredBusinesses();
                     fetchOrders();
                 }
-            } catch (err) {
-                console.error('Error creating order:', err);
-            }
+            } catch (err) { console.error('Error creating order:', err); }
         }
 
         async function fetchOrders() {
             try {
                 const res = await fetch(`${API_URL}/orders`);
-                const orders = await res.json();
-                allOrdersCache = orders;
-
+                allOrdersCache = await res.json();
+                
                 const activeTable = document.getElementById('activeOrdersTableBody');
                 const completedTable = document.getElementById('completedOrdersTableBody');
-                
-                const activeOrders = orders.filter(o => o.status !== 'Delivered');
-                const completedOrders = orders.filter(o => o.status === 'Delivered');
+                const activeOrders = allOrdersCache.filter(o => o.status !== 'Delivered');
+                const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
 
-                let registeredDrivers = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                
-                let onlineDrivers = registeredDrivers.filter(d => {
-                    const isApproved = d.status === 'Approved';
-                    const hasLiveLocation = onlineDriversCache[d.id] && onlineDriversCache[d.id].lat && onlineDriversCache[d.id].lng;
-                    return isApproved && hasLiveLocation;
+                const onlineDrivers = registeredDriversCache.filter(d => d.status === 'Approved' && onlineDriversCache[d.id]?.lat);
+
+                activeTable.innerHTML = activeOrders.length === 0 ? `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>` : '';
+                activeOrders.forEach(order => {
+                    let optionsHtml = `<option value="">Select Online Driver</option>`;
+                    onlineDrivers.forEach(d => {
+                        optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
+                    });
+                    activeTable.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3 font-bold">#${order.id} - ${order.customerName}<br><span class="text-xs text-gray-600 font-normal">${order.customerPhone}</span></td>
+                            <td class="p-3">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}<br><span class="text-xs font-extrabold text-blue-700">Fee: £${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
+                            <td class="p-3"><select onchange="assignDriver('${order.id}', this.value)" class="border p-2 rounded-lg text-sm font-semibold w-full bg-white">${optionsHtml}</select></td>
+                            <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg font-bold text-xs">${order.status || 'Pending'}</span></td>
+                        </tr>`;
                 });
 
-                if (activeOrders.length === 0) {
-                    activeTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
-                } else {
-                    activeTable.innerHTML = '';
-                    activeOrders.forEach(order => {
-                        let optionsHtml = `<option value="">Select Online Driver</option>`;
-                        onlineDrivers.forEach(d => {
-                            optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
-                        });
-
-                        const priceTag = order.deliveryPrice ? `£${Number(order.deliveryPrice).toFixed(2)}` : '£3.80';
-
-                        activeTable.innerHTML += `
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="p-3 font-bold text-gray-900">#${order.id} - ${order.customerName}<br><span class="text-xs text-gray-600 font-normal">${order.customerPhone}</span></td>
-                                <td class="p-3 text-gray-800">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}<br><span class="text-xs font-extrabold text-blue-700">Fee: ${priceTag}</span></td>
-                                <td class="p-3">
-                                    <select onchange="assignDriver('${order.id}', this.value)" class="border p-2 rounded-lg text-sm font-semibold w-full bg-white">${optionsHtml}</select>
-                                </td>
-                                <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg font-bold text-xs">${order.status || 'Pending'}</span></td>
-                            </tr>
-                        `;
-                    });
-                }
-
                 document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
-                if (completedOrders.length === 0) {
-                    completedTable.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>`;
-                } else {
-                    completedTable.innerHTML = '';
-                    completedOrders.forEach(order => {
-                        let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                        const assignedDriver = registeredDriversAll.find(d => String(d.id) === String(order.assignedDriverId));
-                        const driverNameDisplay = assignedDriver ? `${assignedDriver.firstName} ${assignedDriver.surname}` : `Driver #${order.assignedDriverId || 'N/A'}`;
-
-                        completedTable.innerHTML += `
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="p-3 font-bold text-gray-900">#${order.id} - ${order.customerName}</td>
-                                <td class="p-3 text-gray-800">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
-                                <td class="p-3 text-gray-900 font-semibold">${driverNameDisplay}</td>
-                                <td class="p-3"><span class="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
-                            </tr>
-                        `;
-                    });
-                }
-
-                if (!document.getElementById('tabContentDrivers').classList.contains('hidden')) {
-                    loadDriversManagement();
-                }
-            } catch (e) {
-                console.error('Error fetching orders:', e);
-            }
+                completedTable.innerHTML = completedOrders.length === 0 ? `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>` : '';
+                completedOrders.forEach(order => {
+                    const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
+                    completedTable.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
+                            <td class="p-3">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                            <td class="p-3 font-semibold">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</td>
+                            <td class="p-3"><span class="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
+                        </tr>`;
+                });
+            } catch (e) { console.error('Error fetching orders:', e); }
         }
 
         async function assignDriver(orderId, driverId) {
             if (!driverId) return;
-            try {
-                const res = await fetch(`${API_URL}/orders/assign`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId, driverId })
-                });
-                if (res.ok) fetchOrders();
-            } catch (e) {
-                console.error('Error assigning driver:', e);
-            }
+            await fetch(`${API_URL}/orders/assign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, driverId })
+            });
+            fetchOrders();
         }
 
         async function clearCompletedOrders() {
-            if (!confirm('Are you sure you want to clear all completed orders from the server?')) return;
-            try {
-                const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
-                for (const order of completedOrders) {
-                    await fetch(`${API_URL}/orders/${order.id}`, { method: 'DELETE' });
-                }
-                fetchOrders();
-                alert('Completed orders cleared successfully!');
-            } catch (e) {
-                console.error('Error clearing completed orders:', e);
-                alert('Failed to clear some orders from the server.');
+            if (!confirm('Clear all completed orders?')) return;
+            for (const order of allOrdersCache.filter(o => o.status === 'Delivered')) {
+                await fetch(`${API_URL}/orders/${order.id}`, { method: 'DELETE' });
             }
+            fetchOrders();
         }
 
         async function fetchLiveDrivers() {
             try {
                 const res = await fetch(`${API_URL}/drivers/locations`);
-                const drivers = await res.json();
-                
-                let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-                let updated = false;
-                const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-                registeredDriversAll.forEach(drv => {
-                    const hasLoc = drivers[drv.id] && drivers[drv.id].lat && drivers[drv.id].lng;
-                    const wasOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
-
-                    if (hasLoc && !wasOnline) {
-                        drv.lastShiftStart = currentTimeStr;
-                        drv.lastShiftEnd = 'Ongoing...';
-                        updated = true;
-                    } else if (!hasLoc && wasOnline) {
-                        drv.lastShiftEnd = currentTimeStr;
-                        updated = true;
-                    }
-                });
-
-                if (updated) {
-                    localStorage.setItem('registered_drivers', JSON.stringify(registeredDriversAll));
-                }
-
-                onlineDriversCache = drivers; 
+                onlineDriversCache = await res.json();
                 refreshMapPins();
 
                 const driversWidget = document.getElementById('liveDriversListWidget');
-                let activeDriversCount = 0;
-                let driverHtml = '';
-
-                for (const [driverId, data] of Object.entries(drivers)) {
+                let html = '';
+                let count = 0;
+                for (const [id, data] of Object.entries(onlineDriversCache)) {
                     if (data.lat && data.lng) {
-                        activeDriversCount++;
-                        const drvObj = registeredDriversAll.find(d => String(d.id) === String(driverId));
-                        const drvName = drvObj ? `${drvObj.firstName} ${drvObj.surname}` : `Driver #${driverId}`;
-                        
-                        driverHtml += `<div class="text-emerald-800 font-bold text-sm">• 🚗 ${drvName} (Online)</div>`;
+                        count++;
+                        const drv = registeredDriversCache.find(d => String(d.id) === String(id));
+                        html += `<div class="text-emerald-800 font-bold text-sm">• 🚗 ${drv ? `${drv.firstName} ${drv.surname}` : `Driver #${id}`} (Online)</div>`;
                     }
                 }
-
-                if (activeDriversCount === 0) {
-                    driversWidget.innerHTML = `<span class="text-gray-400">No active drivers online.</span>`;
-                } else {
-                    driversWidget.innerHTML = driverHtml;
-                }
-
-                fetchOrders();
-
-                if (!document.getElementById('tabContentDrivers').classList.contains('hidden')) {
-                    loadDriversManagement();
-                }
-            } catch (e) {
-                console.error('Error fetching driver locations:', e);
-            }
+                driversWidget.innerHTML = count === 0 ? `<span class="text-gray-400">No active drivers online.</span>` : html;
+            } catch (e) { console.error(e); }
         }
 
         function refreshMapPins() {
-            if (markersLayer) {
-                markersLayer.clearLayers();
-                addPinsToLayer(markersLayer);
-            }
-            if (dedicatedMarkersLayer) {
-                dedicatedMarkersLayer.clearLayers();
-                addPinsToLayer(dedicatedMarkersLayer);
-            }
-        }
-
-        function addPinsToLayer(layerGroup) {
-            let businesses = JSON.parse(localStorage.getItem('registered_businesses') || '[]');
-            businesses.forEach(b => {
-                if (b.lat && b.lng) {
-                    const marker = L.marker([b.lat, b.lng], { icon: businessIcon })
-                        .bindPopup(`<b>🏢 ${b.name} (Business)</b><br>${b.address1}, ${b.postcode}`);
-                    layerGroup.addLayer(marker);
+            [markersLayer, dedicatedMarkersLayer].forEach(layer => {
+                if (layer) {
+                    layer.clearLayers();
+                    registeredBusinessesCache.forEach(b => {
+                        if (b.lat && b.lng) {
+                            layer.addLayer(L.marker([b.lat, b.lng], { icon: businessIcon }).bindPopup(`<b>🏢 ${b.name}</b><br>${b.address1}, ${b.postcode}`));
+                        }
+                    });
+                    for (const [id, data] of Object.entries(onlineDriversCache)) {
+                        if (data.lat && data.lng) {
+                            const drv = registeredDriversCache.find(d => String(d.id) === String(id));
+                            layer.addLayer(L.marker([data.lat, data.lng], { icon: carIcon }).bindPopup(`<b>🚗 ${drv ? `${drv.firstName} ${drv.surname}` : `Driver #${id}`}</b>`));
+                        }
+                    }
                 }
             });
-
-            let registeredDriversAll = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            for (const [driverId, data] of Object.entries(onlineDriversCache)) {
-                if (data.lat && data.lng) {
-                    const drvObj = registeredDriversAll.find(d => String(d.id) === String(driverId));
-                    const drvName = drvObj ? `${drvObj.firstName} ${drvObj.surname}` : `Driver #${driverId}`;
-                    
-                    const marker = L.marker([data.lat, data.lng], { icon: carIcon })
-                        .bindPopup(`<b>🚗 ${drvName}</b><br>Status: Online (Active Car)`);
-                    layerGroup.addLayer(marker);
-                }
-            }
         }
 
         function loadDriversManagement() {
-            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
             const dirContainer = document.getElementById('driversDirectoryContainer');
             const earnContainer = document.getElementById('driversEarningsContainer');
-            
             if (!dirContainer || !earnContainer) return;
 
-            if (registered.length === 0) {
-                dirContainer.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No driver applications pending or registered.</p>`;
+            if (registeredDriversCache.length === 0) {
+                dirContainer.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No driver applications registered.</p>`;
                 earnContainer.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold">No shift history available.</p>`;
                 return;
             }
 
             dirContainer.innerHTML = '';
             earnContainer.innerHTML = '';
-
-            registered.forEach((drv, index) => {
-                const isOnline = onlineDriversCache[drv.id] && onlineDriversCache[drv.id].lat && onlineDriversCache[drv.id].lng;
-                
-                const driverAcceptedOrders = allOrdersCache.filter(o => String(o.assignedDriverId) === String(drv.id));
-                const driverCompletedOrders = driverAcceptedOrders.filter(o => o.status === 'Delivered');
-                
-                const RATE_PER_DELIVERY = 5.00;
-                const totalEarnings = driverCompletedOrders.length * RATE_PER_DELIVERY;
+            registeredDriversCache.forEach(drv => {
+                const isOnline = onlineDriversCache[drv.id]?.lat;
+                const completedCount = allOrdersCache.filter(o => String(o.assignedDriverId) === String(drv.id) && o.status === 'Delivered').length;
 
                 dirContainer.innerHTML += `
-                    <div class="bg-gray-50 p-4 rounded-xl border flex flex-wrap justify-between items-center gap-3">
+                    <div class="bg-gray-50 p-4 rounded-xl border flex justify-between items-center">
                         <div>
                             <div class="flex items-center gap-3">
-                                <h3 class="font-bold text-gray-900 text-base">${drv.firstName} ${drv.surname}</h3>
-                                ${isOnline 
-                                    ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Online</span>`
-                                    : `<span class="bg-gray-200 text-gray-600 px-2.5 py-0.5 rounded-full text-xs font-bold">Offline</span>`
-                                }
+                                <h3 class="font-bold text-base">${drv.firstName} ${drv.surname}</h3>
+                                <span class="${isOnline ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-600'} px-2.5 py-0.5 rounded-full text-xs font-bold">${isOnline ? 'Online' : 'Offline'}</span>
                             </div>
-                            <p class="text-gray-600 text-xs mt-1">📞 Phone: <a href="tel:${drv.mobile}" class="text-blue-600 font-bold hover:underline">${drv.mobile}</a></p>
+                            <p class="text-gray-600 text-xs mt-1">📞 ${drv.mobile}</p>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">Approval: ${drv.status}</span>
-                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold text-xs transition">Approve</button>` : ''}
+                            <span class="font-bold px-3 py-1 rounded-lg text-xs ${drv.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${drv.status}</span>
+                            ${drv.status !== 'Approved' ? `<button onclick="approveDriver(${drv.id})" class="bg-emerald-600 text-white px-3 py-1 rounded-lg font-bold text-xs">Approve</button>` : ''}
                         </div>
-                    </div>
-                `;
+                    </div>`;
 
                 earnContainer.innerHTML += `
                     <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <h3 class="font-bold text-gray-900 text-sm">${drv.firstName} ${drv.surname}</h3>
-                            ${isOnline 
-                                ? `<span class="text-emerald-700 font-bold text-xs">● Active Shift</span>`
-                                : `<span class="text-gray-500 font-bold text-xs">● Shift Closed</span>`
-                            }
+                        <div class="flex justify-between items-center border-b pb-2"><h3 class="font-bold text-sm">${drv.firstName} ${drv.surname}</h3></div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <div class="bg-white p-3 rounded-lg border">Completed Deliveries: <b class="text-blue-700">${completedCount}</b></div>
+                            <div class="bg-white p-3 rounded-lg border">Total Earnings: <b class="text-emerald-700">£${(completedCount * 5.00).toFixed(2)}</b></div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-                            <div class="bg-white p-3 rounded-lg border">
-                                <span class="text-gray-500 block font-semibold">Total Accepted</span>
-                                <span class="text-gray-900 font-bold text-sm">${driverAcceptedOrders.length} Orders</span>
-                            </div>
-                            <div class="bg-white p-3 rounded-lg border">
-                                <span class="text-gray-500 block font-semibold">Completed Deliveries</span>
-                                <span class="text-blue-700 font-extrabold text-sm">${driverCompletedOrders.length} Orders</span>
-                            </div>
-                            <div class="bg-white p-3 rounded-lg border">
-                                <span class="text-gray-500 block font-semibold">Rate / Delivery</span>
-                                <span class="text-gray-900 font-bold text-sm">£5.00</span>
-                            </div>
-                            <div class="bg-white p-3 rounded-lg border">
-                                <span class="text-gray-500 block font-semibold">Total Earnings</span>
-                                <span class="text-emerald-700 font-extrabold text-sm">£${totalEarnings.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
-        function approveDriver(index) {
-            let registered = JSON.parse(localStorage.getItem('registered_drivers') || '[]');
-            if (registered[index]) {
-                registered[index].status = 'Approved';
-                localStorage.setItem('registered_drivers', JSON.stringify(registered));
-                loadDriversManagement();
-                alert('Driver approved successfully!');
-            }
+        async function approveDriver(driverId) {
+            await fetch(`${API_URL}/drivers/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ driverId })
+            });
+            fetchDrivers();
+            alert('Driver approved successfully!');
         }
 
         window.onload = () => {
             initAdminMap();
-            loadRegisteredBusinesses();
-            loadBusinessesManagement();
-            fetchOrders();
-            fetchLiveDrivers();
-            setInterval(fetchOrders, 5000);
+            fetchAllData();
+            setInterval(fetchAllData, 5000);
             setInterval(fetchLiveDrivers, 4000);
         };
     </script>
