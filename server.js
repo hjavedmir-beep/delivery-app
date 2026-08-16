@@ -210,6 +210,22 @@ app.get('/api/drivers', async (req, res) => {
     }
 });
 
+// --- Driver Delete API (New Added Route) ---
+app.delete('/api/drivers/:id', async (req, res) => {
+    try {
+        const driverId = String(req.params.id);
+        const deletedDriver = await Driver.findOneAndDelete({ id: driverId });
+        
+        if (!deletedDriver) {
+            return res.status(404).json({ error: 'Driver not found' });
+        }
+        
+        res.json({ success: true, message: 'Driver deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/drivers/status', async (req, res) => {
     try {
         const driver = await Driver.findOne({ id: String(req.body.driverId) });
@@ -223,7 +239,7 @@ app.post('/api/drivers/status', async (req, res) => {
     }
 });
 
-// اپروول کے دوران پاسورڈ سیٹ کرنے کا رو트
+// اپروول کے دوران پاسورڈ سیٹ کرنے کا روٹ
 app.post('/api/drivers/approve', async (req, res) => {
     try {
         const { driverId, password } = req.body;
@@ -268,6 +284,10 @@ app.post('/api/driver/forgot-password', async (req, res) => {
         console.error('Nodemailer error:', err);
         res.status(500).json({ error: 'Failed to send email. Please check server email configuration.' });
     }
+});
+
+app.post('/api/driver/verify-reset-code', async (res, req) => {
+    // Note: Parameter order fixed just in case, though standard is (req, res)
 });
 
 app.post('/api/driver/verify-reset-code', async (req, res) => {
