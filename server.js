@@ -306,3 +306,8 @@ app.get('/api/drivers/locations', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+```[cite: 5]
+
+---
+
+### 2. Driver Portal (`driver.html`)
