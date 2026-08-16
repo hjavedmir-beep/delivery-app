@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,16 @@ const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
     .then(() => console.log('Connected to MongoDB Atlas successfully!'))
     .catch(err => console.error('MongoDB connection error:', err));
+
+// --- Nodemailer Transporter Setup ---
+// یہاں اپنی جی میل یا ای میل سروس کی تفصیلات درج کریں
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER || 'your-email@gmail.com', // اپنی جی میل یہاں لکھیں یا Render Environment Variables میں سیٹ کریں
+        pass: process.env.EMAIL_PASS || 'your-email-app-password' // جی میل کا App Password یہاں لکھیں
+    }
+});
 
 // --- Schemas & Models ---
 const orderSchema = new mongoose.Schema({
@@ -37,6 +48,7 @@ const driverSchema = new mongoose.Schema({
     firstName: String,
     surname: String,
     mobile: String,
+    email: { type: String, unique: true, sparse: true }, // ڈرائیور کی ای میل فیلڈ
     address: String,
     password: String,
     status: String
@@ -177,6 +189,7 @@ app.post('/api/drivers/signup', async (req, res) => {
             firstName: req.body.firstName,
             surname: req.body.surname,
             mobile: req.body.mobile,
+            email: req.body.email, // ڈرائیور کی ای میل
             address: req.body.address,
             password: req.body.password,
             status: 'Pending'
@@ -218,6 +231,55 @@ app.post('/api/drivers/approve', async (req, res) => {
         driver.status = 'Approved';
         await driver.save();
         res.json({ success: true, message: 'Driver approved', driver });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Password Reset via Email APIs ---
+app.post('/api/driver/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const driver = await Driver.findOne({ email: email.trim() });
+        if (!driver) {
+            return res.status(404).json({ error: 'No driver account found with this email address.' });
+        }
+
+        // 4 ہندسوں کا کوڈ جنریٹ کریں
+        const resetCode = Math.floor(1000 + Math.random() * 9000).toString();
+        driver.resetCode = resetCode;
+        await driver.save();
+
+        // ای میل بھیجیں
+        const mailOptions = {
+            from: process.env.EMAIL_USER || 'your-email@gmail.com',
+            to: driver.email,
+            subject: 'Swifty Delivery - Password Reset Code',
+            text: `Hello ${driver.firstName},\n\nYour password reset verification code is: ${resetCode}\n\nPlease enter this code in the app to reset your password.`
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'Verification code sent to your email successfully!' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to send email. Please check server email configuration.' });
+    }
+});
+
+app.post('/api/driver/verify-reset-code', async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+        const driver = await Driver.findOne({ email: email.trim() });
+        
+        if (!driver || driver.resetCode !== code) {
+            return res.status(400).json({ error: 'Invalid verification code.' });
+        }
+
+        driver.password = newPassword;
+        driver.resetCode = undefined; // کوڈ استعمال ہونے کے بعد ہٹا دیں
+        await driver.save();
+
+        res.json({ success: true, message: 'Password updated successfully!' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
