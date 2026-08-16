@@ -133,6 +133,7 @@
                 <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 text-base rounded-xl font-extrabold transition shadow-md">Sign In</button>
             </form>
 
+            <!-- Sign Up Form (پاسورڈ کے بغیر) -->
             <form id="signupForm" onsubmit="handleSignUp(event)" class="space-y-3 text-sm pt-2 hidden">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -155,14 +156,6 @@
                 <div>
                     <label class="block font-semibold text-gray-700 text-xs">Address</label>
                     <input type="text" id="signupAddress" required class="w-full mt-1 p-2 border rounded-xl text-sm" placeholder="Enter your residential address">
-                </div>
-                <div>
-                    <label class="block font-semibold text-gray-700 text-xs">Password (Min 8 characters)</label>
-                    <input type="password" id="signupPassword" required minlength="8" class="w-full mt-1 p-2 border rounded-xl text-sm" placeholder="At least 8 characters">
-                </div>
-                <div>
-                    <label class="block font-semibold text-gray-700 text-xs">Retype Password</label>
-                    <input type="password" id="signupRetypePassword" required minlength="8" class="w-full mt-1 p-2 border rounded-xl text-sm" placeholder="Retype password">
                 </div>
                 <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-xl font-bold transition shadow-sm">Create Account</button>
             </form>
@@ -417,28 +410,16 @@
             const mobile = document.getElementById('signupPhone').value.trim();
             const email = document.getElementById('signupEmail').value.trim();
             const address = document.getElementById('signupAddress').value.trim();
-            const password = document.getElementById('signupPassword').value;
-            const retypePassword = document.getElementById('signupRetypePassword').value;
-
-            if (password.length < 8) {
-                alert('Password must be at least 8 characters long.');
-                return;
-            }
-
-            if (password !== retypePassword) {
-                alert('Passwords do not match.');
-                return;
-            }
 
             try {
                 const res = await fetch(`${API_URL}/drivers/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ firstName, surname, mobile, email, address, password })
+                    body: JSON.stringify({ firstName, surname, mobile, email, address })
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert('Account created successfully! Your account is pending approval from the admin panel.');
+                    alert('Account created successfully! Your account is pending approval from the admin panel where your password will be assigned.');
                     switchAuthMode('signin');
                 } else {
                     alert(data.error || 'Signup failed.');
@@ -465,7 +446,7 @@
                 }
 
                 if (driver.status !== 'Approved') {
-                    alert('Your account is currently pending admin approval. Please wait for an admin to approve your account.');
+                    alert('Your account is currently pending admin approval. Please wait for an admin to approve your account and set your password.');
                     return;
                 }
 
