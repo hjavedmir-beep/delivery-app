@@ -247,7 +247,7 @@ app.post('/api/driver/forgot-password', async (req, res) => {
         // SendGrid کے ذریعے ای میل بھیجیں
         const msg = {
             to: driver.email,
-            from: 'h.javedmir@gmail.com', // وہ ای میل جو آپ نے SendGrid پر وریفائی کی ہے
+            from: 'officedeskmh@gmail.com', // وریفائیڈ سینڈر ای میل
             subject: 'Swifty Delivery - Password Reset Code',
             text: `Hello ${driver.firstName},\n\nYour password reset verification code is: ${resetCode}\n\nPlease enter this code in the app to reset your password.`,
             html: `<strong>Hello ${driver.firstName},</strong><br><br>Your password reset verification code is: <b>${resetCode}</b><br><br>Please enter this code in the app to reset your password.`
