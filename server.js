@@ -20,7 +20,7 @@ mongoose.connect(MONGO_URI)
     .catch(err => console.error('MongoDB connection error:', err));
 
 // --- SendGrid API Setup ---
-sgMail.setApiKey(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);
+sgMail.setApiKey('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');
 
 // --- Schemas & Models ---
 const orderSchema = new mongoose.Schema({
