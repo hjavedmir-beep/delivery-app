@@ -40,8 +40,9 @@ const orderSchema = new mongoose.Schema({
     status: String,
     assignedDriverId: String,
     deliveryPrice: Number,
-    deliveredAt: { type: Date }, // <-- Added timestamp tracking for delivery completion
-    updatedAt: { type: Date, default: Date.now } // <-- Added general update timestamp
+    createdAt: { type: Date, default: Date.now }, // <-- Records exact time order was placed
+    deliveredAt: { type: Date },                 // <-- Records exact time order was delivered
+    updatedAt: { type: Date }
 });
 const Order = mongoose.model('Order', orderSchema);
 
@@ -110,7 +111,7 @@ app.post('/api/orders', async (req, res) => {
             status: 'Pending Assignment',
             assignedDriverId: null,
             deliveryPrice: req.body.deliveryPrice || 5.00,
-            updatedAt: new Date()
+            createdAt: new Date() // Set creation time precisely
         });
         await newOrder.save();
         res.status(201).json({ message: 'Order created', order: newOrder });
@@ -143,8 +144,8 @@ app.post('/api/orders/status', async (req, res) => {
         order.status = newStatus;
         order.updatedAt = new Date();
 
-        // If the order status is updated to Delivered, capture the exact timestamp automatically
-        if (newStatus === 'Delivered') {
+        // Only stamp deliveredAt if it's being marked as Delivered AND it hasn't already been stamped
+        if (newStatus === 'Delivered' && !order.deliveredAt) {
             order.deliveredAt = new Date();
         }
 
