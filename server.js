@@ -33,16 +33,18 @@ const orderSchema = new mongoose.Schema({
     id: { type: String, unique: true },
     customerName: String,
     customerPhone: String,
-    deliveryPlatform: String, // Justeat, Ubereats, Deliveroo, Pepes App, Misc
+    deliveryPlatform: String,
     pickupAddress: String,
     dropoffAddress: String,
     notes: String,
     status: String,
     assignedDriverId: String,
     deliveryPrice: Number,
-    createdAt: { type: Date, default: Date.now }, // <-- Records exact time order was placed
-    pickupAt: { type: Date },                    // <-- Records exact time order was picked up
-    deliveredAt: { type: Date },                 // <-- Records exact time order was delivered
+    lat: Number,
+    lng: Number,
+    createdAt: { type: Date, default: Date.now },
+    pickupAt: { type: Date },
+    deliveredAt: { type: Date },
     updatedAt: { type: Date }
 });
 const Order = mongoose.model('Order', orderSchema);
@@ -112,7 +114,9 @@ app.post('/api/orders', async (req, res) => {
             status: 'Pending Assignment',
             assignedDriverId: null,
             deliveryPrice: req.body.deliveryPrice || 5.00,
-            createdAt: new Date() // Set creation time precisely
+            lat: req.body.lat,
+            lng: req.body.lng,
+            createdAt: new Date()
         });
         await newOrder.save();
         res.status(201).json({ message: 'Order created', order: newOrder });
@@ -145,12 +149,14 @@ app.post('/api/orders/status', async (req, res) => {
         order.status = newStatus;
         order.updatedAt = new Date();
 
-        // Stamp pickupAt only when picked up and if not already stamped
-        if ((newStatus === 'Picked Up' || newStatus.includes('Picked')) && !order.pickupAt) {
+        if (req.body.driverAccepted !== undefined) {
+            order.driverAccepted = req.body.driverAccepted;
+        }
+
+        if ((newStatus === 'Picked Up' || newStatus.includes('Collected')) && !order.pickupAt) {
             order.pickupAt = new Date();
         }
 
-        // Only stamp deliveredAt if it's being marked as Delivered AND it hasn't already been stamped
         if (newStatus === 'Delivered' && !order.deliveredAt) {
             order.deliveredAt = new Date();
         }
@@ -341,8 +347,12 @@ let driverLocations = {};
 
 app.post('/api/driver/location', (req, res) => {
     const { driverId, lat, lng } = req.body;
-    if (driverId && lat && lng) {
-        driverLocations[driverId] = { lat, lng, updatedAt: new Date() };
+    if (driverId) {
+        if (lat === null || lng === null) {
+            delete driverLocations[driverId];
+        } else {
+            driverLocations[driverId] = { lat, lng, updatedAt: new Date() };
+        }
         res.json({ success: true, message: 'Location updated successfully' });
     } else {
         res.status(400).json({ success: false, message: 'Invalid data' });
