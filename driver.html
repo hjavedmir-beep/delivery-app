@@ -34,9 +34,9 @@
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 pl-10 space-y-4 shadow-2xl border border-gray-100 text-center relative overflow-hidden">
             
             <!-- Dynamic Platform Branding Vertical Bar -->
-            <div id="modalPlatformBar" class="absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300">
+            <div id="modalPlatformBar" class="absolute left-0 top-0 bottom-0 w-7 bg-red-600 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300">
                 <span id="modalPlatformText" style="writing-mode: vertical-rl; text-orientation: mixed;" class="font-black text-white text-[11px] tracking-widest uppercase transform rotate-180 drop-shadow-sm">
-                    DIRECT
+                    PEPES APP
                 </span>
             </div>
 
@@ -49,10 +49,10 @@
             </div>
             <!-- Dynamic layout container with proper left spacing away from the vertical bar -->
             <div id="modalDetailsContainer" class="bg-gray-50 p-4 pl-5 rounded-2xl text-left space-y-2 border border-gray-100 text-xs ml-2">
-                <p class="text-gray-800 truncate"><b>Pickup:</b> <span id="modalPickup">Pepes Newcastle Under Lyme</span></p>
+                <p class="text-gray-800 truncate"><b>Pickup:</b> <span id="modalPickup">Shop Address</span></p>
                 <p class="text-gray-800 truncate"><b>Drop-off:</b> <span id="modalDropoff">Customer Address</span></p>
                 <p class="text-emerald-700 font-bold" id="modalPayout">Payout: £3.80</p>
-                <p class="text-blue-700 font-bold" id="modalOrderTypeRow">Type: <span id="modalOrderType">Direct</span></p>
+                <p class="text-blue-700 font-bold" id="modalOrderTypeRow">Type: <span id="modalOrderType">Pepes App</span></p>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2 ml-2">
                 <button onclick="rejectIncomingOrder()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold text-xs transition">
@@ -662,6 +662,22 @@
             }, err => { console.error(err); }, { enableHighAccuracy: true });
         }
 
+        function getPlatformDetails(rawPlatformString) {
+            const val = (rawPlatformString || 'Misc').toUpperCase();
+            
+            if (val.includes('DELIVEROO')) {
+                return { name: 'DELIVEROO', bgClass: 'bg-sky-400' };
+            } else if (val.includes('JUST') || val.includes('EAT')) {
+                return { name: 'JUSTEAT', bgClass: 'bg-yellow-400 text-black' };
+            } else if (val.includes('UBER') || val.includes('UBEREATS')) {
+                return { name: 'UBEREATS', bgClass: 'bg-emerald-600' };
+            } else if (val.includes('PEPE') || val.includes('APP')) {
+                return { name: 'PEPES APP', bgClass: 'bg-red-600' };
+            } else {
+                return { name: 'MISC.', bgClass: 'bg-black' };
+            }
+        }
+
         async function fetchDriverAssignedOrders() {
             if (!currentDriver) return;
 
@@ -689,33 +705,20 @@
                     lastNotifiedOrderId = newlyAssigned.id;
                     
                     const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
-                    
-                    // Fixed: accurately read platform/orderType, falling back to 'DIRECT' instead of forcing 'JUST EAT'
-                    const rawPlatform = newlyAssigned.platform || newlyAssigned.orderType || 'Direct';
-                    const platformName = rawPlatform.toUpperCase();
+                    const rawPlatform = newlyAssigned.platform || newlyAssigned.orderType || 'Misc';
+                    const platformInfo = getPlatformDetails(rawPlatform);
                     
                     const platformBar = document.getElementById('modalPlatformBar');
                     const platformText = document.getElementById('modalPlatformText');
                     
-                    platformText.innerText = platformName;
-                    
-                    if (platformName.includes('DELIVEROO')) {
-                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-teal-500 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
-                    } else if (platformName.includes('UBER') || platformName.includes('EATS')) {
-                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-black flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
-                    } else if (platformName.includes('JUST') || platformName.includes('EAT')) {
-                        // Just Eat Yellow/Orange
-                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
-                    } else {
-                        // Default / Delivery / Direct Blue-Grey or Emerald
-                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-blue-600 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
-                    }
+                    platformText.innerText = platformInfo.name;
+                    platformBar.className = `absolute left-0 top-0 bottom-0 w-7 ${platformInfo.bgClass} flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300`;
 
                     document.getElementById('modalCustomerName').innerText = newlyAssigned.customerName;
                     document.getElementById('modalPickup').innerText = newlyAssigned.pickupAddress;
                     document.getElementById('modalDropoff').innerText = newlyAssigned.dropoffAddress;
                     document.getElementById('modalPayout').innerText = `Payout: £${orderPayout}`;
-                    document.getElementById('modalOrderType').innerText = platformName;
+                    document.getElementById('modalOrderType').innerText = platformInfo.name;
 
                     document.getElementById('incomingOrderModal').classList.remove('hidden');
                     playBeepSound();
@@ -736,7 +739,9 @@
                     const isDelivered = status === 'Delivered';
                     const isCollected = status === 'Collected' || isDelivered;
                     const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
-                    const orderPlatform = (order.platform || order.orderType || 'Direct').toUpperCase();
+                    
+                    const rawOrderPlatform = order.platform || order.orderType || 'Misc';
+                    const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
 
                     container.innerHTML += `
                         <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
@@ -748,7 +753,7 @@
                             <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
                             <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
                             <p class="text-xs font-extrabold text-blue-700">Delivery Payout Fee: £${orderFee}</p>
-                            <p class="text-xs font-bold text-purple-700">Platform / Type: ${orderPlatform}</p>
+                            <p class="text-xs font-bold text-gray-800">Platform / Type: <span class="px-2 py-0.5 rounded text-white ${orderPlatformInfo.bgClass}">${orderPlatformInfo.name}</span></p>
                             ${order.specialNotes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.specialNotes}</p>` : ''}
                             
                             <div class="pt-2 space-y-2">
