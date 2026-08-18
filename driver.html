@@ -39,10 +39,12 @@
                 <h3 class="font-extrabold text-xl text-gray-900">New Delivery Assigned!</h3>
                 <p id="modalCustomerName" class="text-xs text-gray-500 mt-0.5">Customer Name</p>
             </div>
-            <div class="bg-gray-50 p-4 rounded-2xl text-left space-y-2 border border-gray-100 text-xs">
+            <!-- Dynamic layout container: vertically aligned if JustEat -->
+            <div id="modalDetailsContainer" class="bg-gray-50 p-4 rounded-2xl text-left space-y-2 border border-gray-100 text-xs">
                 <p class="text-gray-800 truncate"><b>Pickup:</b> <span id="modalPickup">Shop Address</span></p>
                 <p class="text-gray-800 truncate"><b>Drop-off:</b> <span id="modalDropoff">Customer Address</span></p>
                 <p class="text-emerald-700 font-bold" id="modalPayout">Payout: £3.80</p>
+                <p class="text-blue-700 font-bold" id="modalOrderTypeRow">Type: <span id="modalOrderType">Direct</span></p>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2">
                 <button onclick="rejectIncomingOrder()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold text-xs transition">
@@ -679,12 +681,23 @@
                     lastNotifiedOrderId = newlyAssigned.id;
                     
                     const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
+                    const orderType = newlyAssigned.orderType || 'Direct';
+                    
                     document.getElementById('modalCustomerName').innerText = newlyAssigned.customerName;
                     document.getElementById('modalPickup').innerText = newlyAssigned.pickupAddress;
                     document.getElementById('modalDropoff').innerText = newlyAssigned.dropoffAddress;
                     document.getElementById('modalPayout').innerText = `Payout: £${orderPayout}`;
+                    document.getElementById('modalOrderType').innerText = orderType;
+
+                    // If order type is JustEat, make it vertical (space-y-2), else normal flex/inline
+                    const detailsContainer = document.getElementById('modalDetailsContainer');
+                    if (orderType.toLowerCase().includes('justeat')) {
+                        detailsContainer.className = 'bg-gray-50 p-4 rounded-2xl text-left space-y-3 border border-gray-100 text-xs flex flex-col';
+                    } else {
+                        detailsContainer.className = 'bg-gray-50 p-4 rounded-2xl text-left space-y-2 border border-gray-100 text-xs';
+                    }
+
                     document.getElementById('incomingOrderModal').classList.remove('hidden');
-                    
                     playBeepSound();
                 }
 
@@ -703,6 +716,7 @@
                     const isDelivered = status === 'Delivered';
                     const isCollected = status === 'Collected' || isDelivered;
                     const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
+                    const orderType = order.orderType || 'Direct';
 
                     container.innerHTML += `
                         <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
@@ -714,6 +728,7 @@
                             <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
                             <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
                             <p class="text-xs font-extrabold text-blue-700">Delivery Payout Fee: £${orderFee}</p>
+                            <p class="text-xs font-bold text-purple-700">Order Type: ${orderType}</p>
                             ${order.specialNotes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.specialNotes}</p>` : ''}
                             
                             <div class="pt-2 space-y-2">
