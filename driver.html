@@ -258,8 +258,8 @@
                 </div>
 
                 <div class="bg-white p-5 rounded-2xl shadow-sm space-y-2 border border-gray-100">
-                    <h3 class="font-bold text-base text-gray-800 border-b pb-2">🗺️ Your Current GPS Location</h3>
-                    <div id="driverMap" class="w-full h-[220px] rounded-xl"></div>
+                    <h3 class="font-bold text-base text-gray-800 border-b pb-2">🗺️ Your Current GPS Location & Route</h3>
+                    <div id="driverMap" class="w-full h-[260px] rounded-xl"></div>
                 </div>
             </div>
 
@@ -755,7 +755,7 @@
                 }
 
                 container.innerHTML = '';
-                ordersToDisplay.forEach(order => {
+                ordersToDisplay.forEach((order, index) => {
                     const status = order.status || 'Assigned';
                     const isDelivered = status === 'Delivered';
                     const isCollected = status === 'Collected' || isDelivered;
@@ -763,6 +763,13 @@
                     
                     const rawOrderPlatform = order.deliveryPlatform || 'Misc';
                     const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
+
+                    // اگر پہلا فعال آرڈر ہے تو خودکار طور پر م্যাপ پر اس کا روٹ ڈرا کر دیں
+                    if (index === 0 && currentOrderViewFilter === 'assigned' && order.lat && order.lng) {
+                        const sLat = order.shopLat || 53.0027;
+                        const sLng = order.shopLng || -2.1794;
+                        showDeliveryRoute(sLat, sLng, order.lat, order.lng);
+                    }
 
                     container.innerHTML += `
                         <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
@@ -777,6 +784,13 @@
                             <p class="text-xs font-bold text-gray-800">Platform / Type: <span class="px-2 py-0.5 rounded text-white ${orderPlatformInfo.bgClass}">${orderPlatformInfo.name}</span></p>
                             ${order.notes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.notes}</p>` : ''}
                             
+                            <!-- دستی روٹ دیکھنے کا بٹن -->
+                            ${order.lat && order.lng ? `
+                                <button onclick="triggerOrderRoute('${order.shopLat || 53.0027}', '${order.shopLng || -2.1794}', '${order.lat}', '${order.lng}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl font-bold text-xs transition shadow-sm">
+                                    Show Route on Map 🗺️
+                                </button>
+                            ` : ''}
+
                             <div class="pt-2 space-y-2">
                                 ${!isCollected ? `
                                     <button onclick="updateOrderStatus('${order.id}', 'Collected')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
@@ -795,6 +809,16 @@
                 });
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        function triggerOrderRoute(sLat, sLng, dLat, dLng) {
+            showDeliveryRoute(parseFloat(sLat), parseFloat(sLng), parseFloat(dLat), parseFloat(dLng));
+            // م্যাপ والے ٹیب پر خود بخود سکرول کر دیں یا فوکس لے جائیں تاکہ روٹ نظر آئے
+            const mapElement = document.getElementById('driverMap');
+            if (mapElement) {
+                mapElement.scrollIntoView({ behavior: 'smooth' });
+                setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 300);
             }
         }
 
@@ -817,7 +841,6 @@
                 if (acceptedOrder && acceptedOrder.lat && acceptedOrder.lng) {
                     const shopLat = acceptedOrder.shopLat || 53.0027; 
                     const shopLng = acceptedOrder.shopLng || -2.1794; 
-                    
                     showDeliveryRoute(shopLat, shopLng, acceptedOrder.lat, acceptedOrder.lng);
                 }
 
