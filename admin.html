@@ -159,30 +159,24 @@
             </div>
         </div>
 
-        <!-- TAB: Dedicated Orders Page (Active & Completed) -->
+        <!-- TAB: Dedicated Orders Page (Completed Orders Only + Date Filter) -->
         <div id="tabContentOrders" class="space-y-5 hidden">
-            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
-                <h2 class="font-bold text-base text-gray-800 border-b pb-2">All Active Orders Directory</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-800 border-b font-bold">
-                                <th class="p-3">ID & Customer</th>
-                                <th class="p-3">Business & Platform</th>
-                                <th class="p-3">Delivery Address</th>
-                                <th class="p-3">Assigned Driver</th>
-                                <th class="p-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dedicatedActiveOrdersTableBody">
-                            <tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">Loading orders...</td></tr>
-                        </tbody>
-                    </table>
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-4 border-t-4 border-emerald-600">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-3 gap-3">
+                    <div>
+                        <h2 class="font-bold text-base text-gray-800">Completed Orders History</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Filter and review completed delivery history by date.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 uppercase">Filter by Date</label>
+                            <input type="date" id="dedicatedFilterDateInput" onchange="renderDedicatedCompletedOrders()" class="p-1.5 border rounded-lg bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div class="flex items-end pt-3">
+                            <button onclick="clearDedicatedDateFilter()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold transition">Clear Date</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
-                <h2 class="font-bold text-base text-gray-800 border-b pb-2">Completed Orders History</h2>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead>
@@ -663,8 +657,6 @@
                 
                 const activeTable = document.getElementById('activeOrdersTableBody');
                 const completedTable = document.getElementById('completedOrdersTableBody');
-                const dedicatedActiveTable = document.getElementById('dedicatedActiveOrdersTableBody');
-                const dedicatedCompletedTable = document.getElementById('dedicatedCompletedOrdersTableBody');
                 
                 const activeOrders = allOrdersCache.filter(o => o.status !== 'Delivered');
                 const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
@@ -724,15 +716,72 @@
                 };
 
                 activeTable.innerHTML = renderActiveRows(activeOrders);
-                if (dedicatedActiveTable) dedicatedActiveTable.innerHTML = renderActiveRows(activeOrders);
 
                 document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
                 completedTable.innerHTML = renderCompletedRows(completedOrders);
-                if (dedicatedCompletedTable) dedicatedCompletedTable.innerHTML = renderCompletedRows(completedOrders);
 
+                renderDedicatedCompletedOrders();
                 renderFilteredBusinessCompletedOrders();
 
             } catch (e) { console.error('Error fetching orders:', e); }
+        }
+
+        function clearDedicatedDateFilter() {
+            document.getElementById('dedicatedFilterDateInput').value = '';
+            renderDedicatedCompletedOrders();
+        }
+
+        function renderDedicatedCompletedOrders() {
+            const dedicatedCompletedTable = document.getElementById('dedicatedCompletedOrdersTableBody');
+            if (!dedicatedCompletedTable) return;
+
+            const selectedDate = document.getElementById('dedicatedFilterDateInput').value;
+            const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
+
+            const filtered = completedOrders.filter(order => {
+                let matchDate = true;
+                if (selectedDate) {
+                    const orderDateObj = order.deliveredAt ? new Date(order.deliveredAt) : (order.updatedAt ? new Date(order.updatedAt) : null);
+                    if (orderDateObj) {
+                        const orderDateStr = orderDateObj.toISOString().split('T')[0];
+                        matchDate = (orderDateStr === selectedDate);
+                    } else {
+                        matchDate = false;
+                    }
+                }
+                return matchDate;
+            });
+
+            if (filtered.length === 0) {
+                dedicatedCompletedTable.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No completed orders found for this date.</td></tr>`;
+                return;
+            }
+
+            let rowsHtml = '';
+            filtered.forEach(order => {
+                const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
+                const busNameOnly = extractBusinessName(order.pickupAddress);
+                
+                const pickupTimeStr = order.pickedUpAt ? new Date(order.pickedUpAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+                const deliveredTimeStr = order.deliveredAt ? new Date(order.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (order.updatedAt ? new Date(order.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A');
+
+                rowsHtml += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
+                        <td class="p-3">
+                            <span class="font-bold text-gray-900 block">${busNameOnly}</span>
+                            <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs inline-block mt-1">${order.deliveryPlatform || 'Misc'}</span>
+                        </td>
+                        <td class="p-3 text-xs text-gray-700">${order.dropoffAddress}</td>
+                        <td class="p-3">
+                            <span class="font-bold block text-gray-900">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</span>
+                            <span class="text-xs text-gray-600 block mt-1">📥 Picked: <b class="text-emerald-800">${pickupTimeStr}</b></span>
+                            <span class="text-xs text-gray-600 block">🏁 Delivered: <b class="text-emerald-800">${deliveredTimeStr}</b></span>
+                        </td>
+                        <td class="p-3"><span class="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
+                    </tr>`;
+            });
+            dedicatedCompletedTable.innerHTML = rowsHtml;
         }
 
         function clearDateFilter() {
