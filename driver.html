@@ -7,7 +7,9 @@
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 </head>
 <body class="bg-gray-100 font-sans text-sm pb-24">
 
@@ -302,6 +304,7 @@
         let orderPollInterval = null;
         let driverMap = null;
         let driverMarker = null;
+        let currentRoutingControl = null; // Tracks active route on map
         let connectedSeconds = 0;
         let timerInterval = null;
         let pendingAlertOrderId = null;
@@ -524,6 +527,31 @@
             }
         }
 
+        // --- Route Management Functions ---
+        function showDeliveryRoute(shopLat, shopLng, deliveryLat, deliveryLng) {
+            clearDeliveryRoute();
+            if (!driverMap) return;
+
+            currentRoutingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(shopLat, shopLng),       
+                    L.latLng(deliveryLat, deliveryLng)  
+                ],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                show: false // Hides turn-by-turn text box, showing only map polyline
+            }).addTo(driverMap);
+        }
+
+        function clearDeliveryRoute() {
+            if (currentRoutingControl && driverMap) {
+                driverMap.removeControl(currentRoutingControl);
+                currentRoutingControl = null;
+            }
+        }
+
         function setLoggedInDriver(drv) {
             currentDriver = drv;
             localStorage.setItem('logged_in_driver', JSON.stringify(drv));
@@ -556,6 +584,7 @@
             if (isOnline) toggleShift();
             currentDriver = null;
             clearInterval(orderPollInterval);
+            clearDeliveryRoute();
             document.getElementById('driverDashboard').classList.add('hidden');
             document.getElementById('bottomNav').classList.add('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
@@ -613,6 +642,7 @@
                 clearInterval(locationInterval);
                 clearInterval(timerInterval);
                 clearInterval(orderPollInterval);
+                clearDeliveryRoute();
 
                 toggleBtnWallet.innerText = 'Go Online';
                 toggleBtnWallet.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
@@ -663,7 +693,7 @@
         }
 
         function getPlatformDetails(rawPlatformString) {
-            const val = (rawPlatformString || 'Misc').toUpperCase().replace(/[^A-Z]/g, '');
+            const val = (rawPlatformString || 'Misc').toUpperCase();
             
             if (val.includes('DELIVEROO')) {
                 return { name: 'DELIVEROO', bgClass: 'bg-sky-400' };
@@ -780,13 +810,26 @@
         async function acceptIncomingOrder() {
             if (!pendingAlertOrderId) return;
             try {
+                const res = await fetch(`${API_URL}/orders`);
+                const orders = await res.json();
+                const acceptedOrder = orders.find(o => String(o.id) === String(pendingAlertOrderId));
+
                 await fetch(`${API_URL}/orders/status`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderId: pendingAlertOrderId, status: 'Assigned', driverAccepted: true })
                 });
+
                 document.getElementById('incomingOrderModal').classList.add('hidden');
                 pendingAlertOrderId = null;
+
+                // Automatically draw route from shop to customer upon acceptance
+                if (acceptedOrder && acceptedOrder.lat && acceptedOrder.lng) {
+                    const shopLat = 53.0027; // Shop Latitude (Stoke-on-Trent branch)
+                    const shopLng = -2.1794; // Shop Longitude
+                    showDeliveryRoute(shopLat, shopLng, acceptedOrder.lat, acceptedOrder.lng);
+                }
+
                 fetchDriverAssignedOrders();
             } catch (err) {
                 console.error(err);
@@ -818,6 +861,7 @@
                 });
                 if (res.ok) {
                     if (newStatus === 'Delivered') {
+                        clearDeliveryRoute(); // Remove route line and markers from map once completed
                         alert('Order marked as delivered! Delivery fee added to your wallet.');
                     } else {
                         alert('Order status updated: Collected from shop.');
@@ -850,4 +894,3 @@
     </script>
 </body>
 </html>
-```[cite: 2]
