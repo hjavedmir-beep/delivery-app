@@ -116,13 +116,14 @@
                             <thead>
                                 <tr class="bg-gray-50 text-gray-800 border-b font-bold">
                                     <th class="p-3">ID & Customer</th>
-                                    <th class="p-3">Platform & Route</th>
-                                    <th class="p-3">Assigned Driver (Online Only)</th>
+                                    <th class="p-3">Pickup Business & Platform</th>
+                                    <th class="p-3">Delivery Address</th>
+                                    <th class="p-3">Assigned Driver</th>
                                     <th class="p-3">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="activeOrdersTableBody">
-                                <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">Loading active orders...</td></tr>
+                                <tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">Loading active orders...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -144,13 +145,14 @@
                             <thead>
                                 <tr class="bg-gray-50 text-gray-800 border-b font-bold sticky top-0">
                                     <th class="p-3">ID & Customer</th>
-                                    <th class="p-3">Platform & Route</th>
+                                    <th class="p-3">Pickup Business & Platform</th>
+                                    <th class="p-3">Delivery Address</th>
                                     <th class="p-3">Delivered By</th>
                                     <th class="p-3">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="completedOrdersTableBody">
-                                <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>
+                                <tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -167,13 +169,14 @@
                         <thead>
                             <tr class="bg-gray-50 text-gray-800 border-b font-bold">
                                 <th class="p-3">ID & Customer</th>
-                                <th class="p-3">Platform & Route</th>
+                                <th class="p-3">Pickup Business & Platform</th>
+                                <th class="p-3">Delivery Address</th>
                                 <th class="p-3">Assigned Driver</th>
                                 <th class="p-3">Status</th>
                             </tr>
                         </thead>
                         <tbody id="dedicatedActiveOrdersTableBody">
-                            <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">Loading orders...</td></tr>
+                            <tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">Loading orders...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -186,13 +189,14 @@
                         <thead>
                             <tr class="bg-gray-50 text-gray-800 border-b font-bold">
                                 <th class="p-3">ID & Customer</th>
-                                <th class="p-3">Platform & Route</th>
+                                <th class="p-3">Pickup Business & Platform</th>
+                                <th class="p-3">Delivery Address</th>
                                 <th class="p-3">Delivered By</th>
                                 <th class="p-3">Status</th>
                             </tr>
                         </thead>
                         <tbody id="dedicatedCompletedOrdersTableBody">
-                            <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>
+                            <tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -236,7 +240,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: Manage Businesses Page (Now including Business & Completed Orders Info) -->
+        <!-- TAB 4: Manage Businesses Page -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
             <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600 max-w-2xl mx-auto">
                 <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
@@ -285,8 +289,8 @@
                         <thead>
                             <tr class="bg-gray-50 text-gray-800 border-b font-bold sticky top-0">
                                 <th class="p-3">ID & Customer</th>
-                                <th class="p-3">Pickup Location</th>
-                                <th class="p-3">Platform & Fee</th>
+                                <th class="p-3">Pickup Business & Platform</th>
+                                <th class="p-3">Delivery Address</th>
                                 <th class="p-3">Delivered By</th>
                             </tr>
                         </thead>
@@ -587,6 +591,13 @@
             } catch (err) { console.error('Error creating order:', err); }
         }
 
+        // Extracts clean business name from saved pickup string e.g. "Mother Hubbard's Stoke (Stafford Street...)" -> "Mother Hubbard's Stoke"
+        function extractBusinessName(pickupStr) {
+            if (!pickupStr) return 'N/A';
+            const idx = pickupStr.indexOf('(');
+            return idx !== -1 ? pickupStr.substring(0, idx).trim() : pickupStr;
+        }
+
         async function fetchOrders() {
             try {
                 const res = await fetch(`${API_URL}/orders`);
@@ -603,17 +614,22 @@
                 const onlineDrivers = registeredDriversCache.filter(d => d.status === 'Approved' && onlineDriversCache[d.id]?.lat);
 
                 const renderActiveRows = (ordersList) => {
-                    if (ordersList.length === 0) return `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
+                    if (ordersList.length === 0) return `<tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
                     let rowsHtml = '';
                     ordersList.forEach(order => {
                         let optionsHtml = `<option value="">Select Online Driver</option>`;
                         onlineDrivers.forEach(d => {
                             optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
                         });
+                        const busNameOnly = extractBusinessName(order.pickupAddress);
                         rowsHtml += `
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="p-3 font-bold">#${order.id} - ${order.customerName}<br><span class="text-xs text-gray-600 font-normal">${order.customerPhone}</span></td>
-                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}<br><span class="text-xs font-extrabold text-emerald-700">Fee: £${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
+                                <td class="p-3">
+                                    <span class="font-bold text-gray-900 block">${busNameOnly}</span>
+                                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs inline-block mt-1">${order.deliveryPlatform || 'Misc'}</span>
+                                </td>
+                                <td class="p-3 text-xs text-gray-700">${order.dropoffAddress}<br><span class="font-extrabold text-emerald-700">Fee: £${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
                                 <td class="p-3"><select onchange="assignDriver('${order.id}', this.value)" class="border p-2 rounded-lg text-sm font-semibold w-full bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">${optionsHtml}</select></td>
                                 <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg font-bold text-xs">${order.status || 'Pending'}</span></td>
                             </tr>`;
@@ -622,14 +638,19 @@
                 };
 
                 const renderCompletedRows = (ordersList) => {
-                    if (ordersList.length === 0) return `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>`;
+                    if (ordersList.length === 0) return `<tr><td colspan="5" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>`;
                     let rowsHtml = '';
                     ordersList.forEach(order => {
                         const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
+                        const busNameOnly = extractBusinessName(order.pickupAddress);
                         rowsHtml += `
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
-                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-3">
+                                    <span class="font-bold text-gray-900 block">${busNameOnly}</span>
+                                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs inline-block mt-1">${order.deliveryPlatform || 'Misc'}</span>
+                                </td>
+                                <td class="p-3 text-xs text-gray-700">${order.dropoffAddress}</td>
                                 <td class="p-3 font-semibold">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</td>
                                 <td class="p-3"><span class="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
                             </tr>`;
@@ -642,11 +663,15 @@
                     let rowsHtml = '';
                     ordersList.forEach(order => {
                         const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
+                        const busNameOnly = extractBusinessName(order.pickupAddress);
                         rowsHtml += `
                             <tr class="border-b hover:bg-gray-50">
                                 <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
-                                <td class="p-3 text-xs text-gray-700">${order.pickupAddress}</td>
-                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br><span class="text-xs font-extrabold text-emerald-700">£${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
+                                <td class="p-3">
+                                    <span class="font-bold text-gray-900 block">${busNameOnly}</span>
+                                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs inline-block mt-1">${order.deliveryPlatform || 'Misc'}</span>
+                                </td>
+                                <td class="p-3 text-xs text-gray-700">${order.dropoffAddress}<br><span class="font-extrabold text-emerald-700">£${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
                                 <td class="p-3 font-semibold">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</td>
                             </tr>`;
                     });
