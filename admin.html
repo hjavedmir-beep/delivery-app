@@ -238,7 +238,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: Manage Businesses Page (Updated Side-by-Side Layout) -->
+        <!-- TAB 4: Manage Businesses Page -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
                 <!-- Left Column: Add New Business Form -->
@@ -716,8 +716,8 @@
                         const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
                         const busNameOnly = extractBusinessName(order.pickupAddress);
                         
-                        // Using strictly the saved server timestamps without fallback to updatedAt/createdAt
-                        const pickupRaw = order.pickedUpAt;
+                        // Robust fallback for pickup timestamp across different server schema versions
+                        const pickupRaw = order.pickedUpAt || order.pickupTime || order.picked_up_at;
                         const deliveredRaw = order.deliveredAt;
 
                         const pickupTimeStr = pickupRaw ? new Date(pickupRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
@@ -789,7 +789,7 @@
                 const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
                 const busNameOnly = extractBusinessName(order.pickupAddress);
                 
-                const pickupRaw = order.pickedUpAt;
+                const pickupRaw = order.pickedUpAt || order.pickupTime || order.picked_up_at;
                 const deliveredRaw = order.deliveredAt;
 
                 const pickupTimeStr = pickupRaw ? new Date(pickupRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
@@ -867,7 +867,7 @@
                 const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
                 const busNameOnly = extractBusinessName(order.pickupAddress);
                 
-                const pickupRaw = order.pickedUpAt;
+                const pickupRaw = order.pickedUpAt || order.pickupTime || order.picked_up_at;
                 const deliveredRaw = order.deliveredAt;
 
                 const pickupTimeStr = pickupRaw ? new Date(pickupRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
