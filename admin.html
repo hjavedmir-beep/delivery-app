@@ -38,6 +38,19 @@
                                 <input type="text" id="orderCustPhone" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                             </div>
                         </div>
+
+                        <!-- Delivery Platform / Type Field (Customer Phone کے بالکل نیچے) -->
+                        <div>
+                            <label class="block font-semibold text-gray-700">Delivery Platform / Type</label>
+                            <select id="orderDeliveryPlatform" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="Justeat">Justeat</option>
+                                <option value="Ubereats">Ubereats</option>
+                                <option value="Deliveroo">Deliveroo</option>
+                                <option value="Pepes App">Pepes App</option>
+                                <option value="Misc">Misc.</option>
+                            </select>
+                        </div>
+
                         <div>
                             <label class="block font-semibold text-gray-700">Pickup Business (Registered)</label>
                             <select id="orderPickup" onchange="calculateOrderDistance()" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -102,7 +115,7 @@
                             <thead>
                                 <tr class="bg-gray-50 text-gray-800 border-b font-bold">
                                     <th class="p-3">ID & Customer</th>
-                                    <th class="p-3">Route & Price</th>
+                                    <th class="p-3">Platform & Route</th>
                                     <th class="p-3">Assigned Driver (Online Only)</th>
                                     <th class="p-3">Status</th>
                                 </tr>
@@ -130,7 +143,7 @@
                             <thead>
                                 <tr class="bg-gray-50 text-gray-800 border-b font-bold sticky top-0">
                                     <th class="p-3">ID & Customer</th>
-                                    <th class="p-3">Route</th>
+                                    <th class="p-3">Platform & Route</th>
                                     <th class="p-3">Delivered By</th>
                                     <th class="p-3">Status</th>
                                 </tr>
@@ -181,10 +194,9 @@
             </div>
         </div>
 
-        <!-- TAB 4: Manage Businesses Page (Updated with Delivery Details & Stats) -->
+        <!-- TAB 4: Manage Businesses Page -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <!-- Add Business Form -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
                     <form id="addBusinessForm" onsubmit="handleAddBusiness(event)" class="space-y-3 text-sm">
@@ -218,7 +230,6 @@
                     </form>
                 </div>
 
-                <!-- Add Daily Delivery Stats Form -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add Daily Delivery Details</h2>
                     <form id="deliveryStatsForm" onsubmit="handleAddDeliveryStats(event)" class="space-y-3 text-sm">
@@ -257,7 +268,6 @@
                 </div>
             </div>
 
-            <!-- Registered Businesses & Delivery Breakdown Directory -->
             <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                 <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses & Delivery Breakdown</h2>
                 <div id="businessesListContainer" class="space-y-4 text-sm max-h-[500px] overflow-y-auto">
@@ -598,6 +608,7 @@
             const orderData = {
                 customerName: document.getElementById('orderCustName').value.trim(),
                 customerPhone: document.getElementById('orderCustPhone').value.trim(),
+                deliveryPlatform: document.getElementById('orderDeliveryPlatform').value,
                 pickupAddress: document.getElementById('orderPickup').value.trim(),
                 dropoffAddress: `${document.getElementById('dropoffAddress1').value.trim()}, ${document.getElementById('dropoffRegion').value.trim()} - ${document.getElementById('dropoffPostcode').value.trim().toUpperCase()}`,
                 specialNotes: document.getElementById('orderNotes').value.trim(),
@@ -639,7 +650,7 @@
                     activeTable.innerHTML += `
                         <tr class="border-b hover:bg-gray-50">
                             <td class="p-3 font-bold">#${order.id} - ${order.customerName}<br><span class="text-xs text-gray-600 font-normal">${order.customerPhone}</span></td>
-                            <td class="p-3">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}<br><span class="text-xs font-extrabold text-emerald-700">Fee: £${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
+                            <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}<br><span class="text-xs font-extrabold text-emerald-700">Fee: £${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
                             <td class="p-3"><select onchange="assignDriver('${order.id}', this.value)" class="border p-2 rounded-lg text-sm font-semibold w-full bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">${optionsHtml}</select></td>
                             <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg font-bold text-xs">${order.status || 'Pending'}</span></td>
                         </tr>`;
@@ -652,7 +663,7 @@
                     completedTable.innerHTML += `
                         <tr class="border-b hover:bg-gray-50">
                             <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
-                            <td class="p-3">From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                            <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
                             <td class="p-3 font-semibold">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</td>
                             <td class="p-3"><span class="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
                         </tr>`;
