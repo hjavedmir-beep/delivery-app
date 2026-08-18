@@ -49,12 +49,13 @@ const driverSchema = new mongoose.Schema({
     mobile: String,
     email: { type: String, unique: true, sparse: true },
     address: String,
-    password: { type: String, default: '' }, // پاسورڈ اب آپشنل ہے
+    password: { type: String, default: '' },
     status: String,
     resetCode: String
 });
 const Driver = mongoose.model('Driver', driverSchema);
 
+// بزنس اسکیما میں ڈیلیوری ریکارڈز کا ایرے شامل کر دیا گیا ہے
 const businessSchema = new mongoose.Schema({
     id: { type: String, unique: true },
     name: String,
@@ -64,7 +65,15 @@ const businessSchema = new mongoose.Schema({
     postcode: String,
     area: String,
     lat: Number,
-    lng: Number
+    lng: Number,
+    deliveriesStats: [
+        {
+            date: String,
+            platform: String, // Justeat, Ubereats, Deliveroo, Pepes App, Misc
+            totalDeliveries: Number,
+            totalRevenue: Number
+        }
+    ]
 });
 const Business = mongoose.model('Business', businessSchema);
 
@@ -163,10 +172,32 @@ app.post('/api/businesses', async (req, res) => {
             postcode: req.body.postcode,
             area: req.body.area,
             lat: req.body.lat,
-            lng: req.body.lng
+            lng: req.body.lng,
+            deliveriesStats: []
         });
         await newBusiness.save();
         res.status(201).json({ success: true, message: 'Business created', business: newBusiness });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// بزنس کے لیے ڈیلیوری اسٹیٹس ایڈ کرنے کا نیا API روٹ
+app.post('/api/businesses/delivery-stats', async (req, res) => {
+    try {
+        const { businessId, date, platform, totalDeliveries, totalRevenue } = req.body;
+        const business = await Business.findOne({ id: String(businessId) });
+        if (!business) return res.status(404).json({ error: 'Business not found' });
+
+        business.deliveriesStats.push({
+            date,
+            platform,
+            totalDeliveries: Number(totalDeliveries),
+            totalRevenue: Number(totalRevenue)
+        });
+
+        await business.save();
+        res.json({ success: true, message: 'Delivery stats added successfully', business });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -191,7 +222,7 @@ app.post('/api/drivers/signup', async (req, res) => {
             mobile: req.body.mobile,
             email: req.body.email,
             address: req.body.address,
-            password: '', // سائن اپ کے وقت پاسورڈ خالی رکھا جائے گا
+            password: '',
             status: 'Pending'
         });
         await newDriver.save();
@@ -210,16 +241,11 @@ app.get('/api/drivers', async (req, res) => {
     }
 });
 
-// --- Driver Delete API (New Added Route) ---
 app.delete('/api/drivers/:id', async (req, res) => {
     try {
         const driverId = String(req.params.id);
         const deletedDriver = await Driver.findOneAndDelete({ id: driverId });
-        
-        if (!deletedDriver) {
-            return res.status(404).json({ error: 'Driver not found' });
-        }
-        
+        if (!deletedDriver) return res.status(404).json({ error: 'Driver not found' });
         res.json({ success: true, message: 'Driver deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -230,7 +256,6 @@ app.post('/api/drivers/status', async (req, res) => {
     try {
         const driver = await Driver.findOne({ id: String(req.body.driverId) });
         if (!driver) return res.status(404).json({ error: 'Driver not found' });
-
         driver.status = req.body.status;
         await driver.save();
         res.json({ message: 'Driver status updated', driver });
@@ -239,16 +264,12 @@ app.post('/api/drivers/status', async (req, res) => {
     }
 });
 
-// اپروول کے دوران پاسورڈ سیٹ کرنے کا روٹ
 app.post('/api/drivers/approve', async (req, res) => {
     try {
         const { driverId, password } = req.body;
         const driver = await Driver.findOne({ id: String(driverId) });
         if (!driver) return res.status(404).json({ error: 'Driver not found' });
-
-        if (password) {
-            driver.password = password;
-        }
+        if (password) driver.password = password;
         driver.status = 'Approved';
         await driver.save();
         res.json({ success: true, message: 'Driver approved and password set', driver });
@@ -262,9 +283,7 @@ app.post('/api/driver/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
         const driver = await Driver.findOne({ email: email.trim() });
-        if (!driver) {
-            return res.status(404).json({ error: 'No driver account found with this email address.' });
-        }
+        if (!driver) return res.status(404).json({ error: 'No driver account found with this email address.' });
 
         const resetCode = Math.floor(1000 + Math.random() * 9000).toString();
         driver.resetCode = resetCode;
@@ -274,42 +293,31 @@ app.post('/api/driver/forgot-password', async (req, res) => {
             from: 'officedeskmh@gmail.com',
             to: driver.email,
             subject: 'Swifty Delivery - Password Reset Code',
-            text: `Hello ${driver.firstName},\n\nYour password reset verification code is: ${resetCode}\n\nPlease enter this code in the app to reset your password.`,
-            html: `<strong>Hello ${driver.firstName},</strong><br><br>Your password reset verification code is: <b>${resetCode}</b><br><br>Please enter this code in the app to reset your password.`
+            text: `Hello ${driver.firstName},\n\nYour password reset verification code is: ${resetCode}`
         };
 
         await transporter.sendMail(mailOptions);
         res.json({ success: true, message: 'Verification code sent to your email successfully!' });
     } catch (err) {
-        console.error('Nodemailer error:', err);
-        res.status(500).json({ error: 'Failed to send email. Please check server email configuration.' });
+        res.status(500).json({ error: 'Failed to send email.' });
     }
-});
-
-app.post('/api/driver/verify-reset-code', async (res, req) => {
-    // Note: Parameter order fixed just in case, though standard is (req, res)
 });
 
 app.post('/api/driver/verify-reset-code', async (req, res) => {
     try {
         const { email, code, newPassword } = req.body;
         const driver = await Driver.findOne({ email: email.trim() });
-        
-        if (!driver || driver.resetCode !== code) {
-            return res.status(400).json({ error: 'Invalid verification code.' });
-        }
+        if (!driver || driver.resetCode !== code) return res.status(400).json({ error: 'Invalid verification code.' });
 
         driver.password = newPassword;
         driver.resetCode = undefined;
         await driver.save();
-
         res.json({ success: true, message: 'Password updated successfully!' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// --- Live Location Tracking ---
 let driverLocations = {};
 
 app.post('/api/driver/location', (req, res) => {
