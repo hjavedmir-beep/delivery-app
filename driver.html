@@ -27,12 +27,6 @@
             </div>
             <button onclick="logoutDriver()" id="logoutBtn" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1 rounded-lg font-bold text-xs transition hidden">Logout</button>
         </div>
-
-        <!-- Replaced Daily/Weekly/Monthly with Assigned Orders & Completed Orders Tabs -->
-        <div id="walletTabsContainer" class="flex bg-emerald-700/80 p-1 rounded-2xl text-xs font-semibold gap-1 border border-emerald-500 hidden">
-            <button onclick="switchWalletTab('assigned')" id="walletTabAssigned" class="flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center">Assigned Orders</button>
-            <button onclick="switchWalletTab('completed')" id="walletTabCompleted" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Completed Orders</button>
-        </div>
     </div>
 
     <!-- NEW ORDER POPUP MODAL -->
@@ -61,7 +55,7 @@
         </div>
     </div>
 
-    <!-- FORGOT PASSWORD MODAL (Step 1: Enter Email) -->
+    <!-- FORGOT PASSWORD MODAL -->
     <div id="forgotPasswordModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden backdrop-blur-sm">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-100">
             <div class="flex justify-between items-center border-b pb-2">
@@ -81,7 +75,7 @@
         </div>
     </div>
 
-    <!-- RESET PASSWORD NEW MODAL (Step 2: Enter Code & New Password) -->
+    <!-- RESET PASSWORD NEW MODAL -->
     <div id="resetPasswordModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden backdrop-blur-sm">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-100">
             <div class="flex justify-between items-center border-b pb-2">
@@ -125,7 +119,6 @@
                     <input type="password" id="signinPassword" required class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="Enter your password">
                 </div>
                 
-                <!-- Forgot Password Link -->
                 <div class="text-right">
                     <button type="button" onclick="openForgotPasswordModal()" class="text-xs text-emerald-600 font-bold hover:underline">Forgot Password?</button>
                 </div>
@@ -239,6 +232,12 @@
                     </div>
                 </div>
 
+                <!-- Assigned / Completed Toggle Tabs (Only inside Orders Tab) -->
+                <div class="flex bg-emerald-700/80 p-1 rounded-2xl text-xs font-semibold gap-1 border border-emerald-500">
+                    <button onclick="switchOrderViewTab('assigned')" id="orderViewTabAssigned" class="flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center">Assigned Orders</button>
+                    <button onclick="switchOrderViewTab('completed')" id="orderViewTabCompleted" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Completed Orders</button>
+                </div>
+
                 <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100">
                     <div class="flex justify-between items-center border-b pb-2">
                         <h3 id="ordersSectionTitle" class="font-bold text-base text-gray-800">📦 Assigned Delivery Orders</h3>
@@ -298,7 +297,7 @@
         let pendingAlertOrderId = null;
         let lastNotifiedOrderId = null;
         let resetEmailTarget = null;
-        let currentOrderViewFilter = 'assigned'; // tracks active sub-tab ('assigned' or 'completed')
+        let currentOrderViewFilter = 'assigned';
 
         function playBeepSound() {
             try {
@@ -482,16 +481,16 @@
             }
         }
 
-        function switchWalletTab(filter) {
+        function switchOrderViewTab(filter) {
             currentOrderViewFilter = filter;
-            document.getElementById('walletTabAssigned').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
-            document.getElementById('walletTabCompleted').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
+            document.getElementById('orderViewTabAssigned').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
+            document.getElementById('orderViewTabCompleted').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
 
             if (filter === 'assigned') {
-                document.getElementById('walletTabAssigned').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
+                document.getElementById('orderViewTabAssigned').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
                 document.getElementById('ordersSectionTitle').innerText = '📦 Assigned Delivery Orders';
             } else if (filter === 'completed') {
-                document.getElementById('walletTabCompleted').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
+                document.getElementById('orderViewTabCompleted').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
                 document.getElementById('ordersSectionTitle').innerText = '✅ Completed Delivery Orders';
             }
             fetchDriverAssignedOrders();
@@ -520,7 +519,6 @@
             localStorage.setItem('logged_in_driver', JSON.stringify(drv));
 
             document.getElementById('authCard').classList.add('hidden');
-            document.getElementById('walletTabsContainer').classList.remove('hidden');
             document.getElementById('bottomNav').classList.remove('hidden');
             document.getElementById('driverDashboard').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
@@ -549,7 +547,6 @@
             currentDriver = null;
             clearInterval(orderPollInterval);
             document.getElementById('driverDashboard').classList.add('hidden');
-            document.getElementById('walletTabsContainer').classList.add('hidden');
             document.getElementById('bottomNav').classList.add('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
             document.getElementById('authCard').classList.remove('hidden');
