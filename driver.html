@@ -28,10 +28,10 @@
             <button onclick="logoutDriver()" id="logoutBtn" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1 rounded-lg font-bold text-xs transition hidden">Logout</button>
         </div>
 
+        <!-- Replaced Daily/Weekly/Monthly with Assigned Orders & Completed Orders Tabs -->
         <div id="walletTabsContainer" class="flex bg-emerald-700/80 p-1 rounded-2xl text-xs font-semibold gap-1 border border-emerald-500 hidden">
-            <button onclick="switchWalletTab('daily')" id="walletTabDaily" class="flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center">Daily</button>
-            <button onclick="switchWalletTab('weekly')" id="walletTabWeekly" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Weekly</button>
-            <button onclick="switchWalletTab('monthly')" id="walletTabMonthly" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Monthly</button>
+            <button onclick="switchWalletTab('assigned')" id="walletTabAssigned" class="flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center">Assigned Orders</button>
+            <button onclick="switchWalletTab('completed')" id="walletTabCompleted" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Completed Orders</button>
         </div>
     </div>
 
@@ -133,7 +133,7 @@
                 <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-4 text-base rounded-xl font-extrabold transition shadow-md">Sign In</button>
             </form>
 
-            <!-- Sign Up Form (پاسورڈ کے بغیر) -->
+            <!-- Sign Up Form -->
             <form id="signupForm" onsubmit="handleSignUp(event)" class="space-y-3 text-sm pt-2 hidden">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -241,7 +241,7 @@
 
                 <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100">
                     <div class="flex justify-between items-center border-b pb-2">
-                        <h3 class="font-bold text-base text-gray-800">📦 Assigned Delivery Orders</h3>
+                        <h3 id="ordersSectionTitle" class="font-bold text-base text-gray-800">📦 Assigned Delivery Orders</h3>
                         <button onclick="fetchDriverAssignedOrders()" class="text-xs text-emerald-600 font-bold hover:underline">Refresh</button>
                     </div>
                     <div id="assignedOrdersContainer" class="space-y-3">
@@ -298,6 +298,7 @@
         let pendingAlertOrderId = null;
         let lastNotifiedOrderId = null;
         let resetEmailTarget = null;
+        let currentOrderViewFilter = 'assigned'; // tracks active sub-tab ('assigned' or 'completed')
 
         function playBeepSound() {
             try {
@@ -482,19 +483,16 @@
         }
 
         function switchWalletTab(filter) {
-            document.getElementById('walletTabDaily').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
-            document.getElementById('walletTabWeekly').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
-            document.getElementById('walletTabMonthly').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
+            currentOrderViewFilter = filter;
+            document.getElementById('walletTabAssigned').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
+            document.getElementById('walletTabCompleted').className = 'flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center';
 
-            if (filter === 'daily') {
-                document.getElementById('walletTabDaily').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
-                document.getElementById('walletEarningsLabel').innerText = "Today's earnings";
-            } else if (filter === 'weekly') {
-                document.getElementById('walletTabWeekly').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
-                document.getElementById('walletEarningsLabel').innerText = "This week's earnings";
-            } else if (filter === 'monthly') {
-                document.getElementById('walletTabMonthly').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
-                document.getElementById('walletEarningsLabel').innerText = "This month's earnings";
+            if (filter === 'assigned') {
+                document.getElementById('walletTabAssigned').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
+                document.getElementById('ordersSectionTitle').innerText = '📦 Assigned Delivery Orders';
+            } else if (filter === 'completed') {
+                document.getElementById('walletTabCompleted').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
+                document.getElementById('ordersSectionTitle').innerText = '✅ Completed Delivery Orders';
             }
             fetchDriverAssignedOrders();
         }
@@ -666,6 +664,7 @@
 
                 const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
                 const completedOrders = myOrders.filter(o => o.status === 'Delivered');
+                const activeOrders = myOrders.filter(o => o.status !== 'Delivered');
                 
                 let totalEarned = 0;
                 completedOrders.forEach(o => {
@@ -693,13 +692,16 @@
                 }
 
                 const container = document.getElementById('assignedOrdersContainer');
-                if (myOrders.length === 0) {
-                    container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold text-xs">No active orders assigned to you right now.</p>`;
+                const ordersToDisplay = currentOrderViewFilter === 'completed' ? completedOrders : activeOrders;
+
+                if (ordersToDisplay.length === 0) {
+                    const emptyMsg = currentOrderViewFilter === 'completed' ? 'No completed orders found.' : 'No active orders assigned to you right now.';
+                    container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold text-xs">${emptyMsg}</p>`;
                     return;
                 }
 
                 container.innerHTML = '';
-                myOrders.forEach(order => {
+                ordersToDisplay.forEach(order => {
                     const status = order.status || 'Assigned';
                     const isDelivered = status === 'Delivered';
                     const isCollected = status === 'Collected' || isDelivered;
