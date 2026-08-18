@@ -663,7 +663,7 @@
         }
 
         function getPlatformDetails(rawPlatformString) {
-            const val = (rawPlatformString || 'Misc').toUpperCase();
+            const val = (rawPlatformString || 'Misc').toUpperCase().replace(/[^A-Z]/g, '');
             
             if (val.includes('DELIVEROO')) {
                 return { name: 'DELIVEROO', bgClass: 'bg-sky-400' };
@@ -850,3 +850,4 @@
     </script>
 </body>
 </html>
+```[cite: 2]
