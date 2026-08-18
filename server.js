@@ -33,6 +33,7 @@ const orderSchema = new mongoose.Schema({
     id: { type: String, unique: true },
     customerName: String,
     customerPhone: String,
+    deliveryPlatform: String, // Justeat, Ubereats, Deliveroo, Pepes App, Misc
     pickupAddress: String,
     dropoffAddress: String,
     notes: String,
@@ -55,7 +56,6 @@ const driverSchema = new mongoose.Schema({
 });
 const Driver = mongoose.model('Driver', driverSchema);
 
-// بزنس اسکیما میں ڈیلیوری ریکارڈز کا ایرے شامل کر دیا گیا ہے
 const businessSchema = new mongoose.Schema({
     id: { type: String, unique: true },
     name: String,
@@ -69,7 +69,7 @@ const businessSchema = new mongoose.Schema({
     deliveriesStats: [
         {
             date: String,
-            platform: String, // Justeat, Ubereats, Deliveroo, Pepes App, Misc
+            platform: String,
             totalDeliveries: Number,
             totalRevenue: Number
         }
@@ -101,6 +101,7 @@ app.post('/api/orders', async (req, res) => {
             id: Date.now().toString().slice(-4),
             customerName: req.body.customerName,
             customerPhone: req.body.customerPhone,
+            deliveryPlatform: req.body.deliveryPlatform || 'Misc',
             pickupAddress: req.body.pickupAddress,
             dropoffAddress: req.body.dropoffAddress,
             notes: req.body.notes || req.body.specialNotes || '',
@@ -182,7 +183,6 @@ app.post('/api/businesses', async (req, res) => {
     }
 });
 
-// بزنس کے لیے ڈیلیوری اسٹیٹس ایڈ کرنے کا نیا API روٹ
 app.post('/api/businesses/delivery-stats', async (req, res) => {
     try {
         const { businessId, date, platform, totalDeliveries, totalRevenue } = req.body;
