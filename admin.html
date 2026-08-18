@@ -158,7 +158,7 @@
             </div>
         </div>
 
-        <!-- TAB: Dedicated Orders Page -->
+        <!-- TAB: Dedicated Orders Page (Active & Completed) -->
         <div id="tabContentOrders" class="space-y-5 hidden">
             <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                 <h2 class="font-bold text-base text-gray-800 border-b pb-2">All Active Orders Directory</h2>
@@ -174,6 +174,25 @@
                         </thead>
                         <tbody id="dedicatedActiveOrdersTableBody">
                             <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">Loading orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
+                <h2 class="font-bold text-base text-gray-800 border-b pb-2">Completed Orders History</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-800 border-b font-bold">
+                                <th class="p-3">ID & Customer</th>
+                                <th class="p-3">Platform & Route</th>
+                                <th class="p-3">Delivered By</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dedicatedCompletedOrdersTableBody">
+                            <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -217,7 +236,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: Manage Businesses Page -->
+        <!-- TAB 4: Manage Businesses Page (Now including Business & Completed Orders Info) -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
             <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600 max-w-2xl mx-auto">
                 <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
@@ -256,6 +275,25 @@
                 <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory</h2>
                 <div id="businessesListContainer" class="space-y-4 text-sm max-h-[500px] overflow-y-auto">
                     <p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
+                <h2 class="font-bold text-base text-gray-800 border-b pb-2">Business Completed Orders Summary</h2>
+                <div class="overflow-x-auto max-h-[350px] overflow-y-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-800 border-b font-bold sticky top-0">
+                                <th class="p-3">ID & Customer</th>
+                                <th class="p-3">Pickup Location</th>
+                                <th class="p-3">Platform & Fee</th>
+                                <th class="p-3">Delivered By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="businessCompletedOrdersTableBody">
+                            <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found for businesses.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -557,12 +595,14 @@
                 const activeTable = document.getElementById('activeOrdersTableBody');
                 const completedTable = document.getElementById('completedOrdersTableBody');
                 const dedicatedActiveTable = document.getElementById('dedicatedActiveOrdersTableBody');
+                const dedicatedCompletedTable = document.getElementById('dedicatedCompletedOrdersTableBody');
+                const businessCompletedTable = document.getElementById('businessCompletedOrdersTableBody');
                 
                 const activeOrders = allOrdersCache.filter(o => o.status !== 'Delivered');
                 const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
                 const onlineDrivers = registeredDriversCache.filter(d => d.status === 'Approved' && onlineDriversCache[d.id]?.lat);
 
-                const renderOrdersRows = (ordersList) => {
+                const renderActiveRows = (ordersList) => {
                     if (ordersList.length === 0) return `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
                     let rowsHtml = '';
                     ordersList.forEach(order => {
@@ -581,23 +621,46 @@
                     return rowsHtml;
                 };
 
-                activeTable.innerHTML = renderOrdersRows(activeOrders);
-                if (dedicatedActiveTable) {
-                    dedicatedActiveTable.innerHTML = renderOrdersRows(activeOrders);
-                }
+                const renderCompletedRows = (ordersList) => {
+                    if (ordersList.length === 0) return `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>`;
+                    let rowsHtml = '';
+                    ordersList.forEach(order => {
+                        const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
+                        rowsHtml += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
+                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
+                                <td class="p-3 font-semibold">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</td>
+                                <td class="p-3"><span class="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
+                            </tr>`;
+                    });
+                    return rowsHtml;
+                };
+
+                const renderBusinessCompletedRows = (ordersList) => {
+                    if (ordersList.length === 0) return `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found for businesses.</td></tr>`;
+                    let rowsHtml = '';
+                    ordersList.forEach(order => {
+                        const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
+                        rowsHtml += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
+                                <td class="p-3 text-xs text-gray-700">${order.pickupAddress}</td>
+                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br><span class="text-xs font-extrabold text-emerald-700">£${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
+                                <td class="p-3 font-semibold">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</td>
+                            </tr>`;
+                    });
+                    return rowsHtml;
+                };
+
+                activeTable.innerHTML = renderActiveRows(activeOrders);
+                if (dedicatedActiveTable) dedicatedActiveTable.innerHTML = renderActiveRows(activeOrders);
 
                 document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
-                completedTable.innerHTML = completedOrders.length === 0 ? `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>` : '';
-                completedOrders.forEach(order => {
-                    const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
-                    completedTable.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-3 font-bold">#${order.id} - ${order.customerName}</td>
-                            <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}</td>
-                            <td class="p-3 font-semibold">${drv ? `${drv.firstName} ${drv.surname}` : 'N/A'}</td>
-                            <td class="p-3"><span class="bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-lg font-bold text-xs">Delivered</span></td>
-                        </tr>`;
-                });
+                completedTable.innerHTML = renderCompletedRows(completedOrders);
+                if (dedicatedCompletedTable) dedicatedCompletedTable.innerHTML = renderCompletedRows(completedOrders);
+                if (businessCompletedTable) businessCompletedTable.innerHTML = renderBusinessCompletedRows(completedOrders);
+
             } catch (e) { console.error('Error fetching orders:', e); }
         }
 
