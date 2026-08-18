@@ -4,14 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swifty Dashboard</title>
-    <!-- Tailwind CSS CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-sm">
 
-    <!-- Top Navigation Bar (Enlarged and Green Theme) -->
     <header class="bg-emerald-700 text-white shadow-lg py-6 px-8 flex justify-between items-center">
         <h1 class="text-3xl font-extrabold tracking-wide">Swifty Dashboard</h1>
         <div class="space-x-2 flex flex-wrap gap-2">
@@ -26,11 +24,7 @@
         
         <!-- MAIN DASHBOARD / FRONT SCREEN -->
         <div id="tabContentActive" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            
-            <!-- LEFT COLUMN: Create Order Form, Live Drivers List -->
             <div class="lg:col-span-4 space-y-5">
-                
-                <!-- Create New Order Form -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Create New Order</h2>
                     <form id="createOrderForm" onsubmit="handleCreateOrder(event)" class="space-y-3 text-sm">
@@ -51,7 +45,6 @@
                             </select>
                         </div>
 
-                        <!-- Structured Drop-off Address Section -->
                         <div class="space-y-2 border-t pt-2">
                             <label class="block font-bold text-gray-800">Drop-off Address</label>
                             <div>
@@ -72,7 +65,6 @@
                             </div>
                         </div>
 
-                        <!-- Distance & Mileage Pricing Widget -->
                         <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg flex items-center justify-between">
                             <div>
                                <span class="block text-xs font-bold text-emerald-800 uppercase tracking-wide">Route & Delivery Price</span>
@@ -91,26 +83,18 @@
                     </form>
                 </div>
 
-                <!-- Live Drivers Location Widget -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-2 border-t-4 border-emerald-600">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Live Drivers Location</h2>
-                    <div id="liveDriversListWidget" class="text-sm text-gray-600 py-1 font-medium">
-                        No active drivers online.
-                    </div>
+                    <div id="liveDriversListWidget" class="text-sm text-gray-600 py-1 font-medium">No active drivers online.</div>
                 </div>
 
-                <!-- Small Map Widget on Dashboard -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-2 border-t-4 border-emerald-600">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Quick Map Preview</h2>
                     <div id="adminMap" class="w-full h-[200px] rounded-lg"></div>
                 </div>
-
             </div>
 
-            <!-- RIGHT COLUMN: Active Orders Table & Completed Orders Table -->
             <div class="lg:col-span-8 space-y-5">
-                
-                <!-- Active Orders Table Section -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Active Orders & Assignment</h2>
                     <div class="overflow-x-auto">
@@ -130,7 +114,6 @@
                     </div>
                 </div>
 
-                <!-- Completed / Delivered Orders Table Section -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                     <div class="flex justify-between items-center border-b pb-2">
                         <div class="flex items-center space-x-2">
@@ -158,9 +141,7 @@
                         </table>
                     </div>
                 </div>
-
             </div>
-
         </div>
 
         <!-- TAB 2: Dedicated Live Map View -->
@@ -179,8 +160,6 @@
 
         <!-- TAB 3: Manage Drivers Page -->
         <div id="tabContentDrivers" class="space-y-5 hidden">
-            
-            <!-- SECTION A: Driver Directory & Approvals -->
             <div class="bg-white p-5 rounded-xl shadow-md space-y-4 border-t-4 border-emerald-600">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h2 class="font-bold text-base text-gray-800">👤 Driver Directory & Approvals</h2>
@@ -191,7 +170,6 @@
                 </div>
             </div>
 
-            <!-- SECTION B: Real-Time Shift History & Earnings Log -->
             <div class="bg-white p-5 rounded-xl shadow-md space-y-4 border-t-4 border-emerald-600">
                 <div class="border-b pb-2">
                     <h2 class="font-bold text-base text-gray-800">💰 Driver Accepted Deliveries & Earnings Log</h2>
@@ -201,10 +179,9 @@
                     <p class="text-gray-400 text-center py-6 font-semibold">No shift history available.</p>
                 </div>
             </div>
-
         </div>
 
-        <!-- TAB 4: Manage Businesses Page -->
+        <!-- TAB 4: Manage Businesses Page (Updated with Delivery Details & Stats) -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Add Business Form -->
@@ -241,12 +218,50 @@
                     </form>
                 </div>
 
-                <!-- List Registered Businesses Directory -->
+                <!-- Add Daily Delivery Stats Form -->
                 <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
-                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory</h2>
-                    <div id="businessesListContainer" class="space-y-3 text-sm max-h-[380px] overflow-y-auto">
-                        <p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>
-                    </div>
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add Daily Delivery Details</h2>
+                    <form id="deliveryStatsForm" onsubmit="handleAddDeliveryStats(event)" class="space-y-3 text-sm">
+                        <div>
+                            <label class="block font-semibold text-gray-700">Select Business</label>
+                            <select id="statBusinessSelect" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="">Select Registered Business</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Delivery Platform / Type</label>
+                            <select id="statPlatform" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="Justeat">Justeat</option>
+                                <option value="Ubereats">Ubereats</option>
+                                <option value="Deliveroo">Deliveroo</option>
+                                <option value="Pepes App">Pepes App</option>
+                                <option value="Misc">Misc.</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Date</label>
+                            <input type="date" id="statDate" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold text-gray-700">No. of Deliveries</label>
+                                <input type="number" id="statDeliveriesCount" placeholder="e.g. 45" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-gray-700">Total Revenue (£)</label>
+                                <input type="number" step="0.01" id="statRevenue" placeholder="e.g. 540.00" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg font-bold text-base transition">Save Delivery Stats</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Registered Businesses & Delivery Breakdown Directory -->
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
+                <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses & Delivery Breakdown</h2>
+                <div id="businessesListContainer" class="space-y-4 text-sm max-h-[500px] overflow-y-auto">
+                    <p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>
                 </div>
             </div>
         </div>
@@ -286,7 +301,6 @@
         let dropoffCoords = { lat: null, lng: null };
         let pendingApprovalDriverId = null;
 
-        // Custom Leaflet Icons (Green/Emerald Theme)
         const carIcon = L.divIcon({
             className: 'custom-car-marker',
             html: '<div style="background-color: #059669; color: white; padding: 6px 10px; border-radius: 9999px; font-weight: bold; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px; border: 2px solid white;">🚗 Car</div>',
@@ -433,14 +447,25 @@
 
         function loadRegisteredBusinesses() {
             const pickupSelect = document.getElementById('orderPickup');
-            if (!pickupSelect) return;
-            let optionsHtml = '<option value="">Select Registered Business</option>';
-            registeredBusinessesCache.forEach(b => {
-                const addr2 = b.address2 ? `, ${b.address2}` : '';
-                const fullAddress = `${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode}`;
-                optionsHtml += `<option value="${b.name} (${fullAddress})">${b.name} - ${fullAddress}</option>`;
-            });
-            pickupSelect.innerHTML = optionsHtml;
+            const statBusinessSelect = document.getElementById('statBusinessSelect');
+            
+            if (pickupSelect) {
+                let optionsHtml = '<option value="">Select Registered Business</option>';
+                registeredBusinessesCache.forEach(b => {
+                    const addr2 = b.address2 ? `, ${b.address2}` : '';
+                    const fullAddress = `${b.address1}${addr2}, ${b.area ? b.area + ' - ' : ''}${b.postcode}`;
+                    optionsHtml += `<option value="${b.name} (${fullAddress})">${b.name} - ${fullAddress}</option>`;
+                });
+                pickupSelect.innerHTML = optionsHtml;
+            }
+
+            if (statBusinessSelect) {
+                let statOptionsHtml = '<option value="">Select Registered Business</option>';
+                registeredBusinessesCache.forEach(b => {
+                    statOptionsHtml += `<option value="${b.id}">${b.name} (${b.postcode})</option>`;
+                });
+                statBusinessSelect.innerHTML = statOptionsHtml;
+            }
         }
 
         async function handleAddBusiness(e) {
@@ -477,6 +502,33 @@
             } catch (err) { console.error('Error adding business:', err); }
         }
 
+        async function handleAddDeliveryStats(e) {
+            e.preventDefault();
+            const businessId = document.getElementById('statBusinessSelect').value;
+            const platform = document.getElementById('statPlatform').value;
+            const date = document.getElementById('statDate').value;
+            const totalDeliveries = document.getElementById('statDeliveriesCount').value;
+            const totalRevenue = document.getElementById('statRevenue').value;
+
+            try {
+                const res = await fetch(`${API_URL}/businesses/delivery-stats`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ businessId, date, platform, totalDeliveries, totalRevenue })
+                });
+                if (res.ok) {
+                    alert('Delivery stats added successfully!');
+                    document.getElementById('deliveryStatsForm').reset();
+                    fetchBusinesses();
+                } else {
+                    alert('Failed to save delivery stats.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection error.');
+            }
+        }
+
         function loadBusinessesManagement() {
             const container = document.getElementById('businessesListContainer');
             if (!container) return;
@@ -487,13 +539,47 @@
             container.innerHTML = '';
             registeredBusinessesCache.forEach((b) => {
                 const addr2Str = b.address2 ? `, ${b.address2}` : '';
+                
+                let statsRows = '';
+                if (b.deliveriesStats && b.deliveriesStats.length > 0) {
+                    b.deliveriesStats.forEach(stat => {
+                        statsRows += `
+                            <tr class="border-b text-xs">
+                                <td class="p-2">${stat.date}</td>
+                                <td class="p-2 font-bold text-emerald-700">${stat.platform}</td>
+                                <td class="p-2">${stat.totalDeliveries} deliveries</td>
+                                <td class="p-2 font-bold">£${Number(stat.totalRevenue || 0).toFixed(2)}</td>
+                            </tr>`;
+                    });
+                } else {
+                    statsRows = `<tr><td colspan="4" class="text-center py-3 text-gray-400 text-xs">No delivery details added yet.</td></tr>`;
+                }
+
                 container.innerHTML += `
-                    <div class="bg-gray-50 p-3.5 rounded-xl border flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-gray-900 text-base">${b.name} <span class="text-gray-500 font-normal text-sm">(${b.phone})</span></p>
-                            <p class="text-gray-700 text-xs mt-0.5">${b.address1}${addr2Str}, ${b.postcode} <span class="text-emerald-700 font-bold">(${b.area})</span></p>
+                    <div class="bg-gray-50 p-4 rounded-xl border space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-gray-900 text-base">${b.name} <span class="text-gray-500 font-normal text-sm">(${b.phone})</span></p>
+                                <p class="text-gray-700 text-xs mt-0.5">${b.address1}${addr2Str}, ${b.postcode} <span class="text-emerald-700 font-bold">(${b.area})</span></p>
+                            </div>
+                            <button onclick="deleteBusiness(${b.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Delete Business</button>
                         </div>
-                        <button onclick="deleteBusiness(${b.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Delete</button>
+                        <div class="bg-white p-3 rounded-lg border space-y-2">
+                            <h4 class="font-bold text-xs text-gray-700 uppercase tracking-wide">Delivery Breakdown History</h4>
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-700 border-b text-xs">
+                                        <th class="p-2">Date</th>
+                                        <th class="p-2">Platform</th>
+                                        <th class="p-2">Deliveries</th>
+                                        <th class="p-2">Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${statsRows}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 `;
             });
@@ -542,7 +628,6 @@
                 const completedTable = document.getElementById('completedOrdersTableBody');
                 const activeOrders = allOrdersCache.filter(o => o.status !== 'Delivered');
                 const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
-
                 const onlineDrivers = registeredDriversCache.filter(d => d.status === 'Approved' && onlineDriversCache[d.id]?.lat);
 
                 activeTable.innerHTML = activeOrders.length === 0 ? `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>` : '';
