@@ -35,7 +35,6 @@
     <div id="incomingOrderModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden backdrop-blur-sm">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 pl-10 space-y-4 shadow-2xl border border-gray-100 text-center relative overflow-hidden">
             
-            <!-- Dynamic Platform Branding Vertical Bar -->
             <div id="modalPlatformBar" class="absolute left-0 top-0 bottom-0 w-7 bg-red-600 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300">
                 <span id="modalPlatformText" style="writing-mode: vertical-rl; text-orientation: mixed;" class="font-black text-white text-[11px] tracking-widest uppercase transform rotate-180 drop-shadow-sm">
                     PEPES APP
@@ -49,7 +48,6 @@
                 <h3 class="font-extrabold text-xl text-gray-900">New Delivery Assigned!</h3>
                 <p id="modalCustomerName" class="text-xs text-gray-500 mt-0.5">Customer Name</p>
             </div>
-            <!-- Dynamic layout container with proper left spacing away from the vertical bar -->
             <div id="modalDetailsContainer" class="bg-gray-50 p-4 pl-5 rounded-2xl text-left space-y-2 border border-gray-100 text-xs ml-2">
                 <p class="text-gray-800 truncate"><b>Pickup:</b> <span id="modalPickup">Shop Address</span></p>
                 <p class="text-gray-800 truncate"><b>Drop-off:</b> <span id="modalDropoff">Customer Address</span></p>
@@ -244,7 +242,6 @@
                     </div>
                 </div>
 
-                <!-- Assigned / Completed Toggle Tabs (Only inside Orders Tab) -->
                 <div class="flex bg-emerald-700/80 p-1 rounded-2xl text-xs font-semibold gap-1 border border-emerald-500">
                     <button onclick="switchOrderViewTab('assigned')" id="orderViewTabAssigned" class="flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center">Assigned Orders</button>
                     <button onclick="switchOrderViewTab('completed')" id="orderViewTabCompleted" class="flex-1 py-2.5 rounded-xl text-white hover:bg-white/10 transition text-center">Completed Orders</button>
@@ -304,7 +301,7 @@
         let orderPollInterval = null;
         let driverMap = null;
         let driverMarker = null;
-        let currentRoutingControl = null; // Tracks active route on map
+        let currentRoutingControl = null;
         let connectedSeconds = 0;
         let timerInterval = null;
         let pendingAlertOrderId = null;
@@ -527,7 +524,6 @@
             }
         }
 
-        // --- Route Management Functions ---
         function showDeliveryRoute(shopLat, shopLng, deliveryLat, deliveryLng) {
             clearDeliveryRoute();
             if (!driverMap) return;
@@ -541,7 +537,7 @@
                 addWaypoints: false,
                 draggableWaypoints: false,
                 fitSelectedRoutes: true,
-                show: false // Hides turn-by-turn text box, showing only map polyline
+                show: false
             }).addTo(driverMap);
         }
 
@@ -659,7 +655,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         driverId: currentDriver.id, 
-                        driverName: `${currentDriver.firstName} ${currentDriver.surname}`,
                         lat: null, 
                         lng: null 
                     })
@@ -681,7 +676,6 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             driverId: currentDriver.id, 
-                            driverName: `${currentDriver.firstName} ${currentDriver.surname}`,
                             lat, 
                             lng 
                         })
@@ -735,14 +729,11 @@
                     lastNotifiedOrderId = newlyAssigned.id;
                     
                     const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
-                    const rawPlatform = newlyAssigned.platform || newlyAssigned.orderType || 'Misc';
+                    const rawPlatform = newlyAssigned.deliveryPlatform || 'Misc';
                     const platformInfo = getPlatformDetails(rawPlatform);
                     
-                    const platformBar = document.getElementById('modalPlatformBar');
-                    const platformText = document.getElementById('modalPlatformText');
-                    
-                    platformText.innerText = platformInfo.name;
-                    platformBar.className = `absolute left-0 top-0 bottom-0 w-7 ${platformInfo.bgClass} flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300`;
+                    document.getElementById('modalPlatformText').innerText = platformInfo.name;
+                    document.getElementById('modalPlatformBar').className = `absolute left-0 top-0 bottom-0 w-7 ${platformInfo.bgClass} flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300`;
 
                     document.getElementById('modalCustomerName').innerText = newlyAssigned.customerName;
                     document.getElementById('modalPickup').innerText = newlyAssigned.pickupAddress;
@@ -770,7 +761,7 @@
                     const isCollected = status === 'Collected' || isDelivered;
                     const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
                     
-                    const rawOrderPlatform = order.platform || order.orderType || 'Misc';
+                    const rawOrderPlatform = order.deliveryPlatform || 'Misc';
                     const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
 
                     container.innerHTML += `
@@ -784,7 +775,7 @@
                             <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
                             <p class="text-xs font-extrabold text-blue-700">Delivery Payout Fee: £${orderFee}</p>
                             <p class="text-xs font-bold text-gray-800">Platform / Type: <span class="px-2 py-0.5 rounded text-white ${orderPlatformInfo.bgClass}">${orderPlatformInfo.name}</span></p>
-                            ${order.specialNotes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.specialNotes}</p>` : ''}
+                            ${order.notes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.notes}</p>` : ''}
                             
                             <div class="pt-2 space-y-2">
                                 ${!isCollected ? `
@@ -823,10 +814,9 @@
                 document.getElementById('incomingOrderModal').classList.add('hidden');
                 pendingAlertOrderId = null;
 
-                // Automatically draw route from shop to customer upon acceptance
                 if (acceptedOrder && acceptedOrder.lat && acceptedOrder.lng) {
-                    const shopLat = 53.0027; // Shop Latitude (Stoke-on-Trent branch)
-                    const shopLng = -2.1794; // Shop Longitude
+                    const shopLat = 53.0027; 
+                    const shopLng = -2.1794; 
                     showDeliveryRoute(shopLat, shopLng, acceptedOrder.lat, acceptedOrder.lng);
                 }
 
@@ -842,7 +832,7 @@
                 await fetch(`${API_URL}/orders/status`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId: pendingAlertOrderId, status: 'Pending', assignedDriverId: null })
+                    body: JSON.stringify({ orderId: pendingAlertOrderId, status: 'Pending Assignment', assignedDriverId: null, driverAccepted: false })
                 });
                 document.getElementById('incomingOrderModal').classList.add('hidden');
                 pendingAlertOrderId = null;
@@ -861,7 +851,7 @@
                 });
                 if (res.ok) {
                     if (newStatus === 'Delivered') {
-                        clearDeliveryRoute(); // Remove route line and markers from map once completed
+                        clearDeliveryRoute();
                         alert('Order marked as delivered! Delivery fee added to your wallet.');
                     } else {
                         alert('Order status updated: Collected from shop.');
