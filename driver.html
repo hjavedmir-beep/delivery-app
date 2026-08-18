@@ -33,9 +33,9 @@
     <div id="incomingOrderModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden backdrop-blur-sm">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 pl-10 space-y-4 shadow-2xl border border-gray-100 text-center relative overflow-hidden">
             
-            <!-- Professional Yellow Vertical Bar with JustEat Branding -->
-            <div class="absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner">
-                <span style="writing-mode: vertical-rl; text-orientation: mixed;" class="font-black text-white text-[11px] tracking-widest uppercase transform rotate-180 drop-shadow-sm">
+            <!-- Dynamic Platform Branding Vertical Bar -->
+            <div id="modalPlatformBar" class="absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300">
+                <span id="modalPlatformText" style="writing-mode: vertical-rl; text-orientation: mixed;" class="font-black text-white text-[11px] tracking-widest uppercase transform rotate-180 drop-shadow-sm">
                     JUST EAT
                 </span>
             </div>
@@ -691,6 +691,22 @@
                     const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
                     const orderType = newlyAssigned.orderType || 'Direct';
                     
+                    // Dynamically set platform branding on popup modal based on order platform or type
+                    const platformName = (newlyAssigned.platform || orderType || 'JUST EAT').toUpperCase();
+                    const platformBar = document.getElementById('modalPlatformBar');
+                    const platformText = document.getElementById('modalPlatformText');
+                    
+                    platformText.innerText = platformName;
+                    
+                    if (platformName.includes('DELIVEROO')) {
+                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-teal-500 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
+                    } else if (platformName.includes('UBER') || platformName.includes('EATS')) {
+                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-black flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
+                    } else {
+                        // Default Just Eat Yellow/Orange
+                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
+                    }
+
                     document.getElementById('modalCustomerName').innerText = newlyAssigned.customerName;
                     document.getElementById('modalPickup').innerText = newlyAssigned.pickupAddress;
                     document.getElementById('modalDropoff').innerText = newlyAssigned.dropoffAddress;
@@ -717,6 +733,7 @@
                     const isCollected = status === 'Collected' || isDelivered;
                     const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
                     const orderType = order.orderType || 'Direct';
+                    const orderPlatform = order.platform || orderType;
 
                     container.innerHTML += `
                         <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
@@ -728,7 +745,7 @@
                             <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
                             <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
                             <p class="text-xs font-extrabold text-blue-700">Delivery Payout Fee: £${orderFee}</p>
-                            <p class="text-xs font-bold text-purple-700">Order Type: ${orderType}</p>
+                            <p class="text-xs font-bold text-purple-700">Platform / Type: ${orderPlatform}</p>
                             ${order.specialNotes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.specialNotes}</p>` : ''}
                             
                             <div class="pt-2 space-y-2">
