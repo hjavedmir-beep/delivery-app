@@ -14,6 +14,7 @@
         <h1 class="text-3xl font-extrabold tracking-wide">Swifty Dashboard</h1>
         <div class="space-x-2 flex flex-wrap gap-2">
             <button onclick="switchTab('active')" id="navTabActive" class="bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition">Dashboard / Front Screen</button>
+            <button onclick="switchTab('orders')" id="navTabOrders" class="bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition">Orders</button>
             <button onclick="switchTab('map')" id="navTabMap" class="bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition">Live Map View</button>
             <button onclick="switchTab('drivers')" id="navTabDrivers" class="bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Drivers</button>
             <button onclick="switchTab('businesses')" id="navTabBusinesses" class="bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition">Manage Businesses</button>
@@ -157,6 +158,28 @@
             </div>
         </div>
 
+        <!-- TAB: Dedicated Orders Page -->
+        <div id="tabContentOrders" class="space-y-5 hidden">
+            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
+                <h2 class="font-bold text-base text-gray-800 border-b pb-2">All Active Orders Directory</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-800 border-b font-bold">
+                                <th class="p-3">ID & Customer</th>
+                                <th class="p-3">Platform & Route</th>
+                                <th class="p-3">Assigned Driver</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dedicatedActiveOrdersTableBody">
+                            <tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">Loading orders...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- TAB 2: Dedicated Live Map View -->
         <div id="tabContentMap" class="space-y-4 hidden">
             <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
@@ -194,7 +217,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: Manage Businesses Page (Simplified without Delivery Stats Form) -->
+        <!-- TAB 4: Manage Businesses Page -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
             <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600 max-w-2xl mx-auto">
                 <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
@@ -288,11 +311,13 @@
 
         function switchTab(tab) {
             document.getElementById('tabContentActive').classList.add('hidden');
+            document.getElementById('tabContentOrders').classList.add('hidden');
             document.getElementById('tabContentMap').classList.add('hidden');
             document.getElementById('tabContentDrivers').classList.add('hidden');
             document.getElementById('tabContentBusinesses').classList.add('hidden');
 
             document.getElementById('navTabActive').className = 'bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
+            document.getElementById('navTabOrders').className = 'bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
             document.getElementById('navTabMap').className = 'bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
             document.getElementById('navTabDrivers').className = 'bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
             document.getElementById('navTabBusinesses').className = 'bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
@@ -302,6 +327,10 @@
                 document.getElementById('navTabActive').className = 'bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
                 fetchAllData();
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
+            } else if (tab === 'orders') {
+                document.getElementById('tabContentOrders').classList.remove('hidden');
+                document.getElementById('navTabOrders').className = 'bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
+                fetchOrders();
             } else if (tab === 'map') {
                 document.getElementById('tabContentMap').classList.remove('hidden');
                 document.getElementById('navTabMap').className = 'bg-emerald-900 px-4 py-2 rounded-lg font-bold text-sm transition';
@@ -527,24 +556,35 @@
                 
                 const activeTable = document.getElementById('activeOrdersTableBody');
                 const completedTable = document.getElementById('completedOrdersTableBody');
+                const dedicatedActiveTable = document.getElementById('dedicatedActiveOrdersTableBody');
+                
                 const activeOrders = allOrdersCache.filter(o => o.status !== 'Delivered');
                 const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
                 const onlineDrivers = registeredDriversCache.filter(d => d.status === 'Approved' && onlineDriversCache[d.id]?.lat);
 
-                activeTable.innerHTML = activeOrders.length === 0 ? `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>` : '';
-                activeOrders.forEach(order => {
-                    let optionsHtml = `<option value="">Select Online Driver</option>`;
-                    onlineDrivers.forEach(d => {
-                        optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
+                const renderOrdersRows = (ordersList) => {
+                    if (ordersList.length === 0) return `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No active orders found.</td></tr>`;
+                    let rowsHtml = '';
+                    ordersList.forEach(order => {
+                        let optionsHtml = `<option value="">Select Online Driver</option>`;
+                        onlineDrivers.forEach(d => {
+                            optionsHtml += `<option value="${d.id}" ${String(order.assignedDriverId) === String(d.id) ? 'selected' : ''}>${d.firstName} ${d.surname}</option>`;
+                        });
+                        rowsHtml += `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="p-3 font-bold">#${order.id} - ${order.customerName}<br><span class="text-xs text-gray-600 font-normal">${order.customerPhone}</span></td>
+                                <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}<br><span class="text-xs font-extrabold text-emerald-700">Fee: £${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
+                                <td class="p-3"><select onchange="assignDriver('${order.id}', this.value)" class="border p-2 rounded-lg text-sm font-semibold w-full bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">${optionsHtml}</select></td>
+                                <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg font-bold text-xs">${order.status || 'Pending'}</span></td>
+                            </tr>`;
                     });
-                    activeTable.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-3 font-bold">#${order.id} - ${order.customerName}<br><span class="text-xs text-gray-600 font-normal">${order.customerPhone}</span></td>
-                            <td class="p-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-xs">${order.deliveryPlatform || 'Misc'}</span><br>From: ${order.pickupAddress}<br>To: ${order.dropoffAddress}<br><span class="text-xs font-extrabold text-emerald-700">Fee: £${Number(order.deliveryPrice || 3.80).toFixed(2)}</span></td>
-                            <td class="p-3"><select onchange="assignDriver('${order.id}', this.value)" class="border p-2 rounded-lg text-sm font-semibold w-full bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">${optionsHtml}</select></td>
-                            <td class="p-3"><span class="bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg font-bold text-xs">${order.status || 'Pending'}</span></td>
-                        </tr>`;
-                });
+                    return rowsHtml;
+                };
+
+                activeTable.innerHTML = renderOrdersRows(activeOrders);
+                if (dedicatedActiveTable) {
+                    dedicatedActiveTable.innerHTML = renderOrdersRows(activeOrders);
+                }
 
                 document.getElementById('completedCountBadge').innerText = `${completedOrders.length} Orders`;
                 completedTable.innerHTML = completedOrders.length === 0 ? `<tr><td colspan="4" class="text-center py-6 text-gray-400 font-semibold">No completed orders found.</td></tr>` : '';
