@@ -41,6 +41,7 @@ const orderSchema = new mongoose.Schema({
     assignedDriverId: String,
     deliveryPrice: Number,
     createdAt: { type: Date, default: Date.now }, // <-- Records exact time order was placed
+    pickupAt: { type: Date },                    // <-- Records exact time order was picked up
     deliveredAt: { type: Date },                 // <-- Records exact time order was delivered
     updatedAt: { type: Date }
 });
@@ -143,6 +144,11 @@ app.post('/api/orders/status', async (req, res) => {
         const newStatus = req.body.status;
         order.status = newStatus;
         order.updatedAt = new Date();
+
+        // Stamp pickupAt only when picked up and if not already stamped
+        if ((newStatus === 'Picked Up' || newStatus.includes('Picked')) && !order.pickupAt) {
+            order.pickupAt = new Date();
+        }
 
         // Only stamp deliveredAt if it's being marked as Delivered AND it hasn't already been stamped
         if (newStatus === 'Delivered' && !order.deliveredAt) {
