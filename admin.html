@@ -716,9 +716,9 @@
                         const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
                         const busNameOnly = extractBusinessName(order.pickupAddress);
                         
-                        // Robust time fallback parsing
-                        const pickupRaw = order.pickedUpAt || order.createdAt || order.timestamp;
-                        const deliveredRaw = order.deliveredAt || order.updatedAt || order.timestamp;
+                        // Using strictly the saved server timestamps without fallback to updatedAt/createdAt
+                        const pickupRaw = order.pickedUpAt;
+                        const deliveredRaw = order.deliveredAt;
 
                         const pickupTimeStr = pickupRaw ? new Date(pickupRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
                         const deliveredTimeStr = deliveredRaw ? new Date(deliveredRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
@@ -768,7 +768,7 @@
             const filtered = completedOrders.filter(order => {
                 let matchDate = true;
                 if (selectedDate) {
-                    const orderDateObj = order.deliveredAt ? new Date(order.deliveredAt) : (order.updatedAt ? new Date(order.updatedAt) : (order.timestamp ? new Date(order.timestamp) : null));
+                    const orderDateObj = order.deliveredAt ? new Date(order.deliveredAt) : null;
                     if (orderDateObj) {
                         const orderDateStr = orderDateObj.toISOString().split('T')[0];
                         matchDate = (orderDateStr === selectedDate);
@@ -789,8 +789,8 @@
                 const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
                 const busNameOnly = extractBusinessName(order.pickupAddress);
                 
-                const pickupRaw = order.pickedUpAt || order.createdAt || order.timestamp;
-                const deliveredRaw = order.deliveredAt || order.updatedAt || order.timestamp;
+                const pickupRaw = order.pickedUpAt;
+                const deliveredRaw = order.deliveredAt;
 
                 const pickupTimeStr = pickupRaw ? new Date(pickupRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
                 const deliveredTimeStr = deliveredRaw ? new Date(deliveredRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
@@ -837,7 +837,7 @@
                 
                 let matchDate = true;
                 if (selectedDate) {
-                    const orderDateObj = order.deliveredAt ? new Date(order.deliveredAt) : (order.updatedAt ? new Date(order.updatedAt) : (order.timestamp ? new Date(order.timestamp) : null));
+                    const orderDateObj = order.deliveredAt ? new Date(order.deliveredAt) : null;
                     if (orderDateObj) {
                         const orderDateStr = orderDateObj.toISOString().split('T')[0];
                         matchDate = (orderDateStr === selectedDate);
@@ -867,8 +867,8 @@
                 const drv = registeredDriversCache.find(d => String(d.id) === String(order.assignedDriverId));
                 const busNameOnly = extractBusinessName(order.pickupAddress);
                 
-                const pickupRaw = order.pickedUpAt || order.createdAt || order.timestamp;
-                const deliveredRaw = order.deliveredAt || order.updatedAt || order.timestamp;
+                const pickupRaw = order.pickedUpAt;
+                const deliveredRaw = order.deliveredAt;
 
                 const pickupTimeStr = pickupRaw ? new Date(pickupRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
                 const deliveredTimeStr = deliveredRaw ? new Date(deliveredRaw).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
