@@ -36,7 +36,7 @@
             <!-- Dynamic Platform Branding Vertical Bar -->
             <div id="modalPlatformBar" class="absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300">
                 <span id="modalPlatformText" style="writing-mode: vertical-rl; text-orientation: mixed;" class="font-black text-white text-[11px] tracking-widest uppercase transform rotate-180 drop-shadow-sm">
-                    JUST EAT
+                    DIRECT
                 </span>
             </div>
 
@@ -689,10 +689,11 @@
                     lastNotifiedOrderId = newlyAssigned.id;
                     
                     const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
-                    const orderType = newlyAssigned.orderType || 'Direct';
                     
-                    // Fixed: prioritize platform field first, fallback to orderType or 'JUST EAT'
-                    const platformName = (newlyAssigned.platform || newlyAssigned.orderType || 'JUST EAT').toUpperCase();
+                    // Fixed: accurately read platform/orderType, falling back to 'DIRECT' instead of forcing 'JUST EAT'
+                    const rawPlatform = newlyAssigned.platform || newlyAssigned.orderType || 'Direct';
+                    const platformName = rawPlatform.toUpperCase();
+                    
                     const platformBar = document.getElementById('modalPlatformBar');
                     const platformText = document.getElementById('modalPlatformText');
                     
@@ -702,9 +703,12 @@
                         platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-teal-500 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
                     } else if (platformName.includes('UBER') || platformName.includes('EATS')) {
                         platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-black flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
-                    } else {
-                        // Default Just Eat Yellow/Orange
+                    } else if (platformName.includes('JUST') || platformName.includes('EAT')) {
+                        // Just Eat Yellow/Orange
                         platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
+                    } else {
+                        // Default / Delivery / Direct Blue-Grey or Emerald
+                        platformBar.className = 'absolute left-0 top-0 bottom-0 w-7 bg-blue-600 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300';
                     }
 
                     document.getElementById('modalCustomerName').innerText = newlyAssigned.customerName;
