@@ -695,14 +695,14 @@
         function getPlatformDetails(rawPlatformString) {
             const val = (rawPlatformString || 'Misc').toUpperCase();
             
-            if (val.includes('DELIVEROO')) {
-                return { name: 'DELIVEROO', bgClass: 'bg-sky-400' };
+            if (val.includes('Deliveroo')) {
+                return { name: 'Deliveroo', bgClass: 'bg-sky-400' };
             } else if (val.includes('JUST') || val.includes('EAT')) {
-                return { name: 'JUSTEAT', bgClass: 'bg-yellow-400 text-black' };
-            } else if (val.includes('UBER') || val.includes('UBEREATS')) {
-                return { name: 'UBEREATS', bgClass: 'bg-emerald-600' };
+                return { name: 'Justeat', bgClass: 'bg-yellow-400 text-black' };
+            } else if (val.includes('UBER') || val.includes('Ubereats')) {
+                return { name: 'Ubereats', bgClass: 'bg-emerald-600' };
             } else if (val.includes('PEPE') || val.includes('APP')) {
-                return { name: 'PEPES APP', bgClass: 'bg-red-600' };
+                return { name: 'Pepes App', bgClass: 'bg-red-600' };
             } else {
                 return { name: 'MISC.', bgClass: 'bg-black' };
             }
