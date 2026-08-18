@@ -34,7 +34,7 @@
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 pl-10 space-y-4 shadow-2xl border border-gray-100 text-center relative overflow-hidden">
             
             <!-- Dynamic Platform Branding Vertical Bar -->
-            <div id="modalPlatformBar" class="absolute left-0 top-0 bottom-0 w-9 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300">
+            <div id="modalPlatformBar" class="absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner transition-colors duration-300">
                 <span id="modalPlatformText" style="writing-mode: vertical-rl; text-orientation: mixed;" class="font-black text-white text-[11px] tracking-widest uppercase transform rotate-180 drop-shadow-sm">
                     JUST EAT
                 </span>
@@ -691,8 +691,8 @@
                     const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
                     const orderType = newlyAssigned.orderType || 'Direct';
                     
-                    // Dynamically set platform branding on popup modal based on order platform or type
-                    const platformName = (newlyAssigned.platform || orderType || 'JUST EAT').toUpperCase();
+                    // Fixed: prioritize platform field first, fallback to orderType or 'JUST EAT'
+                    const platformName = (newlyAssigned.platform || newlyAssigned.orderType || 'JUST EAT').toUpperCase();
                     const platformBar = document.getElementById('modalPlatformBar');
                     const platformText = document.getElementById('modalPlatformText');
                     
@@ -711,7 +711,7 @@
                     document.getElementById('modalPickup').innerText = newlyAssigned.pickupAddress;
                     document.getElementById('modalDropoff').innerText = newlyAssigned.dropoffAddress;
                     document.getElementById('modalPayout').innerText = `Payout: £${orderPayout}`;
-                    document.getElementById('modalOrderType').innerText = orderType;
+                    document.getElementById('modalOrderType').innerText = platformName;
 
                     document.getElementById('incomingOrderModal').classList.remove('hidden');
                     playBeepSound();
@@ -732,8 +732,7 @@
                     const isDelivered = status === 'Delivered';
                     const isCollected = status === 'Collected' || isDelivered;
                     const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
-                    const orderType = order.orderType || 'Direct';
-                    const orderPlatform = order.platform || orderType;
+                    const orderPlatform = (order.platform || order.orderType || 'Direct').toUpperCase();
 
                     container.innerHTML += `
                         <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
