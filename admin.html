@@ -40,7 +40,6 @@
                             </div>
                         </div>
 
-                        <!-- Delivery Platform / Type Field -->
                         <div>
                             <label class="block font-semibold text-gray-700">Delivery Platform / Type</label>
                             <select id="orderDeliveryPlatform" required class="w-full mt-1 p-2 border rounded-lg bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
@@ -240,45 +239,49 @@
             </div>
         </div>
 
-        <!-- TAB 4: Manage Businesses Page -->
+        <!-- TAB 4: Manage Businesses Page (Updated Side-by-Side Layout) -->
         <div id="tabContentBusinesses" class="space-y-5 hidden">
-            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600 max-w-2xl mx-auto">
-                <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
-                <form id="addBusinessForm" onsubmit="handleAddBusiness(event)" class="space-y-3 text-sm">
-                    <div>
-                        <label class="block font-semibold text-gray-700">Business Name</label>
-                        <input type="text" id="busName" placeholder="e.g. Mother Hubbard's Stoke" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-gray-700">Phone Number</label>
-                        <input type="text" id="busPhone" placeholder="e.g. +44 1782..." required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-gray-700">Address Line 1</label>
-                        <input type="text" id="busAddress1" placeholder="e.g. Stafford Street" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-gray-700">Address Line 2 (Optional)</label>
-                        <input type="text" id="busAddress2" placeholder="e.g. Suite 3 / Unit B" class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                <!-- Left Column: Add New Business Form -->
+                <div class="lg:col-span-6 bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600 h-fit">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Add New Business</h2>
+                    <form id="addBusinessForm" onsubmit="handleAddBusiness(event)" class="space-y-3 text-sm">
                         <div>
-                            <label class="block font-semibold text-gray-700">Post Code</label>
-                            <input type="text" id="busPostcode" placeholder="e.g. ST1 5PT" oninput="lookupPostcode(this.value)" required class="w-full mt-1 p-2 border rounded-lg uppercase text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <label class="block font-semibold text-gray-700">Business Name</label>
+                            <input type="text" id="busName" placeholder="e.g. Mother Hubbard's Stoke" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block font-semibold text-gray-700">Area</label>
-                            <input type="text" id="busArea" placeholder="Auto-populated" readonly class="w-full mt-1 p-2 border rounded-lg bg-gray-50 text-gray-800 font-bold text-sm">
+                            <label class="block font-semibold text-gray-700">Phone Number</label>
+                            <input type="text" id="busPhone" placeholder="e.g. +44 1782..." required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                         </div>
-                    </div>
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg font-bold text-base transition">Save & Pin on Map</button>
-                </form>
-            </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Address Line 1</label>
+                            <input type="text" id="busAddress1" placeholder="e.g. Stafford Street" required class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-gray-700">Address Line 2 (Optional)</label>
+                            <input type="text" id="busAddress2" placeholder="e.g. Suite 3 / Unit B" class="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-semibold text-gray-700">Post Code</label>
+                                <input type="text" id="busPostcode" placeholder="e.g. ST1 5PT" oninput="lookupPostcode(this.value)" required class="w-full mt-1 p-2 border rounded-lg uppercase text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-gray-700">Area</label>
+                                <input type="text" id="busArea" placeholder="Auto-populated" readonly class="w-full mt-1 p-2 border rounded-lg bg-gray-50 text-gray-800 font-bold text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg font-bold text-base transition">Save & Pin on Map</button>
+                    </form>
+                </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
-                <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory</h2>
-                <div id="businessesListContainer" class="space-y-4 text-sm max-h-[500px] overflow-y-auto">
-                    <p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>
+                <!-- Right Column: Registered Businesses Directory -->
+                <div class="lg:col-span-6 bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600 h-fit">
+                    <h2 class="font-bold text-base text-gray-800 border-b pb-2">Registered Businesses Directory</h2>
+                    <div id="businessesListContainer" class="space-y-4 text-sm max-h-[500px] overflow-y-auto">
+                        <p class="text-gray-400 text-center py-6 font-semibold">No businesses registered yet.</p>
+                    </div>
                 </div>
             </div>
 
