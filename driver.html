@@ -31,7 +31,15 @@
 
     <!-- NEW ORDER POPUP MODAL -->
     <div id="incomingOrderModal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden backdrop-blur-sm">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-gray-100 text-center animate-bounce-short">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 pl-10 space-y-4 shadow-2xl border border-gray-100 text-center relative overflow-hidden">
+            
+            <!-- Professional Yellow Vertical Bar with JustEat Branding -->
+            <div class="absolute left-0 top-0 bottom-0 w-7 bg-amber-400 flex flex-col items-center justify-center py-4 shadow-inner">
+                <span style="writing-mode: vertical-rl; text-orientation: mixed;" class="font-black text-white text-[11px] tracking-widest uppercase transform rotate-180 drop-shadow-sm">
+                    JUST EAT
+                </span>
+            </div>
+
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner animate-pulse">
                 📦
             </div>
@@ -39,14 +47,14 @@
                 <h3 class="font-extrabold text-xl text-gray-900">New Delivery Assigned!</h3>
                 <p id="modalCustomerName" class="text-xs text-gray-500 mt-0.5">Customer Name</p>
             </div>
-            <!-- Dynamic layout container: vertically aligned if JustEat -->
-            <div id="modalDetailsContainer" class="bg-gray-50 p-4 rounded-2xl text-left space-y-2 border border-gray-100 text-xs">
-                <p class="text-gray-800 truncate"><b>Pickup:</b> <span id="modalPickup">Shop Address</span></p>
+            <!-- Dynamic layout container with proper left spacing away from the vertical bar -->
+            <div id="modalDetailsContainer" class="bg-gray-50 p-4 pl-5 rounded-2xl text-left space-y-2 border border-gray-100 text-xs ml-2">
+                <p class="text-gray-800 truncate"><b>Pickup:</b> <span id="modalPickup">Pepes Newcastle Under Lyme</span></p>
                 <p class="text-gray-800 truncate"><b>Drop-off:</b> <span id="modalDropoff">Customer Address</span></p>
                 <p class="text-emerald-700 font-bold" id="modalPayout">Payout: £3.80</p>
                 <p class="text-blue-700 font-bold" id="modalOrderTypeRow">Type: <span id="modalOrderType">Direct</span></p>
             </div>
-            <div class="grid grid-cols-2 gap-3 pt-2">
+            <div class="grid grid-cols-2 gap-3 pt-2 ml-2">
                 <button onclick="rejectIncomingOrder()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold text-xs transition">
                     Reject ❌
                 </button>
@@ -688,14 +696,6 @@
                     document.getElementById('modalDropoff').innerText = newlyAssigned.dropoffAddress;
                     document.getElementById('modalPayout').innerText = `Payout: £${orderPayout}`;
                     document.getElementById('modalOrderType').innerText = orderType;
-
-                    // If order type is JustEat, make it vertical (space-y-2), else normal flex/inline
-                    const detailsContainer = document.getElementById('modalDetailsContainer');
-                    if (orderType.toLowerCase().includes('justeat')) {
-                        detailsContainer.className = 'bg-gray-50 p-4 rounded-2xl text-left space-y-3 border border-gray-100 text-xs flex flex-col';
-                    } else {
-                        detailsContainer.className = 'bg-gray-50 p-4 rounded-2xl text-left space-y-2 border border-gray-100 text-xs';
-                    }
 
                     document.getElementById('incomingOrderModal').classList.remove('hidden');
                     playBeepSound();
