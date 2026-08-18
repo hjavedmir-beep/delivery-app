@@ -815,8 +815,9 @@
                 pendingAlertOrderId = null;
 
                 if (acceptedOrder && acceptedOrder.lat && acceptedOrder.lng) {
-                    const shopLat = 53.0027; 
-                    const shopLng = -2.1794; 
+                    const shopLat = acceptedOrder.shopLat || 53.0027; 
+                    const shopLng = acceptedOrder.shopLng || -2.1794; 
+                    
                     showDeliveryRoute(shopLat, shopLng, acceptedOrder.lat, acceptedOrder.lng);
                 }
 
