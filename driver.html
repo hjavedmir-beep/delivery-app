@@ -716,8 +716,13 @@
                 const activeOrders = myOrders.filter(o => o.status !== 'Delivered');
                 
                 let totalEarned = 0;
-                completedOrders.forEach(o => {
-                    totalEarned += Number(o.deliveryPrice || 3.80);
+                completedOrders.forEach((o, index) => {
+                    const orderDistance = Number(o.distanceInMiles || o.distance || 1.0);
+                    let fee = Number(o.deliveryPrice || 3.80);
+                    if (index === 1) {
+                        fee = (orderDistance / 0.10) * 0.11;
+                    }
+                    totalEarned += fee;
                 });
 
                 document.getElementById('walletMainAmount').innerText = `£${totalEarned.toFixed(2)}`;
@@ -761,7 +766,17 @@
                     const status = order.status || 'Assigned';
                     const isDelivered = status === 'Delivered';
                     const isCollected = status === 'Collected' || isDelivered;
-                    const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
+                    
+                    const orderDistance = Number(order.distanceInMiles || order.distance || 1.0);
+                    let calculatedFee;
+                    if (index === 1) {
+                        // 2nd delivery rule: £0.11 for every 0.10 miles
+                        calculatedFee = (orderDistance / 0.10) * 0.11;
+                    } else {
+                        // 1st delivery remains as standard/existing rate
+                        calculatedFee = Number(order.deliveryPrice || 3.80);
+                    }
+                    const orderFee = Number(calculatedFee).toFixed(2);
                     
                     const rawOrderPlatform = order.deliveryPlatform || order.delivery_type || order.platform || 'Misc';
                     const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
