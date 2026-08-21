@@ -700,7 +700,6 @@
             } else if (!val || val === 'MISC' || val === 'MISC.') {
                 return { name: 'MISC.', bgClass: 'bg-black' };
             } else {
-                // If it's a custom string saved directly (e.g. "Deliveroo"), display it properly with a colored badge
                 return { name: rawPlatformString, bgClass: 'bg-sky-400' };
             }
         }
@@ -767,9 +766,10 @@
                     const rawOrderPlatform = order.deliveryPlatform || order.delivery_type || order.platform || 'Misc';
                     const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
 
+                    const sLat = order.shopLat || 53.0027;
+                    const sLng = order.shopLng || -2.1794;
+
                     if (index === 0 && currentOrderViewFilter === 'assigned' && order.lat && order.lng) {
-                        const sLat = order.shopLat || 53.0027;
-                        const sLng = order.shopLng || -2.1794;
                         showDeliveryRoute(sLat, sLng, order.lat, order.lng);
                     }
 
@@ -787,9 +787,14 @@
                             ${order.notes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.notes}</p>` : ''}
                             
                             ${order.lat && order.lng ? `
-                                <button onclick="triggerOrderRoute('${order.shopLat || 53.0027}', '${order.shopLng || -2.1794}', '${order.lat}', '${order.lng}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl font-bold text-xs transition shadow-sm">
-                                    Show Route on Map 🗺️
-                                </button>
+                                <div class="grid grid-cols-2 gap-2 pt-1">
+                                    <button onclick="triggerOrderRoute('${sLat}', '${sLng}', '${order.lat}', '${order.lng}')" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center">
+                                        Show Route on Map 🗺️
+                                    </button>
+                                    <a href="https://www.google.com/maps/dir/?api=1&origin=${sLat},${sLng}&destination=${order.lat},${order.lng}&travelmode=driving" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center flex items-center justify-center gap-1">
+                                        <span>Open in Google Maps</span> 🌐
+                                    </a>
+                                </div>
                             ` : ''}
 
                             <div class="pt-2 space-y-2">
