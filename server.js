@@ -362,6 +362,41 @@ app.post('/api/driver/location', (req, res) => {
 app.get('/api/drivers/locations', (req, res) => {
     res.json(driverLocations);
 });
+// Add this endpoint to your server.js
+app.get('/api/postcode-stats', async (req, res) => {
+    try {
+        // Assuming your orders are loaded or stored in orders.json or database
+        // Let's read from your existing data source (adjust based on how server.js reads orders):
+        const fs = require('fs');
+        const rawData = fs.readFileSync('./orders.json');
+        const orders = JSON.parse(rawData);
+
+        const postcodeCounts = {};
+
+        orders.forEach(order => {
+            // Extracts postcode from address string (e.g., "15, Stoke-on-Trent - ST34NL" -> "ST3")
+            // Adjust regex or field name based on how your delivery address string is formatted
+            const address = order.deliveryAddress || order.address || "";
+            const match = address.match(/ST\d+/i); // Looks for ST postcodes
+            
+            if (match) {
+                const postcode = match[0].toUpperCase();
+                postcodeCounts[postcode] = (postcodeCounts[postcode] || 0) + 1;
+            }
+        });
+
+        // Convert to array and sort highest to lowest
+        const sortedStats = Object.keys(postcodeCounts).map(code => ({
+            _id: code,
+            totalDeliveries: postcodeCounts[code]
+        })).sort((a, b) => b.totalDeliveries - a.totalDeliveries);
+
+        res.json(sortedStats);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Could not calculate postcode stats" });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
