@@ -687,18 +687,21 @@
         }
 
         function getPlatformDetails(rawPlatformString) {
-            const val = (rawPlatformString || 'Misc').toUpperCase();
+            const val = (rawPlatformString || '').toString().trim().toUpperCase();
             
-            if (val.includes('Deliveroo')) {
+            if (val.includes('DELIVEROO') || val === 'DELIVEROO') {
                 return { name: 'Deliveroo', bgClass: 'bg-sky-400' };
-            } else if (val.includes('JUST') || val.includes('EAT')) {
+            } else if (val.includes('JUST') || val.includes('EAT') || val === 'JUSTEAT') {
                 return { name: 'Justeat', bgClass: 'bg-yellow-400 text-black' };
-            } else if (val.includes('UBER') || val.includes('Ubereats')) {
+            } else if (val.includes('UBER') || val.includes('UBEREATS')) {
                 return { name: 'Ubereats', bgClass: 'bg-emerald-600' };
-            } else if (val.includes('PEPE') || val.includes('APP')) {
+            } else if (val.includes('PEPE') || val.includes('APP') || val === 'PEPES APP') {
                 return { name: 'Pepes App', bgClass: 'bg-red-600' };
-            } else {
+            } else if (!val || val === 'MISC' || val === 'MISC.') {
                 return { name: 'MISC.', bgClass: 'bg-black' };
+            } else {
+                // If it's a custom string saved directly (e.g. "Deliveroo"), display it properly with a colored badge
+                return { name: rawPlatformString, bgClass: 'bg-sky-400' };
             }
         }
 
@@ -729,7 +732,7 @@
                     lastNotifiedOrderId = newlyAssigned.id;
                     
                     const orderPayout = Number(newlyAssigned.deliveryPrice || 3.80).toFixed(2);
-                    const rawPlatform = newlyAssigned.deliveryPlatform || 'Misc';
+                    const rawPlatform = newlyAssigned.deliveryPlatform || newlyAssigned.delivery_type || newlyAssigned.platform || 'Misc';
                     const platformInfo = getPlatformDetails(rawPlatform);
                     
                     document.getElementById('modalPlatformText').innerText = platformInfo.name;
@@ -761,10 +764,9 @@
                     const isCollected = status === 'Collected' || isDelivered;
                     const orderFee = Number(order.deliveryPrice || 3.80).toFixed(2);
                     
-                    const rawOrderPlatform = order.deliveryPlatform || 'Misc';
+                    const rawOrderPlatform = order.deliveryPlatform || order.delivery_type || order.platform || 'Misc';
                     const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
 
-                    // اگر پہلا فعال آرڈر ہے تو خودکار طور پر م্যাপ پر اس کا روٹ ڈرا کر دیں
                     if (index === 0 && currentOrderViewFilter === 'assigned' && order.lat && order.lng) {
                         const sLat = order.shopLat || 53.0027;
                         const sLng = order.shopLng || -2.1794;
@@ -784,7 +786,6 @@
                             <p class="text-xs font-bold text-gray-800">Platform / Type: <span class="px-2 py-0.5 rounded text-white ${orderPlatformInfo.bgClass}">${orderPlatformInfo.name}</span></p>
                             ${order.notes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.notes}</p>` : ''}
                             
-                            <!-- دستی روٹ دیکھنے کا بٹن -->
                             ${order.lat && order.lng ? `
                                 <button onclick="triggerOrderRoute('${order.shopLat || 53.0027}', '${order.shopLng || -2.1794}', '${order.lat}', '${order.lng}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl font-bold text-xs transition shadow-sm">
                                     Show Route on Map 🗺️
@@ -814,7 +815,6 @@
 
         function triggerOrderRoute(sLat, sLng, dLat, dLng) {
             showDeliveryRoute(parseFloat(sLat), parseFloat(sLng), parseFloat(dLat), parseFloat(dLng));
-            // م্যাপ والے ٹیب پر خود بخود سکرول کر دیں یا فوکس لے جائیں تاکہ روٹ نظر آئے
             const mapElement = document.getElementById('driverMap');
             if (mapElement) {
                 mapElement.scrollIntoView({ behavior: 'smooth' });
