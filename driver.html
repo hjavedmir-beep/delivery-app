@@ -786,16 +786,15 @@
                             <p class="text-xs font-bold text-gray-800">Platform / Type: <span class="px-2 py-0.5 rounded text-white ${orderPlatformInfo.bgClass}">${orderPlatformInfo.name}</span></p>
                             ${order.notes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.notes}</p>` : ''}
                             
-                            ${order.lat && order.lng ? `
-                                <div class="grid grid-cols-2 gap-2 pt-1">
-                                    <button onclick="triggerOrderRoute('${sLat}', '${sLng}', '${order.lat}', '${order.lng}')" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center">
-                                        Show Route on Map 🗺️
-                                    </button>
-                                    <a href="https://www.google.com/maps/dir/?api=1&origin=${sLat},${sLng}&destination=${order.lat},${order.lng}&travelmode=driving" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center flex items-center justify-center gap-1">
-                                        <span>Open in Google Maps</span> 🌐
-                                    </a>
-                                </div>
-                            ` : ''}
+                            <!-- Map & Navigation Options -->
+                            <div class="grid grid-cols-2 gap-2 pt-1">
+                                <button onclick="triggerOrderRoute('${sLat}', '${sLng}', '${order.lat || sLat}', '${order.lng || sLng}')" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center">
+                                    Show Route on Map 🗺️
+                                </button>
+                                <a href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(order.pickupAddress)}&destination=${encodeURIComponent(order.dropoffAddress)}&travelmode=driving" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center flex items-center justify-center gap-1">
+                                    <span>Open in Google Maps</span> 🌐
+                                </a>
+                            </div>
 
                             <div class="pt-2 space-y-2">
                                 ${!isCollected ? `
