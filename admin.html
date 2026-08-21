@@ -170,17 +170,35 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div class="md:col-span-1 bg-white p-5 rounded-xl shadow-md space-y-3 border-t-4 border-emerald-600">
                     <h2 class="font-bold text-base text-gray-800 border-b pb-2">Deliveries by Postcode</h2>
-                    <p class="text-xs text-gray-500">See which areas generate the most deliveries.</p>
+                    <p class="text-xs text-gray-500">Filter by date range to see area volume & revenue.</p>
+                    
+                    <!-- Date Range Filters for Postcode Stats -->
+                    <div class="space-y-2 bg-gray-50 p-3 rounded-xl border">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 uppercase">From Date</label>
+                            <input type="date" id="postcodeStatsFromDate" onchange="updatePostcodeStatsDropdownAndTable()" class="w-full p-1.5 border rounded-lg bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 uppercase">To Date</label>
+                            <input type="date" id="postcodeStatsToDate" onchange="updatePostcodeStatsDropdownAndTable()" class="w-full p-1.5 border rounded-lg bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div class="pt-1 flex justify-between">
+                            <button onclick="setPostcodeToday()" class="text-[11px] font-bold text-emerald-700 hover:underline">Today</button>
+                            <button onclick="clearPostcodeDateRange()" class="text-[11px] font-bold text-red-600 hover:underline">Clear Range</button>
+                        </div>
+                    </div>
+
                     <div class="overflow-x-auto max-h-[250px] overflow-y-auto">
                         <table class="w-full text-left text-sm">
                             <thead>
-                                <tr class="bg-gray-50 text-gray-800 border-b font-bold sticky top-0">
-                                    <th class="p-2">Postcode Area</th>
-                                    <th class="p-2 text-right">Deliveries</th>
+                                <tr class="bg-gray-50 text-gray-800 border-b font-bold sticky top-0 text-xs">
+                                    <th class="p-2">Area</th>
+                                    <th class="p-2 text-center">Orders</th>
+                                    <th class="p-2 text-right">Revenue</th>
                                 </tr>
                             </thead>
                             <tbody id="postcodeStatsTableBody">
-                                <tr><td colspan="2" class="text-center py-4 text-gray-400 font-semibold text-xs">Loading stats...</td></tr>
+                                <tr><td colspan="3" class="text-center py-4 text-gray-400 font-semibold text-xs">Loading stats...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -700,7 +718,6 @@
             return idx !== -1 ? pickupStr.substring(0, idx).trim() : pickupStr;
         }
 
-        // Helper to extract outward postcode (e.g., ST1, ST4) from address
         function extractPostcodeArea(addressStr) {
             if (!addressStr) return 'UNKNOWN';
             const match = addressStr.match(/([A-Z]{1,2}\d[A-Z\d]?)\s*\d[A-Z]{2}/i) || addressStr.match(/([A-Z]{1,2}\d{1,2})/i);
@@ -787,15 +804,45 @@
             } catch (e) { console.error('Error fetching orders:', e); }
         }
 
+        function setPostcodeToday() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('postcodeStatsFromDate').value = todayStr;
+            document.getElementById('postcodeStatsToDate').value = todayStr;
+            updatePostcodeStatsDropdownAndTable();
+        }
+
+        function clearPostcodeDateRange() {
+            document.getElementById('postcodeStatsFromDate').value = '';
+            document.getElementById('postcodeStatsToDate').value = '';
+            updatePostcodeStatsDropdownAndTable();
+        }
+
         function updatePostcodeStatsDropdownAndTable() {
             const completedOrders = allOrdersCache.filter(o => o.status === 'Delivered');
+            const fromDateVal = document.getElementById('postcodeStatsFromDate').value;
+            const toDateVal = document.getElementById('postcodeStatsToDate').value;
+
             const counts = {};
+            const revenues = {};
             const postcodesSet = new Set();
 
             completedOrders.forEach(o => {
-                const area = extractPostcodeArea(o.dropoffAddress);
-                counts[area] = (counts[area] || 0) + 1;
-                postcodesSet.add(area);
+                let matchDate = true;
+                if (o.deliveredAt) {
+                    const orderDateStr = new Date(o.deliveredAt).toISOString().split('T')[0];
+                    if (fromDateVal && orderDateStr < fromDateVal) matchDate = false;
+                    if (toDateVal && orderDateStr > toDateVal) matchDate = false;
+                } else if (fromDateVal || toDateVal) {
+                    matchDate = false;
+                }
+
+                if (matchDate) {
+                    const area = extractPostcodeArea(o.dropoffAddress);
+                    counts[area] = (counts[area] || 0) + 1;
+                    const price = Number(o.deliveryPrice || 3.80);
+                    revenues[area] = (revenues[area] || 0) + price;
+                    postcodesSet.add(area);
+                }
             });
 
             // Populate Postcode Filter Dropdown
@@ -810,12 +857,12 @@
                 filterPostcodeSelect.value = currentVal;
             }
 
-            // Populate Postcode Summary Widget Table
+            // Populate Postcode Summary Widget Table with Orders & Revenue
             const statsTableBody = document.getElementById('postcodeStatsTableBody');
             if (statsTableBody) {
                 const sortedAreas = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
                 if (sortedAreas.length === 0) {
-                    statsTableBody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-gray-400 font-semibold text-xs">No postcode data yet.</td></tr>`;
+                    statsTableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-gray-400 font-semibold text-xs">No orders for selected dates.</td></tr>`;
                     return;
                 }
                 let statsHtml = '';
@@ -823,7 +870,8 @@
                     statsHtml += `
                         <tr class="border-b hover:bg-gray-50 text-xs">
                             <td class="p-2 font-bold text-gray-800">${area}</td>
-                            <td class="p-2 text-right"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${counts[area]}</span></td>
+                            <td class="p-2 text-center"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${counts[area]}</span></td>
+                            <td class="p-2 text-right font-extrabold text-emerald-900">£${revenues[area].toFixed(2)}</td>
                         </tr>`;
                 });
                 statsTableBody.innerHTML = statsHtml;
@@ -1133,7 +1181,7 @@
                     closeDriverApprovalModal();
                     fetchDrivers();
                 } else {
-                    const data = await res.json();
+                    const data = > res.json();
                     alert(data.error || 'Failed to approve driver.');
                 }
             } catch (err) {
