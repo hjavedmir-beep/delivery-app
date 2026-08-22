@@ -6,6 +6,10 @@
     <title>Swifty - Driver Portal</title>
     <link rel="icon" href="data:,">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 </head>
 <body class="bg-gray-100 font-sans text-sm pb-24">
 
@@ -186,24 +190,6 @@
                     </div>
                 </div>
 
-                <!-- Bank Payout Info Card (Displayed on Main Dashboard) -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-1.5">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-gray-900 text-xs flex items-center gap-1.5">🏦 Payout Bank Account</span>
-                        <button onclick="switchDriverTab('profile')" class="text-xs text-emerald-600 font-bold hover:underline">Edit</button>
-                    </div>
-                    <div class="text-xs text-gray-700 grid grid-cols-2 gap-2 pt-1">
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Sort Code</span>
-                            <span id="dashboardDisplaySortCode" class="font-extrabold text-gray-900">Not Added</span>
-                        </div>
-                        <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
-                            <span class="text-gray-400 block text-[10px] uppercase font-bold">Account Number</span>
-                            <span id="dashboardDisplayAccountNo" class="font-extrabold text-gray-900">Not Added</span>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="font-bold text-gray-900 text-sm px-1 pt-1">Details</div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-100 text-sm">
@@ -232,12 +218,17 @@
 
                 <div class="space-y-2 pt-2">
                     <div class="font-bold text-gray-900 text-sm px-1">Earnings</div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <!-- Earnings Date Card with Interactive Date Picker -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center relative cursor-pointer hover:bg-gray-50 transition" onclick="document.getElementById('earningsDatePicker').showPicker()">
                         <div>
                             <div id="earningsDateLabel" class="font-bold text-gray-900 text-sm">Monday, August 10th, 2026</div>
                             <div id="earningsSubTripText" class="text-xs text-gray-400 mt-0.5">0 trips</div>
                         </div>
-                        <span class="text-gray-400 font-bold text-lg">›</span>
+                        <div class="flex items-center gap-2">
+                            <!-- Hidden date input triggered when clicking the card -->
+                            <input type="date" id="earningsDatePicker" class="absolute opacity-0 pointer-events-none" onchange="handleDateSelection(this.value)">
+                            <span class="text-gray-400 font-bold text-lg">📅 ›</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -270,37 +261,22 @@
                         <p class="text-gray-400 text-center py-6 font-semibold text-xs">No active orders assigned to you right now.</p>
                     </div>
                 </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-2 border border-gray-100">
+                    <h3 class="font-bold text-base text-gray-800 border-b pb-2">🗺️ Your Current GPS Location & Route</h3>
+                    <div id="driverMap" class="w-full h-[260px] rounded-xl"></div>
+                </div>
             </div>
 
             <!-- PROFILE TAB -->
             <div id="tabContentProfile" class="space-y-4 hidden">
-                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100 text-center py-8">
+                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100 text-center py-10">
                     <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-2" id="profileInitial">D</div>
                     <h3 id="profileName" class="font-bold text-lg text-gray-900">Driver Name</h3>
                     <p id="profilePhone" class="text-xs text-gray-500">Phone number</p>
-                </div>
-
-                <!-- Bank Details Form Section -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3 border border-gray-100">
-                    <h3 class="font-bold text-sm text-gray-900 border-b pb-2 flex items-center gap-1.5">🏦 Bank Payout Details</h3>
-                    <p class="text-xs text-gray-500">Add or update your bank account where your weekly delivery earnings will be paid.</p>
-                    <form onsubmit="handleSaveBankDetails(event)" class="space-y-3 pt-1">
-                        <div>
-                            <label class="block font-semibold text-gray-700 text-xs">Sort Code</label>
-                            <input type="text" id="bankSortCodeInput" required class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="e.g. 12-34-56">
-                        </div>
-                        <div>
-                            <label class="block font-semibold text-gray-700 text-xs">Account Number</label>
-                            <input type="text" id="bankAccountNoInput" required class="w-full mt-1 p-2.5 border rounded-xl text-sm" placeholder="e.g. 12345678">
-                        </div>
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
-                            Save Bank Details
-                        </button>
-                    </form>
-                </div>
-
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-center">
-                    <button onclick="logoutDriver()" class="bg-red-500 hover:bg-red-600 text-white w-full py-2.5 rounded-xl font-bold text-xs transition">Logout Account</button>
+                    <div class="pt-4">
+                        <button onclick="logoutDriver()" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs transition">Logout Account</button>
+                    </div>
                 </div>
             </div>
 
@@ -328,12 +304,17 @@
         let isOnline = false;
         let locationInterval = null;
         let orderPollInterval = null;
+        let driverMap = null;
+        let driverMarker = null;
+        let currentRoutingControl = null;
         let connectedSeconds = 0;
         let timerInterval = null;
         let pendingAlertOrderId = null;
         let lastNotifiedOrderId = null;
         let resetEmailTarget = null;
         let currentOrderViewFilter = 'assigned';
+        let allDriverOrdersCache = [];
+        let selectedFilterDate = new Date().toISOString().split('T')[0];
 
         function playBeepSound() {
             try {
@@ -509,6 +490,7 @@
                 document.getElementById('tabContentOrders').classList.remove('hidden');
                 document.getElementById('navBtnOrders').className = 'flex items-center gap-1.5 text-emerald-600 transition bg-emerald-50 px-4 py-1.5 rounded-full font-bold text-xs';
                 document.getElementById('navBtnOrders').innerHTML = '<span class="text-base">📦</span><span>Orders</span>';
+                setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 200);
             } else if (tab === 'profile') {
                 document.getElementById('tabContentProfile').classList.remove('hidden');
                 document.getElementById('navBtnProfile').className = 'flex items-center gap-1.5 text-emerald-600 transition bg-emerald-50 px-4 py-1.5 rounded-full font-bold text-xs';
@@ -528,40 +510,48 @@
                 document.getElementById('orderViewTabCompleted').className = 'flex-1 py-2.5 rounded-xl bg-white text-emerald-700 font-bold shadow-sm transition text-center';
                 document.getElementById('ordersSectionTitle').innerText = '✅ Completed Delivery Orders';
             }
-            fetchDriverAssignedOrders();
+            renderOrdersList();
         }
 
-        function handleSaveBankDetails(e) {
-            e.preventDefault();
-            if (!currentDriver) return;
-
-            const sortCode = document.getElementById('bankSortCodeInput').value.trim();
-            const accountNo = document.getElementById('bankAccountNoInput').value.trim();
-
-            if (!sortCode || !accountNo) {
-                alert('Please enter both your Sort Code and Account Number.');
-                return;
+        function initDriverMap(lat, lng) {
+            if (!driverMap) {
+                driverMap = L.map('driverMap').setView([lat || 53.0027, lng || -2.1794], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(driverMap);
+            } else {
+                driverMap.setView([lat, lng], 14);
             }
 
-            // Save to current session driver object & local storage
-            currentDriver.sortCode = sortCode;
-            currentDriver.accountNo = accountNo;
-            localStorage.setItem('logged_in_driver', JSON.stringify(currentDriver));
-
-            // Update main dashboard view
-            updateDashboardBankDisplay();
-            alert('Bank details saved successfully!');
+            if (driverMarker) {
+                driverMarker.setLatLng([lat, lng]);
+            } else {
+                driverMarker = L.marker([lat, lng]).addTo(driverMap).bindPopup('<b>You are here</b>');
+            }
         }
 
-        function updateDashboardBankDisplay() {
-            if (currentDriver && currentDriver.sortCode && currentDriver.accountNo) {
-                document.getElementById('dashboardDisplaySortCode').innerText = currentDriver.sortCode;
-                document.getElementById('dashboardDisplayAccountNo').innerText = currentDriver.accountNo;
-                document.getElementById('bankSortCodeInput').value = currentDriver.sortCode;
-                document.getElementById('bankAccountNoInput').value = currentDriver.accountNo;
-            } else {
-                document.getElementById('dashboardDisplaySortCode').innerText = 'Not Added';
-                document.getElementById('dashboardDisplayAccountNo').innerText = 'Not Added';
+        function showDeliveryRoute(shopLat, shopLng, deliveryLat, deliveryLng) {
+            clearDeliveryRoute();
+            if (!driverMap) return;
+
+            currentRoutingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(shopLat, shopLng),       
+                    L.latLng(deliveryLat, deliveryLng)  
+                ],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                show: false
+            }).addTo(driverMap);
+        }
+
+        function clearDeliveryRoute() {
+            if (currentRoutingControl && driverMap) {
+                driverMap.removeControl(currentRoutingControl);
+                currentRoutingControl = null;
             }
         }
 
@@ -578,10 +568,16 @@
             document.getElementById('profilePhone').innerText = drv.mobile;
             document.getElementById('profileInitial').innerText = drv.firstName.charAt(0).toUpperCase();
 
-            updateDashboardBankDisplay();
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    initDriverMap(pos.coords.latitude, pos.coords.longitude);
+                }, () => { initDriverMap(53.0027, -2.1794); });
+            } else {
+                initDriverMap(53.0027, -2.1794);
+            }
 
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('earningsDateLabel').innerText = new Date().toLocaleDateString('en-US', options);
+            document.getElementById('earningsDatePicker').value = selectedFilterDate;
+            updateEarningsDateDisplay(new Date(selectedFilterDate + 'T00:00:00'));
 
             fetchDriverAssignedOrders();
         }
@@ -591,6 +587,7 @@
             if (isOnline) toggleShift();
             currentDriver = null;
             clearInterval(orderPollInterval);
+            clearDeliveryRoute();
             document.getElementById('driverDashboard').classList.add('hidden');
             document.getElementById('bottomNav').classList.add('hidden');
             document.getElementById('logoutBtn').classList.add('hidden');
@@ -648,6 +645,7 @@
                 clearInterval(locationInterval);
                 clearInterval(timerInterval);
                 clearInterval(orderPollInterval);
+                clearDeliveryRoute();
 
                 toggleBtnWallet.innerText = 'Go Online';
                 toggleBtnWallet.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm';
@@ -677,6 +675,7 @@
             navigator.geolocation.getCurrentPosition(async pos => {
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
+                initDriverMap(lat, lng);
 
                 try {
                     await fetch(`${API_URL}/driver/location`, {
@@ -712,33 +711,38 @@
             }
         }
 
+        function handleDateSelection(dateString) {
+            if (!dateString) return;
+            selectedFilterDate = dateString;
+            const targetDate = new Date(dateString + 'T00:00:00');
+            updateEarningsDateDisplay(targetDate);
+            processWalletAndOrdersData();
+        }
+
+        function updateEarningsDateDisplay(dateObj) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formattedDate = dateObj.toLocaleDateString('en-US', options);
+
+            if (selectedFilterDate === todayStr) {
+                document.getElementById('walletEarningsLabel').innerText = "Today's earnings";
+            } else {
+                document.getElementById('walletEarningsLabel').innerText = `Earnings for ${dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            }
+            document.getElementById('earningsDateLabel').innerText = formattedDate;
+        }
+
         async function fetchDriverAssignedOrders() {
             if (!currentDriver) return;
 
             try {
                 const res = await fetch(`${API_URL}/orders`);
                 const orders = await res.json();
-
-                const myOrders = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
-                const completedOrders = myOrders.filter(o => o.status === 'Delivered');
-                const activeOrders = myOrders.filter(o => o.status !== 'Delivered');
+                allDriverOrdersCache = orders.filter(o => String(o.assignedDriverId) === String(currentDriver.id));
                 
-                let totalEarned = 0;
-                completedOrders.forEach((o, index) => {
-                    const orderDistance = Number(o.distanceInMiles || o.distance || 1.0);
-                    let fee = Number(o.deliveryPrice || 3.80);
-                    if (index === 1) {
-                        fee = (orderDistance / 0.10) * 0.11;
-                    }
-                    totalEarned += fee;
-                });
+                processWalletAndOrdersData();
 
-                document.getElementById('walletMainAmount').innerText = `£${totalEarned.toFixed(2)}`;
-                document.getElementById('statDeliveryFee').innerText = `£${totalEarned.toFixed(2)}`;
-                document.getElementById('statTripsCount').innerText = completedOrders.length;
-                document.getElementById('earningsSubTripText').innerText = `${completedOrders.length} trips`;
-
-                const newlyAssigned = myOrders.find(o => (!o.driverAccepted || o.driverAccepted === 'pending') && o.status !== 'Delivered');
+                const newlyAssigned = allDriverOrdersCache.find(o => (!o.driverAccepted || o.driverAccepted === 'pending') && o.status !== 'Delivered');
                 if (newlyAssigned && newlyAssigned.id !== lastNotifiedOrderId) {
                     pendingAlertOrderId = newlyAssigned.id;
                     lastNotifiedOrderId = newlyAssigned.id;
@@ -760,77 +764,134 @@
                     playBeepSound();
                 }
 
-                const container = document.getElementById('assignedOrdersContainer');
-                const ordersToDisplay = currentOrderViewFilter === 'completed' ? completedOrders : activeOrders;
-
-                if (ordersToDisplay.length === 0) {
-                    const emptyMsg = currentOrderViewFilter === 'completed' ? 'No completed orders found.' : 'No active orders assigned to you right now.';
-                    container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold text-xs">${emptyMsg}</p>`;
-                    return;
-                }
-
-                container.innerHTML = '';
-                ordersToDisplay.forEach((order, index) => {
-                    const status = order.status || 'Assigned';
-                    const isDelivered = status === 'Delivered';
-                    const isCollected = status === 'Collected' || isDelivered;
-                    
-                    const orderDistance = Number(order.distanceInMiles || order.distance || 1.0);
-                    let calculatedFee;
-                    if (index === 1) {
-                        calculatedFee = (orderDistance / 0.10) * 0.11;
-                    } else {
-                        calculatedFee = Number(order.deliveryPrice || 3.80);
-                    }
-                    const orderFee = Number(calculatedFee).toFixed(2);
-                    
-                    const rawOrderPlatform = order.deliveryPlatform || order.delivery_type || order.platform || 'Misc';
-                    const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
-
-                    container.innerHTML += `
-                        <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-gray-900 text-sm">Order #${order.id} — ${order.customerName}</span>
-                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isDelivered ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}">${status}</span>
-                            </div>
-                            <p class="text-xs text-gray-700">📞 Phone: <a href="tel:${order.customerPhone}" class="text-emerald-600 font-bold hover:underline">${order.customerPhone}</a></p>
-                            <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
-                            <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
-                            <p class="text-xs font-extrabold text-blue-700">Delivery Payout Fee: £${orderFee}</p>
-                            <p class="text-xs font-bold text-gray-800">Platform / Type: <span class="px-2 py-0.5 rounded text-white ${orderPlatformInfo.bgClass}">${orderPlatformInfo.name}</span></p>
-                            ${order.notes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.notes}</p>` : ''}
-                            
-                            <!-- Google Maps Navigation Button -->
-                            <div class="pt-1">
-                                <a href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(order.pickupAddress)}&destination=${encodeURIComponent(order.dropoffAddress)}&travelmode=driving" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center flex items-center justify-center gap-1">
-                                    <span>Open Route in Google Maps</span> 🌐
-                                </a>
-                            </div>
-
-                            <div class="pt-2 space-y-2">
-                                ${!isCollected ? `
-                                    <button onclick="updateOrderStatus('${order.id}', 'Collected')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
-                                        Collected from Shop 🏪
-                                    </button>
-                                ` : !isDelivered ? `
-                                    <button onclick="updateOrderStatus('${order.id}', 'Delivered')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
-                                        Delivered to Customer (£${orderFee} Earned) ✅
-                                    </button>
-                                ` : `
-                                    <p class="text-emerald-700 font-bold text-xs text-center pt-1">✅ Delivery Completed (£${orderFee} Added)</p>
-                                `}
-                            </div>
-                        </div>
-                    `;
-                });
+                renderOrdersList();
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        function processWalletAndOrdersData() {
+            const completedOrders = allDriverOrdersCache.filter(o => o.status === 'Delivered');
+            
+            // Filter completed orders matching the selected date on the calendar
+            const filteredCompletedOrders = completedOrders.filter(o => {
+                const orderDateSource = o.updatedAt || o.createdAt || o.date;
+                if (!orderDateSource) return true; // fallback if no timestamp present
+                const orderDateStr = new Date(orderDateSource).toISOString().split('T')[0];
+                return orderDateStr === selectedFilterDate;
+            });
+
+            let totalEarned = 0;
+            filteredCompletedOrders.forEach((o, index) => {
+                const orderDistance = Number(o.distanceInMiles || o.distance || 1.0);
+                let fee = Number(o.deliveryPrice || 3.80);
+                if (index === 1) {
+                    fee = (orderDistance / 0.10) * 0.11;
+                }
+                totalEarned += fee;
+            });
+
+            document.getElementById('walletMainAmount').innerText = `£${totalEarned.toFixed(2)}`;
+            document.getElementById('statDeliveryFee').innerText = `£${totalEarned.toFixed(2)}`;
+            document.getElementById('statTripsCount').innerText = filteredCompletedOrders.length;
+            document.getElementById('earningsSubTripText').innerText = `${filteredCompletedOrders.length} trips`;
+        }
+
+        function renderOrdersList() {
+            const completedOrders = allDriverOrdersCache.filter(o => o.status === 'Delivered');
+            const activeOrders = allDriverOrdersCache.filter(o => o.status !== 'Delivered');
+
+            const container = document.getElementById('assignedOrdersContainer');
+            const ordersToDisplay = currentOrderViewFilter === 'completed' ? completedOrders : activeOrders;
+
+            if (ordersToDisplay.length === 0) {
+                const emptyMsg = currentOrderViewFilter === 'completed' ? 'No completed orders found.' : 'No active orders assigned to you right now.';
+                container.innerHTML = `<p class="text-gray-400 text-center py-6 font-semibold text-xs">${emptyMsg}</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            ordersToDisplay.forEach((order, index) => {
+                const status = order.status || 'Assigned';
+                const isDelivered = status === 'Delivered';
+                const isCollected = status === 'Collected' || isDelivered;
+                
+                const orderDistance = Number(order.distanceInMiles || order.distance || 1.0);
+                let calculatedFee;
+                if (index === 1) {
+                    calculatedFee = (orderDistance / 0.10) * 0.11;
+                } else {
+                    calculatedFee = Number(order.deliveryPrice || 3.80);
+                }
+                const orderFee = Number(calculatedFee).toFixed(2);
+                
+                const rawOrderPlatform = order.deliveryPlatform || order.delivery_type || order.platform || 'Misc';
+                const orderPlatformInfo = getPlatformDetails(rawOrderPlatform);
+
+                const sLat = order.shopLat || 53.0027;
+                const sLng = order.shopLng || -2.1794;
+
+                if (index === 0 && currentOrderViewFilter === 'assigned' && order.lat && order.lng) {
+                    showDeliveryRoute(sLat, sLng, order.lat, order.lng);
+                }
+
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-4 rounded-xl border space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-900 text-sm">Order #${order.id} — ${order.customerName}</span>
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold ${isDelivered ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}">${status}</span>
+                        </div>
+                        <p class="text-xs text-gray-700">📞 Phone: <a href="tel:${order.customerPhone}" class="text-emerald-600 font-bold hover:underline">${order.customerPhone}</a></p>
+                        <p class="text-xs text-gray-800"><b>Pickup:</b> ${order.pickupAddress}</p>
+                        <p class="text-xs text-gray-800"><b>Drop-off:</b> ${order.dropoffAddress}</p>
+                        <p class="text-xs font-extrabold text-blue-700">Delivery Payout Fee: £${orderFee}</p>
+                        <p class="text-xs font-bold text-gray-800">Platform / Type: <span class="px-2 py-0.5 rounded text-white ${orderPlatformInfo.bgClass}">${orderPlatformInfo.name}</span></p>
+                        ${order.notes ? `<p class="text-xs text-gray-600 italic">Notes: ${order.notes}</p>` : ''}
+                        
+                        <!-- Map & Navigation Options -->
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button onclick="triggerOrderRoute('${sLat}', '${sLng}', '${order.lat || sLat}', '${order.lng || sLng}')" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center">
+                                Show Route on Map 🗺️
+                            </button>
+                            <a href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(order.pickupAddress)}&destination=${encodeURIComponent(order.dropoffAddress)}&travelmode=driving" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-xl font-bold text-xs transition shadow-sm text-center flex items-center justify-center gap-1">
+                                <span>Open in Google Maps</span> 🌐
+                            </a>
+                        </div>
+
+                        <div class="pt-2 space-y-2">
+                            ${!isCollected ? `
+                                <button onclick="updateOrderStatus('${order.id}', 'Collected')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
+                                    Collected from Shop 🏪
+                                </button>
+                            ` : !isDelivered ? `
+                                <button onclick="updateOrderStatus('${order.id}', 'Delivered')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm">
+                                    Delivered to Customer (£${orderFee} Earned) ✅
+                                </button>
+                            ` : `
+                                <p class="text-emerald-700 font-bold text-xs text-center pt-1">✅ Delivery Completed (£${orderFee} Added)</p>
+                            `}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function triggerOrderRoute(sLat, sLng, dLat, dLng) {
+            showDeliveryRoute(parseFloat(sLat), parseFloat(sLng), parseFloat(dLat), parseFloat(dLng));
+            const mapElement = document.getElementById('driverMap');
+            if (mapElement) {
+                mapElement.scrollIntoView({ behavior: 'smooth' });
+                setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 300);
             }
         }
 
         async function acceptIncomingOrder() {
             if (!pendingAlertOrderId) return;
             try {
+                const res = await fetch(`${API_URL}/orders`);
+                const orders = await res.json();
+                const acceptedOrder = orders.find(o => String(o.id) === String(pendingAlertOrderId));
+
                 await fetch(`${API_URL}/orders/status`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -839,6 +900,13 @@
 
                 document.getElementById('incomingOrderModal').classList.add('hidden');
                 pendingAlertOrderId = null;
+
+                if (acceptedOrder && acceptedOrder.lat && acceptedOrder.lng) {
+                    const shopLat = acceptedOrder.shopLat || 53.0027; 
+                    const shopLng = acceptedOrder.shopLng || -2.1794; 
+                    showDeliveryRoute(shopLat, shopLng, acceptedOrder.lat, acceptedOrder.lng);
+                }
+
                 fetchDriverAssignedOrders();
             } catch (err) {
                 console.error(err);
@@ -870,6 +938,7 @@
                 });
                 if (res.ok) {
                     if (newStatus === 'Delivered') {
+                        clearDeliveryRoute();
                         alert('Order marked as delivered! Delivery fee added to your wallet.');
                     } else {
                         alert('Order status updated: Collected from shop.');
@@ -890,9 +959,6 @@
                     const drivers = await res.json();
                     const latestRecord = drivers.find(d => String(d.id) === String(parsedDriver.id));
                     if (latestRecord && latestRecord.status === 'Approved') {
-                        // Keep saved local bank info if present
-                        latestRecord.sortCode = parsedDriver.sortCode;
-                        latestRecord.accountNo = parsedDriver.accountNo;
                         setLoggedInDriver(latestRecord);
                     } else {
                         localStorage.removeItem('logged_in_driver');
